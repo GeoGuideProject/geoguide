@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>GeoHighlight - Charts</title>
+
+	  <meta http-equiv="cache-control" content="max-age=0" />
+	  <meta http-equiv="cache-control" content="no-cache" />
+	  <meta http-equiv="expires" content="0" />
+	  <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT" />
+	  <meta http-equiv="pragma" content="no-cache" />
+
+	<link href="static/bootstrap.min.css" rel="stylesheet">
+	<style>
+	body {
+		margin: 0px auto;
+		width: 960px;
+		min-height: 1000px;
+	}
+
+	#body {
+		position: relative;
+	}
+
+	footer {
+		padding: 2em 0 1em 0;
+		font-size: 12px;
+	}
+
+	h1 {
+		font-size: 96px;
+		margin-top: .3em;
+		margin-bottom: 0;
+	}
+
+	h1 + h2 {
+		margin-top: 0;
+	}
+
+	h2 {
+		font-weight: 400;
+		font-size: 28px;
+	}
+
+	#body > p {
+		line-height: 1.5em;
+		width: 640px;
+	}
+
+	#charts {
+		padding: 10px 0;
+	}
+
+	.chart {
+		display: inline-block;
+		height: 180px;
+		margin-bottom: 10px;
+	}
+
+	.reset {
+		padding-left: 1em;
+		font-size: smaller;
+		color: #ccc;
+	}
+
+	.background.bar {
+		fill: #ccc;
+	}
+
+	.foreground.bar {
+		fill: steelblue;
+	}
+
+	.axis path, .axis line {
+		fill: none;
+		stroke: #000;
+		shape-rendering: crispEdges;
+	}
+
+	.axis text {
+		font: 10px sans-serif;
+	}
+
+	.brush rect.extent {
+		fill: steelblue;
+		fill-opacity: .125;
+	}
+
+	.brush .resize path {
+		fill: #eee;
+		stroke: #666;
+	}
+
+	#hour-chart {
+		width: 305px;
+	}
+	#payment-chart {
+		width: 305px;
+	}
+	#passenger-chart {
+		width: 305px;
+	}
+	#distance-chart{
+		width: 920px;
+	}
+	aside {
+		position: absolute;
+		left: 740px;
+		font-size: smaller;
+		width: 220px;
+	}
+	#heart-map {
+		background-color: white;
+		height: 500px;
+		width: 470px;
+		float: left;
+	}
+	#normal-map {
+		background-color: white;
+		height: 500px;
+		width: 470px;
+		float: right;
+	}
+	</style>
+</head>
+<body>
+	<nav class="navbar navbar-inverse">
+		<div class="container-fluid">
+			<div class="navbar-header">
+				<a class="navbar-brand" href="">GeoHighlight</a>
+			</div>
+		</div>
+	</nav>
+	<div id="body">
+		<div id="charts">
+			<div id="hour-chart" class="chart">
+				<div class="title">{{ filter[0] }}</div>
+			</div>
+			<div id="payment-chart" class="chart">
+				<div class="title">{{ filter[1] }}</div>
+			</div>
+			<div id="passenger-chart" class="chart">
+				<div class="title">{{ filter[2] }}</div>
+			</div>
+			<div id="distance-chart" class="chart">
+				<div class="title">{{ filter[3] }}</div>
+			</div>
+		</div>
+		<aside id="totals"><span id="active">-</span> of <span id="total">-</span> rides selected.</aside>
+		<div id="maps">
+			<br>
+			<div id="heart-map" class ="map"></div>
+			<div id="normal-map" class ="map"></div>
+		</div>
+	</div>
+
+	<script src="static/crossfilter.v1.min.js"></script>
+	<script src="static/d3.v3.min.js"></script>
+	<!--<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css" />-->
+	<link href="static/leaflet.css" rel="stylesheet">
+	<script src="static/leaflet.js"></script>
+	<script src="static/leaflet-heat.js"></script>
+	<script>
+	var heartmap = L.map('heart-map').setView([40.760610,-73.975242], 11);
+	var normalmap = L.map('normal-map').setView([40.760610,-73.975242], 11);
+	var tileset2;
+	function desenharMap(){
+		//Create two tile layer to two maps (error if use same tile layer for two maps)
+		var tileset = L.tileLayer('http://{s}.tiles.wmflabs.org/bw-mapnik/{z}/{x}/{y}.png', {
+			maxZoom: 17,
+			attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+		});
+		tileset2 = L.tileLayer('http://{s}.tiles.wmflabs.org/bw-mapnik/{z}/{x}/{y}.png', {
+			maxZoom: 17,
+			attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+		});
+		tileset.addTo(heartmap);
+		tileset2.addTo(normalmap);
+	}
+
+	desenharMap();
+	function isNumber(n) {
+		return !isNaN(parseFloat(n)) && isFinite(n);
+	}
+	var heat, ride;
+	/*
+	Verificar range se for int e data, armazenar em array se for str
+
+	*/
+	// Add all rides to maps and create crossfilter dimensions and group
+	d3.csv("tmp/{{ csvfilename }}", function(error, rides) {
+		if({{datasettype}} == 2){
+			formatar = d3.time.format.utc("%m/%d/%Y %H:%M:%S").parse;
+		}
+		else{
+			formatar = d3.time.format.utc("%Y-%m-%d %H:%M:%S").parse;
+		}
+
+		val = [rides[1]['{{filter[0]}}'], rides[1]['{{filter[1]}}'], rides[1]['{{filter[2]}}'], rides[1]['{{filter[3]}}']];
+		var type = [0,0,0,0];
+		var matrizelements = [[''],[''],[''],['']];
+		//Types of entryes
+		for(x=0; x<4; x++){
+			if(isNumber(val[x])){
+				switch (x) {
+					case 0:
+					rides.forEach(function(d) {
+						d['{{filter[0]}}'] = +d['{{filter[0]}}'];
+					});
+					break;
+					case 1:
+					rides.forEach(function(d) {
+						d['{{filter[1]}}'] = +d['{{filter[1]}}'];
+					});
+					break;
+					case 2:
+					rides.forEach(function(d) {
+						d['{{filter[2]}}'] = +d['{{filter[2]}}'];
+					});
+					break;
+					case 3:
+					rides.forEach(function(d) {
+						d['{{filter[3]}}'] = +d['{{filter[3]}}'];
+					});
+					break;
+				}
+			}else if(formatar(val[x]) !=  null) {
+				switch (x) {
+					case 0:
+					rides.forEach(function(d) {
+						d['{{filter[0]}}'] = formatar(d['{{filter[0]}}']);
+						type[0] = 1;
+					});
+					break;
+					case 1:
+					rides.forEach(function(d) {
+						d['{{filter[1]}}'] = formatar(d['{{filter[1]}}']);
+						type[1] = 1;
+					});
+					break;
+					case 2:
+					rides.forEach(function(d) {
+						d['{{filter[2]}}'] = formatar(d['{{filter[2]}}']);
+						type[2] = 1;
+					});
+					break;
+					case 3:
+					rides.forEach(function(d) {
+						d['{{filter[3]}}'] = formatar(d['{{filter[3]}}']);
+						type[3] = 1;
+					});
+					break;
+				}
+			}else{
+				switch (x) {
+					case 0:
+					rides.forEach(function(d) {
+						matrizelements[0].push(d['{{filter[0]}}']);
+					});
+					matrizelements[0] = matrizelements[0].filter(function(elem, pos, self) {
+						return self.indexOf(elem) == pos;
+					});
+//					matrizelements[0].push(')');
+					type[0] = 2;
+					break;
+					case 1:
+					rides.forEach(function(d) {
+						matrizelements[1].push(d['{{filter[1]}}']);
+					});
+					matrizelements[1] = matrizelements[1].filter(function(elem, pos, self) {
+						return self.indexOf(elem) == pos;
+					});
+//					matrizelements[1].push(')');
+					type[1] = 2;
+					break;
+					case 2:
+					rides.forEach(function(d) {
+						matrizelements[2].push(d['{{filter[2]}}']);
+					});
+					matrizelements[2] = matrizelements[2].filter(function(elem, pos, self) {
+						return self.indexOf(elem) == pos;
+					});
+//					matrizelements[2].push(')');
+					type[2] = 2;
+					break;
+					case 3:
+					rides.forEach(function(d) {
+						matrizelements[3].push(d['{{filter[3]}}']);
+					});
+					matrizelements[3] = matrizelements[3].filter(function(elem, pos, self) {
+						return self.indexOf(elem) == pos;
+					});
+//					matrizelements[3].push(')');
+					type[3] = 2;
+					break;
+				}
+			}
+		}
+		rides.forEach(function(d) {
+			d['{{positions[0]}}'] = +d['{{positions[0]}}'];
+			d['{{positions[1]}}'] = +d['{{positions[1]}}'];
+			d['{{positions[2]}}'] = +d['{{positions[2]}}'];
+			d['{{positions[3]}}'] = +d['{{positions[3]}}'];
+		});
+		// Create the crossfilter for the relevant dimensions and groups.
+		ride = crossfilter(rides);
+		var all = ride.groupAll();
+		if(type[0] == 1){
+			var fil1d = ride.dimension(function(d) { return d['{{ filter[0] }}'].getHours()});
+			fil1min = (d3.min(rides, function(d) { return d['{{filter[0]}}'].getHours(); }));
+			fil1max = (d3.max(rides, function(d) { return d['{{filter[0]}}'].getHours(); }));
+		}
+		else if (type[0] == 0){
+			var fil1d = ride.dimension(function(d) { return d['{{ filter[0] }}']});
+			fil1min = (d3.min(rides, function(d) { return d['{{filter[0]}}']; }));
+			fil1max = (d3.max(rides, function(d) { return d['{{filter[0]}}']; }));
+		}
+		else{
+			var fil1d = ride.dimension(function(d) { return d['{{ filter[0] }}']});
+		}
+		var fil1g = fil1d.group(function(d) {return d});
+		// Total amount dimension and group
+		if(type[1] == 1){
+			var fil2d = ride.dimension(function(d) { return d['{{ filter[1] }}'].getHours()});
+			fil2min = (d3.min(rides, function(d) { return d['{{filter[1]}}'].getHours(); }));
+			fil2max = (d3.max(rides, function(d) { return d['{{filter[1]}}'].getHours(); }));
+		}
+		else if (type[1] == 0){
+			var fil2d = ride.dimension(function(d) { return d['{{ filter[1] }}']});
+			fil2min = (d3.min(rides, function(d) { return d['{{filter[1]}}']; }));
+			fil2max = (d3.max(rides, function(d) { return d['{{filter[1]}}']; }));
+		}
+		else{
+			var fil2d = ride.dimension(function(d) { return d['{{ filter[0] }}']});
+		}
+		var fil2g = fil2d.group(function(d) {return d});
+		// Distance dimension and group
+		if(type[2] == 1){
+			var fil3d = ride.dimension(function(d) {return d['{{ filter[2] }}'].getHours()});
+			fil3min = (d3.min(rides, function(d) { return d['{{filter[2]}}'].getHours(); }));
+			fil3max = (d3.max(rides, function(d) { return d['{{filter[2]}}'].getHours(); }));
+		}
+		else if (type[2] == 0){
+			var fil3d = ride.dimension(function(d) {return d['{{ filter[2]}}']});
+			fil3min = (d3.min(rides, function(d) { return d['{{filter[2]}}']; }));
+			fil3max = (d3.max(rides, function(d) { return d['{{filter[2]}}']; }));
+		}
+		else{
+			var fil3d = ride.dimension(function(d) { return d['{{ filter[0] }}']});
+		}
+		var fil3g = fil3d.group(function(d) {return d});
+		// Passenger dimension and group
+		if(type[3] == 1){
+			var fil4d = ride.dimension(function(d) {return d['{{ filter[3] }}'].getHours()});
+			fil4min = (d3.min(rides, function(d) { return d['{{filter[3]}}'].getHours(); }));
+			fil4max = (d3.max(rides, function(d) { return d['{{filter[3]}}'].getHours(); }));
+		}
+		else if (type[3] == 0){
+			var fil4d = ride.dimension(function(d) {return d['{{ filter[3] }}']});
+			fil4min = (d3.min(rides, function(d) { return d['{{filter[3]}}']; }));
+			fil4max = (d3.max(rides, function(d) { return d['{{filter[3]}}']; }));
+		}
+		else{
+			var fil4d = ride.dimension(function(d) { return d['{{ filter[0] }}']});
+		}
+		var fil4g = fil4d.group(function(d) {return d});
+		console.log(type, matrizelements[0]);
+
+		var charts = [
+			//Create all bar charts
+			barChart()
+			.dimension(fil1d)
+			.group(fil1g)
+			.x(d3.scale.linear()
+			.domain([fil1min-1, fil1max+1])
+			.rangeRound([0, 275])),
+
+			barChart()
+			.dimension(fil2d)
+			.group(fil2g)
+			.x(d3.scale.linear()
+			.domain([fil2min-1, fil2max+1])
+			.rangeRound([0, 275])),
+
+			barChart()
+			.dimension(fil3d)
+			.group(fil3g)
+			.x(d3.scale.linear()
+			.domain([fil3min-1, fil3max+1])
+			.rangeRound([0, 275])),
+
+			barChart()
+			.dimension(fil4d)
+			.group(fil4g)
+			.x(d3.scale.linear()
+			.domain([fil4min-1, fil4max+1])
+			.rangeRound([0, 920]))
+		];
+
+		// Given our array of charts, which we assume are in the same order as the
+		// .chart elements in the DOM, bind the charts to the DOM and render them.
+		// We also listen to the chart's brush events to update the display.
+		var chart = d3.selectAll(".chart")
+		.data(charts)
+		.each(function(chart) { chart.on("brush", renderAll).on("brushend", renderAll); });
+
+		// Render the total.
+		d3.selectAll("#total")
+		.text(ride.size());
+		renderAll();
+		// Renders the specified chart or list.
+		function render(method) {
+			d3.select(this).call(method);
+
+		}
+		var firstprint = true;
+		function reloadMaps(){
+			//Create array of points to refresh the heat map
+			var pointsfiltred = fil1d.top(Infinity);
+			points = pointsfiltred.map(function (d) { return [d['{{positions[0]}}'], d['{{positions[1]}}']] });
+			if(heat != undefined) {heartmap.removeLayer(heat);}
+			heat = L.heatLayer(points);
+			heat.setOptions({max: 500, minOpacity: 0.7, radius: 15});
+			heat.addTo(heartmap);
+
+			//Create array of point tho droppoff and use "points" to pickup points and create normal map with polilines
+			normalmap.eachLayer(function (layer) {
+				if(tileset2 != layer){
+					normalmap.removeLayer(layer);
+				}
+
+			});
+			var latandlongpoints = pointsfiltred.map(function (d) {
+				pickp = new L.LatLng(d['{{positions[0]}}'], d['{{positions[1]}}']);
+				dropp = new L.LatLng(d['{{positions[2]}}'], d['{{positions[3]}}']);
+				var pointlist = [dropp, pickp];
+				return new L.Polyline(pointlist, {
+					color: 'blue',
+					weight: 3
+
+				});
+			});
+			var linesgroup = L.layerGroup(latandlongpoints);
+			linesgroup.addTo(normalmap);
+
+
+		}
+		// Whenever the brush moves, re-rendering everything.
+		var timerMaps;
+		function renderAll() {
+			chart.each(render);
+			d3.select("#active").text(all.value());
+			//Call reloadMaps two secconds before select anything in charts
+			if(timerMaps != undefined){ clearTimeout(timerMaps); }
+			//Timer to load data to maps, long time is best
+			timerMaps = setTimeout(reloadMaps, 300);
+		}
+
+		window.filter = function(filters) {
+			filters.forEach(function(d, i) {
+				charts[i].filter(d);
+			});
+			renderAll();
+		};
+
+		window.reset = function(i) {
+			charts[i].filter(null);
+			renderAll();
+		};
+
+		function barChart() {
+			if (!barChart.id) barChart.id = 0;
+
+			var margin = {top: 10, right: 10, bottom: 20, left: 10},
+			x,
+			y = d3.scale.linear().range([130, 0]),
+			id = barChart.id++,
+			axis = d3.svg.axis().orient("bottom"),
+			brush = d3.svg.brush(),
+			brushDirty,
+			dimension,
+			group,
+			round;
+
+			function chart(div) {
+				var width = x.range()[1],
+				height = y.range()[0];
+
+				y.domain([0, group.top(1)[0].value]);
+
+				div.each(function() {
+					var div = d3.select(this),
+					g = div.select("g");
+
+					// Create the skeletal chart.
+					if (g.empty()) {
+						div.select(".title").append("a")
+						.attr("href", "javascript:reset(" + id + ")")
+						.attr("class", "reset")
+						.text("reset")
+						.style("display", "none");
+
+						g = div.append("svg")
+						.attr("width", width + margin.left + margin.right)
+						.attr("height", height + margin.top + margin.bottom)
+						.append("g")
+						.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+						g.append("clipPath")
+						.attr("id", "clip-" + id)
+						.append("rect")
+						.attr("width", width)
+						.attr("height", height);
+
+						g.selectAll(".bar")
+						.data(["background", "foreground"])
+						.enter().append("path")
+						.attr("class", function(d) { return d + " bar"; })
+						.datum(group.all());
+
+						g.selectAll(".foreground.bar")
+						.attr("clip-path", "url(#clip-" + id + ")");
+
+						g.append("g")
+						.attr("class", "axis")
+						.attr("transform", "translate(0," + height + ")")
+						.call(axis);
+
+						// Initialize the brush component with pretty resize handles.
+						var gBrush = g.append("g").attr("class", "brush").call(brush);
+						gBrush.selectAll("rect").attr("height", height);
+						gBrush.selectAll(".resize").append("path").attr("d", resizePath);
+					}
+
+					// Only redraw the brush if set externally.
+					if (brushDirty) {
+						brushDirty = false;
+						g.selectAll(".brush").call(brush);
+						div.select(".title a").style("display", brush.empty() ? "none" : null);
+						if (brush.empty()) {
+							g.selectAll("#clip-" + id + " rect")
+							.attr("x", 0)
+							.attr("width", width);
+						} else {
+							var extent = brush.extent();
+							g.selectAll("#clip-" + id + " rect")
+							.attr("x", x(extent[0]))
+							.attr("width", x(extent[1]) - x(extent[0]));
+						}
+					}
+
+					g.selectAll(".bar").attr("d", barPath);
+				});
+
+				function barPath(groups) {
+					var path = [],
+					i = -1,
+					n = groups.length,
+					d;
+					while (++i < n) {
+						d = groups[i];
+						path.push("M", x(d.key), ",", height, "V", y(d.value), "h9V", height);
+					}
+					return path.join("");
+				}
+
+				function resizePath(d) {
+					var e = +(d == "e"),
+					x = e ? 1 : -1,
+					y = height / 3;
+					return "M" + (.5 * x) + "," + y
+					+ "A6,6 0 0 " + e + " " + (6.5 * x) + "," + (y + 6)
+					+ "V" + (2 * y - 6)
+					+ "A6,6 0 0 " + e + " " + (.5 * x) + "," + (2 * y)
+					+ "Z"
+					+ "M" + (2.5 * x) + "," + (y + 8)
+					+ "V" + (2 * y - 8)
+					+ "M" + (4.5 * x) + "," + (y + 8)
+					+ "V" + (2 * y - 8);
+				}
+			}
+
+			brush.on("brushstart.chart", function() {
+				var div = d3.select(this.parentNode.parentNode.parentNode);
+				div.select(".title a").style("display", null);
+			});
+
+			brush.on("brush.chart", function() {
+				var g = d3.select(this.parentNode),
+				extent = brush.extent();
+				if (round) g.select(".brush")
+				.call(brush.extent(extent = extent.map(round)))
+				.selectAll(".resize")
+				.style("display", null);
+				g.select("#clip-" + id + " rect")
+				.attr("x", x(extent[0]))
+				.attr("width", x(extent[1]) - x(extent[0]));
+				dimension.filterRange(extent);
+			});
+
+			brush.on("brushend.chart", function() {
+				if (brush.empty()) {
+					var div = d3.select(this.parentNode.parentNode.parentNode);
+					div.select(".title a").style("display", "none");
+					div.select("#clip-" + id + " rect").attr("x", null).attr("width", "100%");
+					dimension.filterAll();
+				}
+			});
+
+			chart.margin = function(_) {
+				if (!arguments.length) return margin;
+				margin = _;
+				return chart;
+			};
+
+			chart.x = function(_) {
+				if (!arguments.length) return x;
+				x = _;
+				axis.scale(x);
+				brush.x(x);
+				return chart;
+			};
+
+			chart.y = function(_) {
+				if (!arguments.length) return y;
+				y = _;
+				return chart;
+			};
+
+			chart.dimension = function(_) {
+				if (!arguments.length) return dimension;
+				dimension = _;
+				return chart;
+			};
+
+			chart.filter = function(_) {
+				if (_) {
+					brush.extent(_);
+					dimension.filterRange(_);
+				} else {
+					brush.clear();
+					dimension.filterAll();
+				}
+				brushDirty = true;
+				return chart;
+			};
+
+			chart.group = function(_) {
+				if (!arguments.length) return group;
+				group = _;
+				return chart;
+			};
+
+			chart.round = function(_) {
+				if (!arguments.length) return round;
+				round = _;
+				return chart;
+			};
+
+			return d3.rebind(chart, brush, "on");
+		}
+	});
+
+	</script>
+</body>
+</html>

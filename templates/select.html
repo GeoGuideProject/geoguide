@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="static/bootstrap.min.css" rel="stylesheet">
+  <title>GeoHighlight - Chose the fields </title>
+  <style>
+  body{
+    margin: 2em auto;
+    text-align: center;
+    margin:0;
+    padding:0;
+  }
+  #colutil{
+    height: 130px;
+    vertical-align: middle;
+    border: 1px dashed #333333;
+    border-radius: 4px;
+    padding: 10px;
+  }
+  #colutil2{
+    height: 170px;
+    vertical-align: middle;
+    border: 1px dashed #333333;
+    border-radius: 4px;
+    padding: 10px;
+  }
+  h3{
+    font-size: 17px;
+  }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-inverse">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="  ">GeoHighlight</a>
+      </div>
+    </div>
+  </nav>
+  <form action="selectdata" method="post" enctype="multipart/form-data">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-md-12">
+          <div class="page-header">
+            <h1>
+              Select your fields <small>Used to compose maps and charts</small>
+            </h1>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-2"></div>
+        <div class="col-md-2" id="colutil">
+          <h3 class="text-center">
+            Chart 1<br><br>
+            <select name="filter1">
+              {% for o in option_list %}
+              <option value="{{ o }}">{{ o }}</option>
+              {% endfor %}
+            </select>
+          </h3>
+        </div>
+        <div class="col-md-1"></div>
+        <div class="col-md-2" id="colutil">
+          <h3 class="text-center">
+            Chart 2<br><br>
+            <select name="filter2">
+              {% for o in option_list %}
+              <option value="{{ o }}">{{ o }}</option>
+              {% endfor %}
+            </select>
+          </h3>
+        </div>
+        <div class="col-md-1"></div>
+        <div class="col-md-2" id="colutil">
+          <h3 class="text-center">
+            Chart 3<br><br>
+            <select name="filter3">
+              {% for o in option_list %}
+              <option value="{{ o }}">{{ o }}</option>
+              {% endfor %}
+            </select>
+          </h3>
+        </div>
+      </div><br><br>
+      <div class="row">
+        <div class="col-md-2"></div>
+        <div class="col-md-8" id="colutil">
+          <h3 class="text-center">
+            Chart 4<br><br>
+            <select name="filter4">
+              {% for o in option_list %}
+              <option value="{{ o }}">{{ o }}</option>
+              {% endfor %}
+            </select>
+          </h3>
+        </div>
+      </div><br><br>
+      <div class="row">
+        <div class="col-md-2"></div>
+        <div class="col-md-3" id="colutil2">
+          <h3 class="text-center">
+            Map heat<br><br>
+            Longitude: <select name="longitude1">
+              {% for o in mapsoptions %}
+              <option value="{{ o }}">{{ o }}</option>
+              {% endfor %}
+            </select><br><br>
+            Latitude: <select name="latitude1">
+              {% for o in mapsoptions %}
+              <option value="{{ o }}">{{ o }}</option>
+              {% endfor %}
+            </select>
+          </h3>
+        </div>
+        <div class="col-md-2"></div>
+          <div class="col-md-3" id="colutil2">
+            <h3 class="text-center">
+              Map Normal<br><br>
+              Longitude: <select name="longitude2">
+                {% for o in mapsoptions %}
+                <option value="{{ o }}">{{ o }}</option>
+                {% endfor %}
+              </select><br><br>
+              Latitude: <select name="latitude2">
+                {% for o in mapsoptions %}
+                <option value="{{ o }}">{{ o }}</option>
+                {% endfor %}
+              </select>
+            </h3>
+          </div>
+      </div>
+
+    </div><br><br>
+    <input type="submit" value="Show Charts and Maps"><br><br>
+  </form>
+</body>
+<script src="/static/jquery.min.js"></script>
+<script src="/static/bootstrap.min.js"></script>
+</html>
