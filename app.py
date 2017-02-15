@@ -167,11 +167,11 @@ def sendfiles(directory):
 @app.route('/isfinish', methods=['POST'])
 def sendstatus():
     global controleRun
-    if background_scripts[controleRun]:
+    if(controleRun != -1) and background_scripts[controleRun]:
         return json.dumps({'success': False}), 200, {'ContentType': 'application/json'}
     else:
         return json.dumps({'success': True}), 201, {'ContentType': 'application/json'}
-
+ 
 
 @app.route('/runiuga', methods=['GET'])
 def runiuga():
