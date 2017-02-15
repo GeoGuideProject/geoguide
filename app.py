@@ -18,6 +18,7 @@ app = Flask(__name__)
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))   # refers to application_top
 APP_ANALYSIS = os.path.join(APP_ROOT, 'dataanalysis')
 APP_TMP = os.path.join(APP_ROOT, 'tmp')
+APP_DS = os.path.join(APP_ANALYSIS, 'dspoints')
 
 app.config['ALLOWED_EXTENSIONS'] = set(['csv'])
 
@@ -27,16 +28,14 @@ controleRun = -1
 #
 datasettype = 0
 # Making dspoints directory if its not exist
-dsdir = os.path.join(APP_ANALYSIS, 'dspoints')
-tmpdir = os.path.join(APP_ROOT, 'tmp')
 try:
-    os.stat(tmpdir)
+    os.stat(APP_TMP)
 except:
-    os.mkdir(tmpdir)
+    os.mkdir(APP_TMP)
 try:
-    os.stat(dsdir)
+    os.stat(APP_DS)
 except:
-    os.mkdir(dsdir)
+    os.mkdir(APP_DS)
 
 # Send no-cache request in header
 
@@ -102,7 +101,6 @@ def file_proc():
         options.append(tempoptions[1])
         options.append(tempoptions[2])
         datasettype = 2
-    print("DATASET: ", datasettype)
     # Select in options list the possible values for lat and long, if not
     # found show all int values
     for index, value in enumerate(tempoptions):
@@ -152,7 +150,7 @@ def upload():
     file = request.files['file']
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        file.save(APP_ROOT + '/arquivo.csv')
+        file.save(APP_TMP + '/arquivo.csv')
         if(request.form.get('botao') == "Charts and Maps"):
             return file_proc()
         else:
