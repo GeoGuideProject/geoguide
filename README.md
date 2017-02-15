@@ -16,3 +16,6 @@ gunicorn wsgi:app
 python app.py
 
 ```
+
+#### Deploy:
+ The branch "deploy" is set to auto deploy on Heroku.
