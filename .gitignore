@@ -58,6 +58,5 @@ docs/_build/
 target/
 
 # Ds Generator files
-dataanalysis/dspoints/*
-tmp/*
+
 venv/

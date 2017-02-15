@@ -16,8 +16,8 @@ app = Flask(__name__)
 
 # Directories config
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))   # refers to application_top
-APP_TMP = os.path.join(APP_ROOT, 'tmp')
 APP_ANALYSIS = os.path.join(APP_ROOT, 'dataanalysis')
+APP_TMP = os.path.join(APP_ROOT, 'tmp')
 
 app.config['ALLOWED_EXTENSIONS'] = set(['csv'])
 
@@ -27,12 +27,17 @@ controleRun = -1
 #
 datasettype = 0
 # Making dspoints directory if its not exist
-dir = os.path.join(APP_ANALYSIS, 'dspoints')
-
+dsdir = os.path.join(APP_ANALYSIS, 'dspoints')
+tmpdir = os.path.join(APP_ROOT, 'tmp')
 try:
-    os.stat(dir)
+    os.stat(tmpdir)
 except:
-    os.mkdir(dir)
+    os.mkdir(tmpdir)
+try:
+    os.stat(dsdir)
+except:
+    os.mkdir(dsdir)
+
 # Send no-cache request in header
 
 
