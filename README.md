@@ -2,7 +2,7 @@
 
 #### Use python 3.X.X
 
-#### To run the tool, first install all requirements using pip, before call gunicorn web server or app.py:
+#### To run the tool, first install all requirements using pip, Then run gunicorn web server or app.py:
 
 ```shell
 #Instaling requirements:
