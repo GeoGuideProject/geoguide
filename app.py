@@ -127,11 +127,7 @@ def file_proc():
 
 @app.route('/')
 def index():
-    formatsmsg = 'Only accept: '
-    for x in app.config['ALLOWED_EXTENSIONS']:
-        formatsmsg += ' ' + x.upper()
-    return render_template('index.html', formatsmsg=formatsmsg)
-
+    return render_template('index.html')
 
 @app.route('/selectdata', methods=['POST', 'GET'])
 def selectdata():
@@ -144,8 +140,14 @@ def selectdata():
     return render_template('charts.html', csvfilename='arquivo.csv', filter=filter, positions=positions, datasettype=datasettype)
 
 
-@app.route('/upload', methods=['POST'])
+@app.route('/upload', methods=['GET','POST'])
 def upload():
+    if request.method == 'GET':
+        formatsmsg = 'Only accept: '
+        for x in app.config['ALLOWED_EXTENSIONS']:
+            formatsmsg += ' ' + x.upper()
+        return render_template('upload.html', formatsmsg=formatsmsg)
+
     # Get the name of the uploaded file
     file = request.files['file']
     if file and allowed_file(file.filename):
@@ -174,7 +176,7 @@ def sendstatus():
         return json.dumps({'success': False}), 200, {'ContentType': 'application/json'}
     else:
         return json.dumps({'success': True}), 201, {'ContentType': 'application/json'}
- 
+
 
 @app.route('/runiuga', methods=['GET'])
 def runiuga():
@@ -183,11 +185,11 @@ def runiuga():
     time_limit = int(request.args.get('timelimit'))  # in miliseconds
     k = int(request.args.get('kvalue'))            # number of returned records
     lowest_acceptable_similarity = float(request.args.get('sigma'))
-    input_file = APP_ROOT + "/dataanalysis/ds.csv"  
+    input_file = APP_ROOT + "/dataanalysis/ds.csv"
     compostReturn = iugaMod.runIuga(input_g, k, time_limit, lowest_acceptable_similarity, input_file)
     return json.dumps({"similarity": compostReturn[0], "diversity": compostReturn[1], "array": (compostReturn[2])}), 200, {'ContentType': 'application/json'}
 
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8000))
-    app.run(host='0.0.0.0', use_reloader=True, port=port)
+    app.run(use_reloader=True, port=port, extra_files=['templates/index.html'])

@@ -2,51 +2,101 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>GeoHighlight - Upload your dataset </title>
+  <title>GeoHighlight</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="static/bootstrap.min.css" rel="stylesheet">
-  <style>
-  body{
-    text-align: center;
-    margin: 2em auto;
-    margin:0;
-    padding:0;
-  }
-  #inputs
-  {
-    width:200px;
-    margin:auto;
-  }
-  </style>
+  <link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/paper/bootstrap.min.css" rel="stylesheet" >
 </head>
 <body>
-  <nav class="navbar navbar-inverse">
+  <nav class="navbar">
     <div class="container-fluid">
       <div class="navbar-header">
-        <a class="navbar-brand" href="">GeoHighlight</a>
+        <a class="navbar-brand" href="/">Spatio-temporal Predictive Analysis of Urban Data</a>
+      </div>
+      <div class="navbar-right">
+        <a href="#">
+          <img src="https://placehold.it/40x40">
+        </a>
       </div>
     </div>
   </nav>
   <div class="container-fluid">
-    <div class="row">
-      <div class="col-md-12">
-        <div class="page-header">
-          <h1>
-            Select the file to upload <small>{{formatsmsg}}</small>
-          </h1>
+    <div class="col-md-10 col-md-offset-1">
+      <div class="jumbotron" style="margin-bottom:0; !important">
+        <h4>Description</h4>
+        <p>
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. In aliquet volutpat lectus, at maximus metus sodales id. Nunc luctus nisl id ornare commodo.
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. In aliquet volutpat lectus, at maximus metus sodales id. Nunc luctus nisl id ornare commodo.
+        </p>
+      </div>
+      <div class="jumbotron" style="margin-top:0 !important;padding-top: 0 !important;">
+        <h4>Members</h4>
+        <div class="row">
+          <div class="col-sm-6 col-md-4">
+            <div class="thumbnail">
+              <img src="https://avatars1.githubusercontent.com/u/1442478?v=3&s=110">
+              <div class="caption">
+                <h4>Plácido Neto</h4>
+                <p>Description #1</p>
+                <p>
+                  <a href="https://github.com/placidoneto" class="btn btn-default" role="button">github</a>
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6 col-md-4">
+            <div class="thumbnail">
+              <img src="https://avatars3.githubusercontent.com/u/16253660?v=3&s=110">
+              <div class="caption">
+                <h4>Behrooz Omidvar-Tehrani</h4>
+                <p>Description #2</p>
+                <p>
+                  <a href="https://github.com/behroozomidvar" class="btn btn-default" role="button">github</a>
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6 col-md-4">
+            <div class="thumbnail">
+              <img src="https://avatars2.githubusercontent.com/u/17347069?v=3&s=110">
+              <div class="caption">
+                <h4>Gustavo Guerino</h4>
+                <p>Description #3</p>
+                <p>
+                  <a href="https://github.com/gustavoguerino" class="btn btn-default" role="button">github</a>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row col-md-offset-2">
+          <div class="col-sm-6 col-md-4">
+            <div class="thumbnail">
+              <img src="https://avatars2.githubusercontent.com/u/8146112?v=3&s=110">
+              <div class="caption">
+                <h4>Felipe Pontes</h4>
+                <p>Description #4</p>
+                <p>
+                  <a href="https://github.com/felipemfp" class="btn btn-default" role="button">github</a>
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6 col-md-4">
+            <div class="thumbnail">
+              <img src="https://avatars2.githubusercontent.com/u/9325152?v=3&s=110">
+              <div class="caption">
+                <h4>Francisco Bento</h4>
+                <p>Description #5</p>
+                <p>
+                  <a href="https://github.com/chicobentojr" class="btn btn-default" role="button">github</a>
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="row">
-      <div class="col-md-12">
-        <form action="upload" method="POST" enctype="multipart/form-data">
-          <p>
-            <input type="file" name="file" id="inputs"><br><br>
-            <input type="submit" name="botao" value="Charts and Maps"> or
-            <input type="submit" name="botao" value="Data Analisys">
-          </p>
-        </form>
       </div>
     </div>
   </div>
