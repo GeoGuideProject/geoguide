@@ -75,6 +75,8 @@ def file_proc():
     global datasettype
     examplevalues = []
     options = []
+    lat_options = []
+    long_options = []
     mapsoptions = []
     datasettype = 0
     with open(os.path.join(APP_TMP, 'arquivo.csv')) as f:
@@ -104,25 +106,18 @@ def file_proc():
     # Select in options list the possible values for lat and long, if not
     # found show all int values
     for index, value in enumerate(tempoptions):
-        if(value.find("lat") != -1):
-            mapsoptions.append(tempoptions[index])
-        elif(value.find("long") != -1):
-            mapsoptions.append(tempoptions[index])
-    if(len(mapsoptions) < 2):
-        mapsoptions = []
-        for index, value in enumerate(examplevalues):
-            try:
-                value = float(value)
-                try:
-                    int(value)
+        if(value.find("latitude") != -1):
+            lat_options.append(tempoptions[index])
+        elif(value.find("longitude") != -1):
+            long_options.append(tempoptions[index])
 
-                except:
-                    mapsoptions.append(tempoptions[index])
-            except:
-                None
-    if(len(mapsoptions) < 2):
-        mapsoptions = options
-    return render_template('select.html', option_list=options, mapsoptions=mapsoptions)
+    long_options = options if len(long_options) == 0 else long_options
+    lat_options = options if len(lat_options) == 0 else lat_options
+
+    return render_template('select.html',
+                            option_list = options,
+                            lat_options = lat_options,
+                            long_options = long_options)
 
 
 @app.route('/')

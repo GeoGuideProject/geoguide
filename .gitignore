@@ -60,3 +60,5 @@ target/
 # Ds Generator files
 
 venv/
+tmp/
+dataanalysis/dspoints/

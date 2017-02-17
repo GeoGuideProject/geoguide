@@ -133,14 +133,30 @@ function initMap() {
 // Create a map object and specify the DOM element for display.
   map = new google.maps.Map(document.getElementById('map'), {
     scrollwheel: false,
-    zoom: 8
+    zoom: 11,
+    mapTypeControlOptions: {
+      mapTypeIds: [google.maps.MapTypeId.ROADMAP, 'grayscale']
+    }
   });
+
+  var mapType = new google.maps.StyledMapType([
+    {
+      featureType: "all",
+      elementType: "all",
+      stylers: [
+        { saturation: -100 }
+      ]
+    }
+  ], { name:"Grayscale" });
+  map.mapTypes.set('grayscale', mapType);
+
+
   d3.csv("/dataanalysis/index.csv", function(error, data) {
     var latmed = parseFloat(d3.min(data, function(d) { return d.latitude; })) + parseFloat(d3.max(data, function(d) { return d.latitude; }));
     var latmed = latmed/2;
     var longmed = parseFloat(d3.min(data, function(d) { return d.longitude; })) + parseFloat(d3.max(data, function(d) { return d.longitude; }));
     var longmed = longmed/2;
-    map.setCenter({lat: latmed, lng: longmed}); 
+    map.setCenter({lat: latmed, lng: longmed});
   });
 }
 var iconBlue = '/static/images/marker-icon.png';

@@ -221,7 +221,6 @@ for val in range(10):
     arquivos.append(csv.writer(open(strfile, 'w', newline='')))
     arquivos[val].writerow(['p1', 'p2'])
 
-
 with open('dataanalysis/ds.csv', newline='') as f7:
     for row in csv.reader(f7):
         row2 = float(row[2])
@@ -246,5 +245,8 @@ with open('dataanalysis/ds.csv', newline='') as f7:
             arquivos[8].writerow([row[0], row[1]])
         elif (0.9 <= row3 <= 1):
             arquivos[9].writerow([row[0], row[1]])
+
+for val in range(10):
+    arquivos[val].close()
 
 print("Finish!")
