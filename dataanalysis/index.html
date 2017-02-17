@@ -123,8 +123,10 @@
     </div>
   </div>
   <script>
-    var pointChose,firstPoint, firstArrayPoints, map;
+    var pointChose, firstPoint, firstArrayPoints, map;
     var markers = [];
+    var infowindows = [];
+    var infowindowsOpened = null;
     document.getElementById("pointInfo").value = "";
 // ----------------------------------------------------------
 // ------------------------- Create the map and locate center
@@ -140,7 +142,7 @@ function initMap() {
     var latmed = latmed/2;
     var longmed = parseFloat(d3.min(data, function(d) { return d.longitude; })) + parseFloat(d3.max(data, function(d) { return d.longitude; }));
     var longmed = longmed/2;
-    map.setCenter({lat: latmed, lng: longmed}); 
+    map.setCenter({lat: latmed, lng: longmed});
   });
 }
 var iconBlue = '/static/images/marker-icon.png';
@@ -152,8 +154,21 @@ function clearMap(){
     markers[i].setMap(null);
   }
   markers = [];
+  infowindows = [];
 }
-function addPoint(platitude, plongitude, picon, pindex){
+function addPoint(platitude, plongitude, picon, pindex, options){
+  var contentString = '<div>';
+
+  for (key in options) {
+    if (options[key] === undefined) { continue; }
+    contentString += '<b>' + key + '</b>: ' + options[key] + '<br />';
+  }
+  contentString += '</div>';
+
+  var infowindow = new google.maps.InfoWindow({
+    content: contentString
+  });
+
   var marker = new google.maps.Marker({
     position: {lat: parseFloat(platitude), lng: parseFloat(plongitude)},
     map: map,
@@ -162,6 +177,16 @@ function addPoint(platitude, plongitude, picon, pindex){
     latitude: platitude,
     longitude: plongitude
   });
+
+  marker.addListener('click', function() {
+    if (infowindowsOpened != null) {
+      infowindowsOpened.close();
+    }
+    infowindow.open(map, marker);
+    infowindowsOpened = infowindow;
+  })
+
+  infowindows.push(infowindow);
   markers.push(marker);
   return marker;
 }
@@ -188,7 +213,7 @@ function refreshMap(){
       indexLines.forEach(function(indexLine) {
         arrayPoints.forEach(function(point) {
           if(indexLine.p_index == point){
-            addPoint(indexLine.latitude, indexLine.longitude, iconBlue, indexLine.p_index).addListener('click', onPointClick);
+            addPoint(indexLine.latitude, indexLine.longitude, iconBlue, indexLine.p_index, indexLine).addListener('click', onPointClick);
           }
         });
       });
@@ -223,7 +248,7 @@ function showFirstRequestOnMap(){
   function onPointClick(event) {
     document.getElementById("pointInfo").value = "ID: " + this.pointId + " - Latitude: " + this.latitude + " - Longitude: " + this.longitude;
     pointChose = this.pointId;
-    if(pointChose != firstPoint){
+    if(pointChose != firstPoint) {
       document.getElementById("seccondpass").disabled = false;
     }
     else{
@@ -260,6 +285,7 @@ function showSeccondRequestOnMap(jsonResponse){
     });
   });
   function onPointClick(event) {
+    console.log(this);
     document.getElementById("pointInfo").value = "ID: " + this.pointId + " - Latitude: " + this.latitude + " - Longitude: " + this.longitude;
     pointChose = this.pointId;
     var disableSeccondPass = false;
