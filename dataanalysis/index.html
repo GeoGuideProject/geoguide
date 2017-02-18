@@ -174,13 +174,28 @@
 // ----------------------------------------------------------
 function initMap() {
 // Create a map object and specify the DOM element for display.
+  var mapType = new google.maps.StyledMapType([
+      {
+        featureType: "all",
+        elementType: "all",
+        stylers: [
+          { saturation: -100 }
+        ]
+      }
+  ], { name: "Grayscale" });
+
   map = new google.maps.Map(document.getElementById('map'), {
     zoom: 9,
     mapTypeControlOptions: {
+        mapTypeIds: [google.maps.MapTypeId.ROADMAP, google.maps.MapTypeId.HYBRID, google.maps.MapTypeId.SATELLITE, google.maps.MapTypeId.TERRAIN, 'grayscale'],
         position: google.maps.ControlPosition.TOP_RIGHT,
         style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
-    }
+    },
+    streetViewControl: false
   });
+
+  map.mapTypes.set('grayscale', mapType);
+
   d3.csv("/dataanalysis/index.csv", function(error, data) {
     var latmed = parseFloat(d3.min(data, function(d) { return d.latitude; })) + parseFloat(d3.max(data, function(d) { return d.latitude; }));
     var latmed = latmed/2;
@@ -222,7 +237,13 @@ function addPoint(platitude, plongitude, picon, pindex, options){
   var marker = new google.maps.Marker({
     position: {lat: parseFloat(platitude), lng: parseFloat(plongitude)},
     map: map,
-    icon: picon,
+    icon: {
+      path: google.maps.SymbolPath.CIRCLE,
+      scale: 7,
+      fillColor: picon === iconYellow ? '#F44336' : '#2196F3',
+      fillOpacity: 0.75,
+      strokeWeight: 0
+    },
     pointId: pindex,
     latitude: platitude,
     longitude: plongitude,
