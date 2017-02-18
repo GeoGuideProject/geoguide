@@ -9,10 +9,10 @@
 #pointInfo {
 	width: 100%;
 }
-.divanalysis{
+/*.divanalysis{
 	margin-top: 10px;
 	padding-top: 2px;
-}
+}*/
 #firstAnalysis, #seccondAnalysis{
 	display: none;
 }
