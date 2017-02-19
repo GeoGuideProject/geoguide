@@ -1,4 +1,3 @@
-# Force python 2.7 to work with utf-8
 import sys
 import os
 import csv
@@ -162,6 +161,10 @@ def upload():
         return render_template('index.html', formatsmsg='Format not suported! Try again!')
 
 
+@app.route('/dataanalysis')
+def data_analysis():
+    return send_from_directory(APP_ANALYSIS, 'index.html')
+
 @app.route('/<path:directory>')
 def sendfiles(directory):
     return send_from_directory(APP_ROOT, directory)
@@ -174,7 +177,7 @@ def sendstatus():
         return json.dumps({'success': False}), 200, {'ContentType': 'application/json'}
     else:
         return json.dumps({'success': True}), 201, {'ContentType': 'application/json'}
- 
+
 
 @app.route('/runiuga', methods=['GET'])
 def runiuga():
@@ -183,7 +186,7 @@ def runiuga():
     time_limit = int(request.args.get('timelimit'))  # in miliseconds
     k = int(request.args.get('kvalue'))            # number of returned records
     lowest_acceptable_similarity = float(request.args.get('sigma'))
-    input_file = APP_ROOT + "/dataanalysis/ds.csv"  
+    input_file = APP_ROOT + "/dataanalysis/ds.csv"
     compostReturn = iugaMod.runIuga(input_g, k, time_limit, lowest_acceptable_similarity, input_file)
     return json.dumps({"similarity": compostReturn[0], "diversity": compostReturn[1], "array": (compostReturn[2])}), 200, {'ContentType': 'application/json'}
 
