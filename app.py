@@ -187,4 +187,4 @@ def runiuga():
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8000))
-    app.run(use_reloader=True, port=port, extra_files=['templates/index.html'])
+    app.run(use_reloader=True, port=port, debug=True)
