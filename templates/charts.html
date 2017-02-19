@@ -388,7 +388,7 @@
 
 		switch (button.value) {
 			case 'Previous':
-				currentChartIndex = currentChartIndex == 0 ? charts.length : currentChartIndex - 1;
+				currentChartIndex = currentChartIndex == 0 ? charts.length - 1 : currentChartIndex - 1;
 				break;
 			case 'Next':
 				currentChartIndex = currentChartIndex == charts.length - 1 ? 0 : currentChartIndex + 1;
