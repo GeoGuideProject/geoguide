@@ -15,7 +15,7 @@
 	body {
 		margin: 0px auto;
 		width: 960px;
-		min-height: 1000px;
+		/*min-height: 1000px;*/
 	}
 
 	#body {
@@ -52,7 +52,7 @@
 	}
 
 	.chart {
-		display: inline-block;
+		/*display: inline-block;*/
 		height: 180px;
 		margin-bottom: 10px;
 	}
@@ -101,7 +101,8 @@
 		width: 305px;
 	}
 	#distance-chart{
-		width: 920px;
+		/*width: 920px;*/
+		width: 305px;
 	}
 	aside {
 		position: absolute;
@@ -124,7 +125,7 @@
 	#map-google {
 		background-color: white;
 		height: 500px;
-		width: 940px;
+		width: 470px;
 	}
 
 	#heatMapUI {
@@ -135,6 +136,7 @@
 	  cursor: pointer;
 	  float: left;
 	  margin-bottom: 22px;
+		margin-right: 10px;
 	  text-align: center;
 	}
 
@@ -146,39 +148,123 @@
 	  padding-left: 5px;
 	  padding-right: 5px;
 	}
+
+	html, body {
+    margin: 0;
+    padding: 0;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    font-family: Roboto, sans-serif;
+    font-size: 12px;
+  }
+  .sidebar {
+    position: absolute;
+    margin: 0;
+    top:0;
+    left:0;
+    /*background: rgba(125, 125, 125, 0.40);*/
+    height: 100%;
+    /*opacity: 0.75;*/
+    z-index: 1000;
+    padding: 1em;
+    width: 31em;
+  }
+  .mapContainer {
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  #map-google {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+  }
+  .sidebar .well {
+    background: #ffffff;/*rgba(245, 245, 245, 0.75);*/
+		width: 305px;
+		box-shadow: 0 2px 6px rgba(0,0,0,.3);
+  }
+  .sidebar .well h3 {
+    margin-top: 0;
+    font-size: 1.3em;
+    font-weight: 500;
+  }
 	</style>
 </head>
 <body>
-	<nav class="navbar navbar-inverse">
+	<!-- <nav class="navbar navbar-inverse">
 		<div class="container-fluid">
 			<div class="navbar-header">
 				<a class="navbar-brand" href="">GeoHighlight</a>
 			</div>
 		</div>
-	</nav>
-	<div id="body">
-		<div id="charts">
-			<div id="hour-chart" class="chart">
-				<div class="title">{{ filter[0] }}</div>
-			</div>
-			<div id="payment-chart" class="chart">
-				<div class="title">{{ filter[1] }}</div>
-			</div>
-			<div id="passenger-chart" class="chart">
-				<div class="title">{{ filter[2] }}</div>
-			</div>
-			<div id="distance-chart" class="chart">
-				<div class="title">{{ filter[3] }}</div>
-			</div>
+	</nav> -->
+	<div class="sidebar">
+    <div class="row">
+      <div class="col-md-12">
+        <div hidden class="well  well-sm range-group">
+          <h3>Similarity Range</h3>
+          <div class="form-group select-range">
+            <label for="range">Range Limits:</label>
+            <select id="range" name="range" class="form-control">
+              <option value="0">0.0 ~ 0.1</option>
+              <option value="1">0.1 ~ 0.2</option>
+              <option value="2">0.2 ~ 0.3</option>
+              <option value="3">0.3 ~ 0.4</option>
+              <option value="4">0.4 ~ 0.5</option>
+              <option value="5">0.5 ~ 0.6</option>
+              <option value="6">0.6 ~ 0.7</option>
+              <option value="7">0.7 ~ 0.8</option>
+              <option value="8">0.8 ~ 0.9</option>
+              <option value="9">0.9 ~ 1.0</option>
+            </select>
+            <input type="button" class="btn btn-default show-button" onClick="refreshMap()" value="Show/Reset">
+          </div>
+        </div>
+				<div class="well well-sm range-group">
+					<span id="active">-</span> of <span id="total">-</span> rides selected.</aside>
+				</div>
+				<div class="well well-sm range-group">
+					<div id="hour-chart" class="chart">
+						<h3>{{ filter[0] }}</h3>
+						<!-- <div class="title">{{ filter[0] }}</div> -->
+					</div>
+					<div hidden id="payment-chart" class="chart">
+						<h3>{{ filter[1] }}</h3>
+						<!-- <div class="title">{{ filter[1] }}</div> -->
+					</div>
+					<div hidden id="passenger-chart" class="chart">
+						<h3>{{ filter[2] }}</h3>
+						<!-- <div class="title">{{ filter[2] }}</div> -->
+					</div>
+					<div hidden id="distance-chart" class="chart">
+						<h3>{{ filter[3] }}</h3>
+						<!-- <div class="title">{{ filter[3] }}</div> -->
+					</div>
+					<input type="button" class="btn btn-default" onClick="changeChart(this)" value="Previous">
+					<input type="button" class="btn btn-default pull-right" onClick="changeChart(this)" value="Next">
+				</div>
+				<!-- <div id="charts">
+				</div> -->
+      </div>
 		</div>
+	</div>
+	<div class="mapContainer">
+    <div id="map-google"></div>
+  </div>
+	<!-- <div id="body">
 		<aside id="totals"><span id="active">-</span> of <span id="total">-</span> rides selected.</aside>
 		<div id="maps">
 			<br>
 			<div id="map-google" class ="map"></div>
-			<div id="heart-map" class ="map"></div>
-			<div id="normal-map" class ="map"></div>
+			<div id="heart-map" hidden class ="map"></div>
+			<div id="normal-map" hidden class ="map"></div>
 		</div>
-	</div>
+	</div> -->
 
 	<script src="static/crossfilter.v1.min.js"></script>
 	<script src="static/d3.v3.min.js"></script>
@@ -187,11 +273,13 @@
 	<script src="static/leaflet.js"></script>
 	<script src="static/leaflet-heat.js"></script>
 	<script>
-	var heartmap = L.map('heart-map').setView([40.760610,-73.975242], 11);
-	var normalmap = L.map('normal-map').setView([40.760610,-73.975242], 11);
-	var tileset2;
+	// var heartmap = L.map('heart-map').setView([40.760610,-73.975242], 11);
+	// var normalmap = L.map('normal-map').setView([40.760610,-73.975242], 11);
+	// var tileset2;
+	var heartmap, normalmap, tileset2;
 
-	var mapGoogle,
+	var currentChartIndex = 0,
+			mapGoogle,
 			mapGoogleMarkers = [],
 			heatmap,
 			heatMapPoints = [],
@@ -275,7 +363,7 @@
 
 	  heatMapDiv.index = 1;
 	  heatMapDiv.style['padding-top'] = '10px';
-	  mapGoogle.controls[google.maps.ControlPosition.TOP_CENTER].push(heatMapDiv);
+	  mapGoogle.controls[google.maps.ControlPosition.RIGHT_TOP].push(heatMapDiv);
 	}
 
 	function desenharMap(){
@@ -292,7 +380,25 @@
 		tileset2.addTo(normalmap);
 	}
 
-	desenharMap();
+	function changeChart(button) {
+
+		var charts = document.getElementsByClassName('chart');
+
+		charts[currentChartIndex].hidden = true;
+
+		switch (button.value) {
+			case 'Previous':
+				currentChartIndex = currentChartIndex == 0 ? charts.length : currentChartIndex - 1;
+				break;
+			case 'Next':
+				currentChartIndex = currentChartIndex == charts.length - 1 ? 0 : currentChartIndex + 1;
+				break;
+		}
+
+		charts[currentChartIndex].hidden = false;
+	}
+
+	//desenharMap();
 	function isNumber(n) {
 		return !isNaN(parseFloat(n)) && isFinite(n);
 	}
@@ -511,7 +617,7 @@
 			.group(fil4g)
 			.x(d3.scale.linear()
 			.domain([fil4min-1, fil4max+1])
-			.rangeRound([0, 920]))
+			.rangeRound([0, 275]))
 		];
 
 		// Given our array of charts, which we assume are in the same order as the
