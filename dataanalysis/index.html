@@ -41,6 +41,19 @@
       z-index: 1000;
       padding: 1em;
       width: 20em;
+      pointer-events: none;
+    }
+
+    .sidebar .control {
+      pointer-events: auto;
+      background: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,.3);
+    }
+
+    .sidebar .control h3 {
+      margin-top: 0;
+      font-size: 1.3em;
+      font-weight: 500;
     }
 
     .mapContainer {
@@ -55,16 +68,6 @@
       height: 100%;
       width: 100%;
       margin: 0;
-    }
-
-    .sidebar .well {
-      background: #ffffff;/*rgba(245, 245, 245, 0.75);*/
-    }
-
-    .sidebar .well h3 {
-      margin-top: 0;
-      font-size: 1.3em;
-      font-weight: 500;
     }
   </style>
 </head>
@@ -88,7 +91,7 @@
   <div class="sidebar">
     <div class="row">
       <div class="col-md-12">
-        <div class="well  well-sm range-group">
+        <div class="control well  well-sm range-group">
           <h3>Similarity Range</h3>
           <div class="form-group select-range">
             <label for="range">Range Limits:</label>
@@ -109,7 +112,7 @@
         </div>
       </div>
       <div class="col-md-12">
-        <div class="well  well-sm timelimit-group">
+        <div class="control well  well-sm timelimit-group">
           <h3>Highlighter Definition</h3>
           <div class="form-group">
             <label for="timelimit">Time Limit(ms):</label>
@@ -136,7 +139,7 @@
     </div>
     <div class="row">
       <div class="col-md-12">
-        <div class="well well-sm divanalysis" id="firstAnalysis">
+        <div class="control well well-sm divanalysis" id="firstAnalysis">
           <h3>Analysis</h3>
           <label for="basic-url">Selected:</label>
           <p id="firstSelected"></p>
@@ -311,7 +314,7 @@ function showFirstRequestOnMap(){
         document.getElementById("firstAnalysis").style.display = "block";
         document.getElementById("seccondAnalysis").style.display = "none";
         document.getElementById("firstSelected").innerHTML = firstPoint;
-        document.getElementById("firstKPoints").innerHTML = firstArrayPoints.array;
+        document.getElementById("firstKPoints").innerHTML = firstArrayPoints.array.join(', ');
         document.getElementById("firstSimilarity").innerHTML = firstArrayPoints.similarity;
       }
     });
