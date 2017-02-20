@@ -19,12 +19,12 @@
     }
 
     .container-title h1 {
-      font-size: 3em;
+      font-size: 2.5em;
       margin-bottom: .75em;
     }
 
     .container-title p {
-      font-size: 1.5em;
+      font-size: 1.25em;
     }
 
     .container-title a {
@@ -52,7 +52,7 @@
       margin-left: 1em;
     }
 
-    .container-members {
+    .container-info {
       border: 1px solid #ccc;
       border-bottom: 0px;
       -webkit-box-shadow: 0px -1px 5px #ccc;
@@ -60,26 +60,36 @@
       padding: 2.5em;
     }
 
-    .container-members h2 {
-      font-size: 2em;
+    .container-info h2 {
+      font-size: 1.75em;
+      margin-bottom: 1em;
     }
 
-    .container-members .row {
-      margin: 3em 0;
+    .container-info .container-member {
+      margin: 0 0 3em;
+    }
+
+    .container-info-text {
+      font-size: 1.1em;
+      color: #0f0f0f;
+      text-align: justify;
     }
 
     .container-member {
       text-align: center;
     }
 
+    .container-member img {
+      border-radius: 50%;
+    }
+
     .container-member h3 {
-      font-size: 1.5em;
+      font-size: 1.25em;
     }
 
     .container-member p {
       color: #7c7c7c;
     }
-
   </style>
 </head>
 <body>
@@ -95,7 +105,7 @@
       </div>
     </div>
   </nav> -->
-  <div class="container-fluid">
+  <div class="container">
     <div class="col-md-10 col-md-offset-1">
       <div class="container-logo">
         <img alt="IFRN" src="/static/images/ifrn.png" />
@@ -108,72 +118,81 @@
         </p>
         <a class="btn btn-primary btn-lg" href="/upload" target="_blank">Open</a>
       </div>
-      <div class="container-members">
-        <h2>Members</h2>
-        <div class="row">
-          <div class="col-sm-6 col-md-4">
-            <div class="container-member">
-              <img src="https://placehold.it/100x100">
-              <div class="">
-                <h3>Plácido Neto</h3>
-                <p>Data Scientist</p>
-                <!-- <p>
-                  <a href="https://github.com/placidoneto" class="btn btn-default" role="button">github</a>
-                </p> -->
+      <div class="container-info">
+        <section>
+          <h2>About</h2>
+          <p class="container-info-text">
+            This project aims the development of an environment for analysis, cleaning and visualization of large amounts of spatio-temporal urban data. We also consider the definition of algorithms to detect possible unexpected events from the analysis of different datasets. This project is a collaboration with Behrooz Omidvar-Tehrani from The Ohio State University (United States). We will start analysing heterogeneous urban datasets (in CSV, XML and JSON formats) and design a JavaScript-based tool which imports these files and visualize the data on a geographical map. A JavaScript-based tool benefits from being portable, light, efficient and minimally dependent to the system configuration. We also consider defining a generic model for spatio-temporal data and propose recommendation and prediction algorithms. The results of this project will be a web-based framework that shall be developed to validate the models and algorithms in this research work.
+          </p>
+        </section>
+
+        <section>
+          <h2>Members</h2>
+          <div class="row">
+            <div class="col-md-4 col-md-offset-2">
+              <div class="container-member">
+                <img src="https://placehold.it/150x150">
+                <div class="">
+                  <h3>Behrooz Omidvar-Tehrani</h3>
+                  <p>Something about</p>
+                  <!-- <p>
+                    <a href="https://github.com/behroozomidvar" class="btn btn-default" role="button">github</a>
+                  </p> -->
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="container-member">
+                <img src="https://placehold.it/150x150">
+                <div class="">
+                  <h3>Plácido Neto</h3>
+                  <p>Something about</p>
+                  <!-- <p>
+                    <a href="https://github.com/placidoneto" class="btn btn-default" role="button">github</a>
+                  </p> -->
+                </div>
               </div>
             </div>
           </div>
-          <div class="col-sm-6 col-md-4">
-            <div class="container-member">
-              <img src="https://placehold.it/100x100">
-              <div class="">
-                <h3>Behrooz Omidvar-Tehrani</h3>
-                <p>Data Scientist</p>
-                <!-- <p>
-                  <a href="https://github.com/behroozomidvar" class="btn btn-default" role="button">github</a>
-                </p> -->
+          <div class="row">
+            <div class="col-md-4">
+              <div class="container-member">
+                <img src="https://placehold.it/150x150">
+                <div class="">
+                  <h3>Felipe Pontes</h3>
+                  <p>Something about</p>
+                  <!-- <p>
+                    <a href="https://github.com/felipemfp" class="btn btn-default" role="button">github</a>
+                  </p> -->
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="container-member">
+                <img src="https://placehold.it/150x150">
+                <div class="">
+                  <h3>Francisco Bento</h3>
+                  <p>Something about</p>
+                  <!-- <p>
+                    <a href="https://github.com/chicobentojr" class="btn btn-default" role="button">github</a>
+                  </p> -->
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="container-member">
+                <img src="https://placehold.it/150x150">
+                <div class="">
+                  <h3>Gustavo Guerino</h3>
+                  <p>Something about</p>
+                  <!-- <p>
+                    <a href="https://github.com/gustavoguerino" class="btn btn-default" role="button">github</a>
+                  </p> -->
+                </div>
               </div>
             </div>
           </div>
-          <div class="col-sm-6 col-md-4">
-            <div class="container-member">
-              <img src="https://placehold.it/100x100">
-              <div class="">
-                <h3>Gustavo Guerino</h3>
-                <p>Web Developer</p>
-                <!-- <p>
-                  <a href="https://github.com/gustavoguerino" class="btn btn-default" role="button">github</a>
-                </p> -->
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-sm-6 col-md-4 col-md-offset-2">
-            <div class="container-member">
-              <img src="https://placehold.it/100x100">
-              <div class="">
-                <h3>Felipe Pontes</h3>
-                <p>Web Developer</p>
-                <!-- <p>
-                  <a href="https://github.com/felipemfp" class="btn btn-default" role="button">github</a>
-                </p> -->
-              </div>
-            </div>
-          </div>
-          <div class="col-sm-6 col-md-4">
-            <div class="container-member">
-              <img src="https://placehold.it/100x100">
-              <div class="">
-                <h3>Francisco Bento</h3>
-                <p>Web Developer</p>
-                <!-- <p>
-                  <a href="https://github.com/chicobentojr" class="btn btn-default" role="button">github</a>
-                </p> -->
-              </div>
-            </div>
-          </div>
-        </div>
+        </section>
       </div>
       </div>
     </div>
