@@ -170,6 +170,7 @@
     z-index: 1000;
     padding: 1em;
     width: 31em;
+		pointer-events: none;
   }
   .mapContainer {
     height: 100%;
@@ -185,8 +186,9 @@
   }
   .sidebar .well {
     background: #ffffff;/*rgba(245, 245, 245, 0.75);*/
-		width: 305px;
+		/*width: 305px;*/
 		box-shadow: 0 2px 6px rgba(0,0,0,.3);
+    pointer-events: auto;
   }
   .sidebar .well h3 {
     margin-top: 0;
@@ -206,25 +208,6 @@
 	<div class="sidebar">
     <div class="row">
       <div class="col-md-12">
-        <div hidden class="well  well-sm range-group">
-          <h3>Similarity Range</h3>
-          <div class="form-group select-range">
-            <label for="range">Range Limits:</label>
-            <select id="range" name="range" class="form-control">
-              <option value="0">0.0 ~ 0.1</option>
-              <option value="1">0.1 ~ 0.2</option>
-              <option value="2">0.2 ~ 0.3</option>
-              <option value="3">0.3 ~ 0.4</option>
-              <option value="4">0.4 ~ 0.5</option>
-              <option value="5">0.5 ~ 0.6</option>
-              <option value="6">0.6 ~ 0.7</option>
-              <option value="7">0.7 ~ 0.8</option>
-              <option value="8">0.8 ~ 0.9</option>
-              <option value="9">0.9 ~ 1.0</option>
-            </select>
-            <input type="button" class="btn btn-default show-button" onClick="refreshMap()" value="Show/Reset">
-          </div>
-        </div>
 				<div class="well well-sm range-group">
 					<span id="active">-</span> of <span id="total">-</span> rides selected.</aside>
 				</div>
@@ -712,7 +695,7 @@
 			    map: mapGoogle,
 			    icon: {
 			      path: google.maps.SymbolPath.CIRCLE,
-			      scale: 3,
+			      scale: 7,
 			      fillColor: '#2196F3',
 			      fillOpacity: 0.75,
 			      strokeWeight: 0
