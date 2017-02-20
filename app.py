@@ -1,4 +1,3 @@
-# Force python 2.7 to work with utf-8
 import sys
 import os
 import csv
@@ -158,6 +157,10 @@ def upload():
     else:
         return render_template('index.html', formatsmsg='Format not suported! Try again!')
 
+
+@app.route('/dataanalysis')
+def data_analysis():
+    return send_from_directory(APP_ANALYSIS, 'index.html')
 
 @app.route('/<path:directory>')
 def sendfiles(directory):
