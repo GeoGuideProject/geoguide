@@ -177,15 +177,11 @@
 // ----------------------------------------------------------
 function initMap() {
 // Create a map object and specify the DOM element for display.
-  var mapType = new google.maps.StyledMapType([
-      {
-        featureType: "all",
-        elementType: "all",
-        stylers: [
-          { saturation: -100 }
-        ]
-      }
-  ], { name: "Grayscale" });
+  var mapType = new google.maps.StyledMapType([{
+    featureType: "all",
+    elementType: "all",
+    stylers: [{ saturation: -100 }]
+  }], { name: "Grayscale" });
 
   map = new google.maps.Map(document.getElementById('map'), {
     zoom: 9,

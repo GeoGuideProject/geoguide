@@ -2,51 +2,198 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>GeoHighlight - Upload your dataset </title>
+  <title>GeoHighlight</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css?family=Lato" rel="stylesheet">
   <link href="static/bootstrap.min.css" rel="stylesheet">
   <style>
-  body{
-    text-align: center;
-    margin: 2em auto;
-    margin:0;
-    padding:0;
-  }
-  #inputs
-  {
-    width:200px;
-    margin:auto;
-  }
+    body {
+      font-family: "Lato", "Heveltica", sans-serif;
+    }
+
+    .container-title {
+      text-align: center;
+      padding: 2em 2.5em 5em 2.5em;
+      margin-bottom: 2em;
+    }
+
+    .container-title h1 {
+      font-size: 2.5em;
+      margin-bottom: .75em;
+    }
+
+    .container-title p {
+      font-size: 1.25em;
+    }
+
+    .container-title a {
+      margin-top: 0.5em;
+      padding: 0.5em 1.75em;
+    }
+
+    .container-logo {
+      margin-top: 3.5em;
+      text-align: center;
+    }
+
+    .container-logo img {
+      height: 5em;
+      vertical-align: middle;
+      /*-webkit-filter: grayscale(100%);*/
+      /*filter: grayscale(100%);*/
+    }
+
+    .container-logo img:first-child {
+      margin-right: 1em;
+    }
+
+    .container-logo img:last-child {
+      margin-left: 1em;
+    }
+
+    .container-info {
+      border: 1px solid #ccc;
+      border-bottom: 0px;
+      -webkit-box-shadow: 0px -1px 5px #ccc;
+      box-shadow: 0px -1px 5px #ccc;
+      padding: 2.5em;
+    }
+
+    .container-info h2 {
+      font-size: 1.75em;
+      margin-bottom: 1em;
+    }
+
+    .container-info .container-member {
+      margin: 0 0 3em;
+    }
+
+    .container-info-text {
+      font-size: 1.1em;
+      color: #0f0f0f;
+      text-align: justify;
+    }
+
+    .container-member {
+      text-align: center;
+    }
+
+    .container-member img {
+      border-radius: 50%;
+    }
+
+    .container-member h3 {
+      font-size: 1.25em;
+    }
+
+    .container-member p {
+      color: #7c7c7c;
+    }
   </style>
 </head>
 <body>
-  <nav class="navbar navbar-inverse">
+  <!-- <nav class="navbar">
     <div class="container-fluid">
       <div class="navbar-header">
-        <a class="navbar-brand" href="">GeoHighlight</a>
+        <a class="navbar-brand" href="/">Spatio-temporal Predictive Analysis of Urban Data</a>
+      </div>
+      <div class="navbar-right">
+        <a href="#">
+          <img src="https://placehold.it/40x40">
+        </a>
       </div>
     </div>
-  </nav>
-  <div class="container-fluid">
-    <div class="row">
-      <div class="col-md-12">
-        <div class="page-header">
-          <h1>
-            Select the file to upload <small>{{formatsmsg}}</small>
-          </h1>
-        </div>
+  </nav> -->
+  <div class="container">
+    <div class="col-md-10 col-md-offset-1">
+      <div class="container-logo">
+        <img alt="IFRN" src="/static/images/ifrn.png" />
+        <img alt="The Ohio State University" src="/static/images/osu.png" />
       </div>
-    </div>
-    <div class="row">
-      <div class="col-md-12">
-        <form action="upload" method="POST" enctype="multipart/form-data">
-          <p>
-            <input type="file" name="file" id="inputs"><br><br>
-            <input type="submit" name="botao" value="Charts and Maps"> or
-            <input type="submit" name="botao" value="Data Analisys">
+      <div class="container-title">
+        <h1>Spatio-temporal Predictive Analysis of Urban Data</h1>
+        <p>
+          This project aims the development of an environment for analysis, cleaning and visualization of large amounts of spatio-temporal urban data.
+        </p>
+        <a class="btn btn-primary btn-lg" href="/upload" target="_blank">Open</a>
+      </div>
+      <div class="container-info">
+        <section>
+          <h2>About</h2>
+          <p class="container-info-text">
+            This project aims the development of an environment for analysis, cleaning and visualization of large amounts of spatio-temporal urban data. We also consider the definition of algorithms to detect possible unexpected events from the analysis of different datasets. This project is a collaboration with Behrooz Omidvar-Tehrani from The Ohio State University (United States). We will start analysing heterogeneous urban datasets (in CSV, XML and JSON formats) and design a JavaScript-based tool which imports these files and visualize the data on a geographical map. A JavaScript-based tool benefits from being portable, light, efficient and minimally dependent to the system configuration. We also consider defining a generic model for spatio-temporal data and propose recommendation and prediction algorithms. The results of this project will be a web-based framework that shall be developed to validate the models and algorithms in this research work.
           </p>
-        </form>
+        </section>
+
+        <section>
+          <h2>Members</h2>
+          <div class="row">
+            <div class="col-md-4 col-md-offset-2">
+              <div class="container-member">
+                <img src="https://placehold.it/150x150">
+                <div class="">
+                  <h3>Behrooz Omidvar-Tehrani</h3>
+                  <p>Something about</p>
+                  <!-- <p>
+                    <a href="https://github.com/behroozomidvar" class="btn btn-default" role="button">github</a>
+                  </p> -->
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="container-member">
+                <img src="https://placehold.it/150x150">
+                <div class="">
+                  <h3>Plácido Neto</h3>
+                  <p>Something about</p>
+                  <!-- <p>
+                    <a href="https://github.com/placidoneto" class="btn btn-default" role="button">github</a>
+                  </p> -->
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-4">
+              <div class="container-member">
+                <img src="https://placehold.it/150x150">
+                <div class="">
+                  <h3>Felipe Pontes</h3>
+                  <p>Something about</p>
+                  <!-- <p>
+                    <a href="https://github.com/felipemfp" class="btn btn-default" role="button">github</a>
+                  </p> -->
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="container-member">
+                <img src="https://placehold.it/150x150">
+                <div class="">
+                  <h3>Francisco Bento</h3>
+                  <p>Something about</p>
+                  <!-- <p>
+                    <a href="https://github.com/chicobentojr" class="btn btn-default" role="button">github</a>
+                  </p> -->
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="container-member">
+                <img src="https://placehold.it/150x150">
+                <div class="">
+                  <h3>Gustavo Guerino</h3>
+                  <p>Something about</p>
+                  <!-- <p>
+                    <a href="https://github.com/gustavoguerino" class="btn btn-default" role="button">github</a>
+                  </p> -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
       </div>
     </div>
   </div>

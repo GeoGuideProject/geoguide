@@ -88,7 +88,8 @@ def ignorePoint(p1, p2, p3, p4):
 # "0tripduration","1starttime","2stoptime","3start station id","4start station name",
 # "5start station latitude","6start station longitude","7end station id","8end station name",
 # "9end station latitude","10end station longitude","11bikeid","12usertype","13birth year","14gender"
-temp = csv.writer(open("tmp/temp.csv", "w", newline=''))
+temp_csv = open("tmp/temp.csv", "w", newline='')
+temp = csv.writer(temp_csv)
 index = csv.writer(open("dataanalysis/index.csv", "w", newline=''))
 index.writerow(['p_index', 'dataset_line_index', 'latitude',
                 'longitude', 'hour', 'duration', 'isPickUp'])
@@ -146,6 +147,7 @@ for row in iter(input_dataset.readline, ''):
         print(float(reading_line[latdrop]), float(reading_line[longdrop]),
               float(reading_line[latdrop]), float(reading_line[longdrop]))
 
+input_dataset.close()
 #-------------------------------------------------------------------------
 #----------------------------    Reading Data Set again    ---------------
 #-------------------------------------------------------------------------
@@ -178,6 +180,7 @@ for i in range(countlines):
     #print("Opening index_aux.csv to start operations...")
     index_aux = open('tmp/index_aux.csv', newline='')
     index_aux_features = index_aux.readline().split(",")
+
 
     index_aux = index_aux.readlines()
     print("Still calculating the similarities [missing features...]",
@@ -232,6 +235,7 @@ with open('tmp/temp.csv', newline='') as temp_ds:
         else:
             dscsv.writerow([row[0], row[1], camp1, camp2])
 ds.close()
+temp_csv.close()
 
 os.remove('tmp/temp.csv')
 os.remove('tmp/index_aux.csv')
@@ -241,6 +245,7 @@ os.remove('tmp/index_aux.csv')
 #-------------------------------------------------------------------------
 
 arquivos = []
+arquivos_csv = []
 print("Running experiments.")
 
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -254,9 +259,9 @@ except:
 
 for val in range(0, 10):
     strfile = 'dataanalysis/dspoints/' + str(val) + '_' + str(val + 1) + '.csv'
-    arquivos.append(csv.writer(open(strfile, 'w', newline='')))
+    arquivos_csv.append(open(strfile, 'w', newline=''))
+    arquivos.append(csv.writer(arquivos_csv[val]))
     arquivos[val].writerow(['p1', 'p2'])
-
 
 with open('dataanalysis/ds.csv', newline='') as f7:
     for row in csv.reader(f7):
@@ -282,5 +287,8 @@ with open('dataanalysis/ds.csv', newline='') as f7:
             arquivos[8].writerow([row[0], row[1]])
         elif (0.9 <= row3 <= 1):
             arquivos[9].writerow([row[0], row[1]])
+
+for val in range(0, 10):
+    arquivos_csv[val].close()
 
 print("Finish!")

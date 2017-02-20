@@ -68,7 +68,7 @@
             Chart 2<br><br>
             <select name="filter2">
               {% for o in option_list %}
-              <option value="{{ o }}">{{ o }}</option>
+              <option {{ 'selected' if loop.index == 2 else '' }} value="{{ o }}">{{ o }}</option>
               {% endfor %}
             </select>
           </h3>
@@ -79,7 +79,7 @@
             Chart 3<br><br>
             <select name="filter3">
               {% for o in option_list %}
-              <option value="{{ o }}">{{ o }}</option>
+              <option {{ 'selected' if loop.index == 3 else '' }} value="{{ o }}">{{ o }}</option>
               {% endfor %}
             </select>
           </h3>
@@ -92,7 +92,7 @@
             Chart 4<br><br>
             <select name="filter4">
               {% for o in option_list %}
-              <option value="{{ o }}">{{ o }}</option>
+              <option {{ 'selected' if loop.index == 4 else '' }} value="{{ o }}">{{ o }}</option>
               {% endfor %}
             </select>
           </h3>
@@ -104,12 +104,12 @@
           <h3 class="text-center">
             Map heat<br><br>
             Longitude: <select name="longitude1">
-              {% for o in mapsoptions %}
+              {% for o in long_options %}
               <option value="{{ o }}">{{ o }}</option>
               {% endfor %}
             </select><br><br>
             Latitude: <select name="latitude1">
-              {% for o in mapsoptions %}
+              {% for o in lat_options %}
               <option value="{{ o }}">{{ o }}</option>
               {% endfor %}
             </select>
@@ -120,12 +120,12 @@
             <h3 class="text-center">
               Map Normal<br><br>
               Longitude: <select name="longitude2">
-                {% for o in mapsoptions %}
+                {% for o in long_options %}
                 <option value="{{ o }}">{{ o }}</option>
                 {% endfor %}
               </select><br><br>
               Latitude: <select name="latitude2">
-                {% for o in mapsoptions %}
+                {% for o in lat_options %}
                 <option value="{{ o }}">{{ o }}</option>
                 {% endfor %}
               </select>

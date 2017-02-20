@@ -15,7 +15,7 @@
 	body {
 		margin: 0px auto;
 		width: 960px;
-		min-height: 1000px;
+		/*min-height: 1000px;*/
 	}
 
 	#body {
@@ -52,7 +52,7 @@
 	}
 
 	.chart {
-		display: inline-block;
+		/*display: inline-block;*/
 		height: 180px;
 		margin-bottom: 10px;
 	}
@@ -101,7 +101,8 @@
 		width: 305px;
 	}
 	#distance-chart{
-		width: 920px;
+		/*width: 920px;*/
+		width: 305px;
 	}
 	aside {
 		position: absolute;
@@ -121,38 +122,132 @@
 		width: 470px;
 		float: right;
 	}
+	#map-google {
+		background-color: white;
+		height: 500px;
+		width: 470px;
+	}
+
+	#heatMapUI {
+	  background-color: #fff;
+	  border: 2px solid #fff;
+	  border-radius: 3px;
+	  box-shadow: 0 2px 6px rgba(0,0,0,.3);
+	  cursor: pointer;
+	  float: left;
+	  margin-bottom: 22px;
+		margin-right: 10px;
+	  text-align: center;
+	}
+
+	#heatMapText {
+	  color: rgb(25,25,25);
+	  font-family: Roboto, Arial, sans-serif;
+	  font-size: 15px;
+	  line-height: 25px;
+	  padding-left: 5px;
+	  padding-right: 5px;
+	}
+
+	html, body {
+    margin: 0;
+    padding: 0;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    font-family: Roboto, sans-serif;
+    font-size: 12px;
+  }
+  .sidebar {
+    position: absolute;
+    margin: 0;
+    top:0;
+    left:0;
+    /*background: rgba(125, 125, 125, 0.40);*/
+    height: 100%;
+    /*opacity: 0.75;*/
+    z-index: 1000;
+    padding: 1em;
+    width: 31em;
+		pointer-events: none;
+  }
+  .mapContainer {
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  #map-google {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+  }
+  .sidebar .well {
+    background: #ffffff;/*rgba(245, 245, 245, 0.75);*/
+		/*width: 305px;*/
+		box-shadow: 0 2px 6px rgba(0,0,0,.3);
+    pointer-events: auto;
+  }
+  .sidebar .well h3 {
+    margin-top: 0;
+    font-size: 1.3em;
+    font-weight: 500;
+  }
 	</style>
 </head>
 <body>
-	<nav class="navbar navbar-inverse">
+	<!-- <nav class="navbar navbar-inverse">
 		<div class="container-fluid">
 			<div class="navbar-header">
 				<a class="navbar-brand" href="">GeoHighlight</a>
 			</div>
 		</div>
-	</nav>
-	<div id="body">
-		<div id="charts">
-			<div id="hour-chart" class="chart">
-				<div class="title">{{ filter[0] }}</div>
-			</div>
-			<div id="payment-chart" class="chart">
-				<div class="title">{{ filter[1] }}</div>
-			</div>
-			<div id="passenger-chart" class="chart">
-				<div class="title">{{ filter[2] }}</div>
-			</div>
-			<div id="distance-chart" class="chart">
-				<div class="title">{{ filter[3] }}</div>
-			</div>
+	</nav> -->
+	<div class="sidebar">
+    <div class="row">
+      <div class="col-md-12">
+				<div class="well well-sm range-group">
+					<span id="active">-</span> of <span id="total">-</span> rides selected.</aside>
+				</div>
+				<div class="well well-sm range-group">
+					<div id="hour-chart" class="chart">
+						<h3>{{ filter[0] }}</h3>
+						<!-- <div class="title">{{ filter[0] }}</div> -->
+					</div>
+					<div hidden id="payment-chart" class="chart">
+						<h3>{{ filter[1] }}</h3>
+						<!-- <div class="title">{{ filter[1] }}</div> -->
+					</div>
+					<div hidden id="passenger-chart" class="chart">
+						<h3>{{ filter[2] }}</h3>
+						<!-- <div class="title">{{ filter[2] }}</div> -->
+					</div>
+					<div hidden id="distance-chart" class="chart">
+						<h3>{{ filter[3] }}</h3>
+						<!-- <div class="title">{{ filter[3] }}</div> -->
+					</div>
+					<input type="button" class="btn btn-default" onClick="changeChart(this)" value="Previous">
+					<input type="button" class="btn btn-default pull-right" onClick="changeChart(this)" value="Next">
+				</div>
+				<!-- <div id="charts">
+				</div> -->
+      </div>
 		</div>
+	</div>
+	<div class="mapContainer">
+    <div id="map-google"></div>
+  </div>
+	<!-- <div id="body">
 		<aside id="totals"><span id="active">-</span> of <span id="total">-</span> rides selected.</aside>
 		<div id="maps">
 			<br>
-			<div id="heart-map" class ="map"></div>
-			<div id="normal-map" class ="map"></div>
+			<div id="map-google" class ="map"></div>
+			<div id="heart-map" hidden class ="map"></div>
+			<div id="normal-map" hidden class ="map"></div>
 		</div>
-	</div>
+	</div> -->
 
 	<script src="static/crossfilter.v1.min.js"></script>
 	<script src="static/d3.v3.min.js"></script>
@@ -161,9 +256,99 @@
 	<script src="static/leaflet.js"></script>
 	<script src="static/leaflet-heat.js"></script>
 	<script>
-	var heartmap = L.map('heart-map').setView([40.760610,-73.975242], 11);
-	var normalmap = L.map('normal-map').setView([40.760610,-73.975242], 11);
-	var tileset2;
+	// var heartmap = L.map('heart-map').setView([40.760610,-73.975242], 11);
+	// var normalmap = L.map('normal-map').setView([40.760610,-73.975242], 11);
+	// var tileset2;
+	var heartmap, normalmap, tileset2;
+
+	var currentChartIndex = 0,
+			mapGoogle,
+			mapGoogleMarkers = [],
+			heatmap,
+			heatMapPoints = [],
+			isHeatMap = false,
+			infowindows = [],
+			infowindowsOpened = null;
+
+	function HeatMapControl(controlDiv, map) {
+
+  	var control = this;
+
+  	controlDiv.style.clear = 'both';
+
+	  var heatMapUI = document.createElement('div');
+	  heatMapUI.id = 'heatMapUI';
+	  controlDiv.appendChild(heatMapUI);
+
+	  var heatMapText = document.createElement('div');
+	  heatMapText.id = 'heatMapText';
+	  heatMapText.innerHTML = 'Heat';
+	  heatMapUI.appendChild(heatMapText);
+
+	  heatMapUI.addEventListener('click', function() {
+			heatMapPoints = mapGoogleMarkers.map(function(marker){
+				marker.setVisible(isHeatMap);
+				return marker.position;
+			});
+
+			isHeatMap = !isHeatMap;
+
+			if (isHeatMap) {
+				heatmap.setData(heatMapPoints);
+				heatmap.setMap(mapGoogle);
+				heatMapText.innerHTML = 'Normal';
+			}
+			else {
+				heatmap.setMap(null);
+				heatMapText.innerHTML = 'Heat';
+			}
+	  });
+	}
+
+	function initMap() {
+		var mapType = new google.maps.StyledMapType([
+		 {
+			 featureType: "all",
+			 elementType: "all",
+			 stylers: [
+				 { saturation: -100 }
+			 ]
+		 }
+ 		], { name: "Grayscale" });
+
+ 		mapGoogle = new google.maps.Map(document.getElementById('map-google'), {
+	 		zoom: 12,
+	 		mapTypeControlOptions: {
+				mapTypeIds: [
+					google.maps.MapTypeId.ROADMAP,
+					google.maps.MapTypeId.HYBRID,
+					google.maps.MapTypeId.SATELLITE,
+					google.maps.MapTypeId.TERRAIN,
+					'grayscale'
+				],
+				position: google.maps.ControlPosition.TOP_RIGHT,
+				style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
+	 		},
+	 		streetViewControl: false
+		});
+ 	 	mapGoogle.mapTypes.set('grayscale', mapType);
+		mapGoogle.setMapTypeId('grayscale');
+	 	mapGoogle.setCenter({lat: 40.760610, lng: -73.975242});
+
+		heatmap = new google.maps.visualization.HeatmapLayer({
+			data: heatMapPoints,
+			radius: 50,
+			map: mapGoogle,
+		});
+
+		var heatMapDiv = document.createElement('div');
+	  var heatMap = new HeatMapControl(heatMapDiv, mapGoogle);
+
+	  heatMapDiv.index = 1;
+	  heatMapDiv.style['padding-top'] = '10px';
+	  mapGoogle.controls[google.maps.ControlPosition.RIGHT_TOP].push(heatMapDiv);
+	}
+
 	function desenharMap(){
 		//Create two tile layer to two maps (error if use same tile layer for two maps)
 		var tileset = L.tileLayer('http://{s}.tiles.wmflabs.org/bw-mapnik/{z}/{x}/{y}.png', {
@@ -178,7 +363,25 @@
 		tileset2.addTo(normalmap);
 	}
 
-	desenharMap();
+	function changeChart(button) {
+
+		var charts = document.getElementsByClassName('chart');
+
+		charts[currentChartIndex].hidden = true;
+
+		switch (button.value) {
+			case 'Previous':
+				currentChartIndex = currentChartIndex == 0 ? charts.length - 1 : currentChartIndex - 1;
+				break;
+			case 'Next':
+				currentChartIndex = currentChartIndex == charts.length - 1 ? 0 : currentChartIndex + 1;
+				break;
+		}
+
+		charts[currentChartIndex].hidden = false;
+	}
+
+	//desenharMap();
 	function isNumber(n) {
 		return !isNaN(parseFloat(n)) && isFinite(n);
 	}
@@ -260,7 +463,7 @@
 					matrizelements[0] = matrizelements[0].filter(function(elem, pos, self) {
 						return self.indexOf(elem) == pos;
 					});
-//					matrizelements[0].push(')');
+					//					matrizelements[0].push(')');
 					type[0] = 2;
 					break;
 					case 1:
@@ -270,7 +473,7 @@
 					matrizelements[1] = matrizelements[1].filter(function(elem, pos, self) {
 						return self.indexOf(elem) == pos;
 					});
-//					matrizelements[1].push(')');
+					//					matrizelements[1].push(')');
 					type[1] = 2;
 					break;
 					case 2:
@@ -280,7 +483,7 @@
 					matrizelements[2] = matrizelements[2].filter(function(elem, pos, self) {
 						return self.indexOf(elem) == pos;
 					});
-//					matrizelements[2].push(')');
+					//					matrizelements[2].push(')');
 					type[2] = 2;
 					break;
 					case 3:
@@ -290,18 +493,21 @@
 					matrizelements[3] = matrizelements[3].filter(function(elem, pos, self) {
 						return self.indexOf(elem) == pos;
 					});
-//					matrizelements[3].push(')');
+					//					matrizelements[3].push(')');
 					type[3] = 2;
 					break;
 				}
 			}
 		}
-		rides.forEach(function(d) {
+
+		rides.forEach(function(d, index) {
+			d.pointId = index;
 			d['{{positions[0]}}'] = +d['{{positions[0]}}'];
 			d['{{positions[1]}}'] = +d['{{positions[1]}}'];
 			d['{{positions[2]}}'] = +d['{{positions[2]}}'];
 			d['{{positions[3]}}'] = +d['{{positions[3]}}'];
 		});
+
 		// Create the crossfilter for the relevant dimensions and groups.
 		ride = crossfilter(rides);
 		var all = ride.groupAll();
@@ -394,7 +600,7 @@
 			.group(fil4g)
 			.x(d3.scale.linear()
 			.domain([fil4min-1, fil4max+1])
-			.rangeRound([0, 920]))
+			.rangeRound([0, 275]))
 		];
 
 		// Given our array of charts, which we assume are in the same order as the
@@ -417,7 +623,10 @@
 		function reloadMaps(){
 			//Create array of points to refresh the heat map
 			var pointsfiltred = fil1d.top(Infinity);
-			points = pointsfiltred.map(function (d) { return [d['{{positions[0]}}'], d['{{positions[1]}}']] });
+			points = pointsfiltred.map(function (d) {
+				return [d['{{positions[0]}}'], d['{{positions[1]}}']]
+			});
+			reloadGoogleMaps(pointsfiltred);
 			if(heat != undefined) {heartmap.removeLayer(heat);}
 			heat = L.heatLayer(points);
 			heat.setOptions({max: 500, minOpacity: 0.7, radius: 15});
@@ -442,10 +651,90 @@
 			});
 			var linesgroup = L.layerGroup(latandlongpoints);
 			linesgroup.addTo(normalmap);
-
-
 		}
 		// Whenever the brush moves, re-rendering everything.
+		function reloadGoogleMaps(points) {
+			for (var i = 0; i < mapGoogleMarkers.length; i++) {
+		    mapGoogleMarkers[i].hasMarker = false;
+		  }
+			points.forEach(function(point) {
+				if (mapGoogleMarkers.length > 0) {
+					var pointAlreadyExist = false;
+					for (var i = 0; i < mapGoogleMarkers.length; i++) {
+						if (mapGoogleMarkers[i].pointId == point.pointId)
+						{
+							mapGoogleMarkers[i].hasMarker = true;
+							pointAlreadyExist = true;
+							break;
+						}
+				  }
+					if (pointAlreadyExist)
+						return;
+				}
+
+				var platitude = point['{{positions[0]}}'];
+				var plongitude = point['{{positions[1]}}'];
+
+				var contentString = '<div><h4>Info</h4>';
+			  for (key in point) {
+			    if (point[key] === undefined) { continue; }
+			    var value = point[key];
+			    if (Number(point[key])) {
+			      var number = Number(point[key]);
+			      value = Number.isInteger(number) ? number.toString() : parseFloat(Number(point[key]).toFixed(5)).toString();
+			    }
+			    contentString += '<b>' + key + '</b>: ' + value + '<br />';
+			  }
+
+			  contentString += '</div>';
+			  var infowindow = new google.maps.InfoWindow({
+			    content: contentString
+			  });
+			  var marker = new google.maps.Marker({
+			    position: new google.maps.LatLng(platitude, plongitude),
+			    map: mapGoogle,
+			    icon: {
+			      path: google.maps.SymbolPath.CIRCLE,
+			      scale: 7,
+			      fillColor: '#2196F3',
+			      fillOpacity: 0.75,
+			      strokeWeight: 0
+			    },
+			    pointId: point.pointId,
+					hasMarker: true,
+			  });
+			  marker.addListener('click', function() {
+			    if (infowindowsOpened != null) {
+			      infowindowsOpened.close();
+			    }
+			    infowindow.open(mapGoogle, marker);
+			    infowindowsOpened = infowindow;
+			  })
+
+			  infowindows.push(infowindow);
+			  mapGoogleMarkers.push(marker);
+			});
+			var oldPoints = mapGoogleMarkers.length - points.length;
+			var i = 0;
+			while(oldPoints > 0)
+			{
+				if (!mapGoogleMarkers[i].hasMarker)
+				{
+					mapGoogleMarkers[i].setMap(null);
+					mapGoogleMarkers.splice(i, 1);
+					oldPoints--;
+				}
+				else {
+					i++;
+				}
+			}
+
+			if (isHeatMap) {
+				isHeatMap = !isHeatMap;
+				document.getElementById('heatMapUI').click();
+			}
+		}
+
 		var timerMaps;
 		function renderAll() {
 			chart.each(render);
@@ -662,5 +951,6 @@
 	});
 
 	</script>
+	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCkb8SUi3_g9PJxJgGfydzLqmqIp3NpUeU&&libraries=visualization&callback=initMap"></script>
 </body>
 </html>
