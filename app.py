@@ -114,9 +114,9 @@ def file_proc():
     lat_options = options if len(lat_options) == 0 else lat_options
 
     return render_template('select.html',
-                            option_list = options,
-                            lat_options = lat_options,
-                            long_options = long_options)
+                           option_list=options,
+                           lat_options=lat_options,
+                           long_options=long_options)
 
 
 @app.route('/')
@@ -134,7 +134,7 @@ def selectdata():
     return render_template('charts.html', csvfilename='arquivo.csv', filter=filter, positions=positions, datasettype=datasettype)
 
 
-@app.route('/upload', methods=['GET','POST'])
+@app.route('/upload', methods=['GET', 'POST'])
 def upload():
     if request.method == 'GET':
         formatsmsg = 'Only accept: '
@@ -162,6 +162,7 @@ def upload():
 def data_analysis():
     return send_from_directory(APP_ANALYSIS, 'index.html')
 
+
 @app.route('/<path:directory>')
 def sendfiles(directory):
     return send_from_directory(APP_ROOT, directory)
@@ -184,7 +185,8 @@ def runiuga():
     k = int(request.args.get('kvalue'))            # number of returned records
     lowest_acceptable_similarity = float(request.args.get('sigma'))
     input_file = APP_ROOT + "/dataanalysis/ds.csv"
-    compostReturn = iugaMod.runIuga(input_g, k, time_limit, lowest_acceptable_similarity, input_file)
+    compostReturn = iugaMod.runIuga(
+        input_g, k, time_limit, lowest_acceptable_similarity, input_file)
     return json.dumps({"similarity": compostReturn[0], "diversity": compostReturn[1], "array": (compostReturn[2])}), 200, {'ContentType': 'application/json'}
 
 
