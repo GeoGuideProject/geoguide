@@ -134,8 +134,6 @@
 	  border-radius: 3px;
 	  box-shadow: 0 2px 6px rgba(0,0,0,.3);
 	  cursor: pointer;
-	  float: left;
-	  margin-bottom: 22px;
 		margin-right: 10px;
 	  text-align: center;
 	}
@@ -147,6 +145,7 @@
 	  line-height: 25px;
 	  padding-left: 5px;
 	  padding-right: 5px;
+		pointer-events: auto;
 	}
 
 	html, body {
@@ -213,19 +212,19 @@
 				</div>
 				<div class="well well-sm range-group">
 					<div id="hour-chart" class="chart">
-						<h3>{{ filter[0] }}</h3>
+						<h3 class="title">{{ filter[0] }}</h3>
 						<!-- <div class="title">{{ filter[0] }}</div> -->
 					</div>
 					<div hidden id="payment-chart" class="chart">
-						<h3>{{ filter[1] }}</h3>
+						<h3 class="title">{{ filter[1] }}</h3>
 						<!-- <div class="title">{{ filter[1] }}</div> -->
 					</div>
 					<div hidden id="passenger-chart" class="chart">
-						<h3>{{ filter[2] }}</h3>
+						<h3 class="title">{{ filter[2] }}</h3>
 						<!-- <div class="title">{{ filter[2] }}</div> -->
 					</div>
 					<div hidden id="distance-chart" class="chart">
-						<h3>{{ filter[3] }}</h3>
+						<h3 class="title">{{ filter[3] }}</h3>
 						<!-- <div class="title">{{ filter[3] }}</div> -->
 					</div>
 					<input type="button" class="btn btn-default" onClick="changeChart(this)" value="Previous">
@@ -345,7 +344,8 @@
 	  var heatMap = new HeatMapControl(heatMapDiv, mapGoogle);
 
 	  heatMapDiv.index = 1;
-	  heatMapDiv.style['padding-top'] = '10px';
+		heatMapDiv.style['padding-top'] = '10px';
+	  heatMapDiv.style['pointer-events'] = 'none';
 	  mapGoogle.controls[google.maps.ControlPosition.RIGHT_TOP].push(heatMapDiv);
 	}
 
@@ -675,7 +675,7 @@
 				var platitude = point['{{positions[0]}}'];
 				var plongitude = point['{{positions[1]}}'];
 
-				var contentString = '<div><h4>Info</h4>';
+				var contentString = '<div><h4>Profile</h4>';
 			  for (key in point) {
 			    if (point[key] === undefined) { continue; }
 			    var value = point[key];

@@ -69,6 +69,26 @@
       width: 100%;
       margin: 0;
     }
+
+    #heatMapUI {
+  	  background-color: #fff;
+  	  border: 2px solid #fff;
+  	  border-radius: 3px;
+  	  box-shadow: 0 2px 6px rgba(0,0,0,.3);
+  	  cursor: pointer;
+  		margin-right: 10px;
+  	  text-align: center;
+  	}
+
+  	#heatMapText {
+  	  color: rgb(25,25,25);
+  	  font-family: Roboto, Arial, sans-serif;
+  	  font-size: 15px;
+  	  line-height: 25px;
+  	  padding-left: 5px;
+  	  padding-right: 5px;
+  		pointer-events: auto;
+  	}
   </style>
 </head>
 <body>
@@ -171,242 +191,315 @@
     var markers = [];
     var infowindows = [];
     var infowindowsOpened = null;
+
+    var iconBlue = '/static/images/marker-icon.png';
+    var iconGreen = '/static/images/marker-icon-green.png';
+    var iconRed = '/static/images/marker-icon-red.png';
+    var iconYellow = '/static/images/marker-icon-yellow.png';
+    var runningRequest = false;
+
+    var heatMap,
+        heatMapPoints = [],
+        isHeatMap = false;
+
     document.getElementById("pointInfo").value = "";
-// ----------------------------------------------------------
-// ------------------------- Create the map and locate center
-// ----------------------------------------------------------
-function initMap() {
-// Create a map object and specify the DOM element for display.
-  var mapType = new google.maps.StyledMapType([{
-    featureType: "all",
-    elementType: "all",
-    stylers: [{ saturation: -100 }]
-  }], { name: "Grayscale" });
+    // ----------------------------------------------------------
+    // ------------------------- Create the map and locate center
+    // ----------------------------------------------------------
 
-  map = new google.maps.Map(document.getElementById('map'), {
-    zoom: 9,
-    mapTypeControlOptions: {
-        mapTypeIds: [google.maps.MapTypeId.ROADMAP, google.maps.MapTypeId.HYBRID, google.maps.MapTypeId.SATELLITE, google.maps.MapTypeId.TERRAIN, 'grayscale'],
-        position: google.maps.ControlPosition.TOP_RIGHT,
-        style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
-    },
-    streetViewControl: false
-  });
+    function HeatMapControl(controlDiv, map) {
 
-  map.mapTypes.set('grayscale', mapType);
+      var control = this;
 
-  d3.csv("/dataanalysis/index.csv", function(error, data) {
-    var latmed = parseFloat(d3.min(data, function(d) { return d.latitude; })) + parseFloat(d3.max(data, function(d) { return d.latitude; }));
-    var latmed = latmed/2;
-    var longmed = parseFloat(d3.min(data, function(d) { return d.longitude; })) + parseFloat(d3.max(data, function(d) { return d.longitude; }));
-    var longmed = longmed/2;
-    map.setCenter({lat: latmed, lng: longmed});
-  });
-}
-var iconBlue = '/static/images/marker-icon.png';
-var iconGreen = '/static/images/marker-icon-green.png';
-var iconRed = '/static/images/marker-icon-red.png';
-var iconYellow = '/static/images/marker-icon-yellow.png';
-function clearMap(){
-  for (var i = 0; i < markers.length; i++) {
-    markers[i].setMap(null);
-  }
-  markers = [];
-  infowindows = [];
-}
-function addPoint(platitude, plongitude, picon, pindex, options){
-  var contentString = '<div><h4>Profile</h4>';
+      controlDiv.style.clear = 'both';
 
-  for (key in options) {
-    if (options[key] === undefined) { continue; }
-    var value = options[key];
-    if (Number(options[key])) {
-      var number = Number(options[key]);
-      value = Number.isInteger(number) ? number.toString() : parseFloat(Number(options[key]).toFixed(5)).toString();
+      var heatMapUI = document.createElement('div');
+      heatMapUI.id = 'heatMapUI';
+      controlDiv.appendChild(heatMapUI);
+
+      var heatMapText = document.createElement('div');
+      heatMapText.id = 'heatMapText';
+      heatMapText.innerHTML = 'Heat';
+      heatMapUI.appendChild(heatMapText);
+
+      heatMapUI.addEventListener('click', function() {
+        heatMapPoints = markers.map(function(marker) {
+          marker.setVisible(isHeatMap);
+          return marker.position;
+        });
+
+        isHeatMap = !isHeatMap;
+
+        if (isHeatMap) {
+          heatmap.setData(heatMapPoints);
+          heatmap.setMap(map);
+          heatMapText.innerHTML = 'Normal';
+        }
+        else {
+          heatmap.setMap(null);
+          heatMapText.innerHTML = 'Heat';
+        }
+        if (infowindowsOpened != null) {
+          infowindowsOpened.close();
+        }
+      });
     }
-    contentString += '<b>' + key + '</b>: ' + value + '<br />';
-  }
-  contentString += '<button type="button" class="btn btn-primary show-button" onClick="runPass(1)">Show</button>';
-  contentString += '</div>';
 
-  var infowindow = new google.maps.InfoWindow({
-    content: contentString
-  });
+    function initMap() {
+      // Create a map object and specify the DOM element for display.
+      var mapType = new google.maps.StyledMapType([{
+        featureType: "all",
+        elementType: "all",
+        stylers: [{ saturation: -100 }]
+      }], { name: "Grayscale" });
 
-  var marker = new google.maps.Marker({
-    position: {lat: parseFloat(platitude), lng: parseFloat(plongitude)},
-    map: map,
-    icon: {
-      path: google.maps.SymbolPath.CIRCLE,
-      scale: 7,
-      fillColor: picon === iconYellow ? '#F44336' : '#2196F3',
-      fillOpacity: 0.75,
-      strokeWeight: 0
-    },
-    pointId: pindex,
-    latitude: platitude,
-    longitude: plongitude,
-  });
+      map = new google.maps.Map(document.getElementById('map'), {
+        zoom: 9,
+        mapTypeControlOptions: {
+            mapTypeIds: [google.maps.MapTypeId.ROADMAP, google.maps.MapTypeId.HYBRID, google.maps.MapTypeId.SATELLITE, google.maps.MapTypeId.TERRAIN, 'grayscale'],
+            position: google.maps.ControlPosition.TOP_RIGHT,
+            style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
+        },
+        streetViewControl: false
+      });
 
-  marker.addListener('click', function() {
-    if (infowindowsOpened != null) {
-      infowindowsOpened.close();
+      map.mapTypes.set('grayscale', mapType);
+      map.setMapTypeId('grayscale');
+
+      heatmap = new google.maps.visualization.HeatmapLayer({
+  			data: heatMapPoints,
+  			radius: 50,
+  			map: map,
+  		});
+
+      var heatMapDiv = document.createElement('div');
+  	  var heatMap = new HeatMapControl(heatMapDiv, map);
+
+  	  heatMapDiv.index = 1;
+  		heatMapDiv.style['padding-top'] = '10px';
+  	  heatMapDiv.style['pointer-events'] = 'none';
+  	  map.controls[google.maps.ControlPosition.RIGHT_TOP].push(heatMapDiv);
+
+      d3.csv("/dataanalysis/index.csv", function(error, data) {
+        var latmed = parseFloat(d3.min(data, function(d) { return d.latitude; })) + parseFloat(d3.max(data, function(d) { return d.latitude; }));
+        var latmed = latmed/2;
+        var longmed = parseFloat(d3.min(data, function(d) { return d.longitude; })) + parseFloat(d3.max(data, function(d) { return d.longitude; }));
+        var longmed = longmed/2;
+        map.setCenter({lat: latmed, lng: longmed});
+      });
     }
-    infowindow.open(map, marker);
-    infowindowsOpened = infowindow;
-  })
 
-  infowindows.push(infowindow);
-  markers.push(marker);
-  return marker;
-}
-function refreshMap(){
-  var arrayPoints = [];
-  document.getElementById("seccondpass").disabled = true;
-  document.getElementById("pointInfo").value = "";
-  document.getElementById("firstAnalysis").style.display = "none";
-  document.getElementById("seccondAnalysis").style.display = "none";
-  clearMap();
-  var namefile = "/dataanalysis/dspoints/" + document.getElementById("range").options[document.getElementById("range").selectedIndex].value + "_" +(parseInt(document.getElementById("range").options[document.getElementById("range").selectedIndex].value)+1) + ".csv";
-  d3.csv(namefile, function(error, dsPointsLines) {
-    var auxArrayPoints = [];
-    dsPointsLines.forEach(function(dsLine) {
-      auxArrayPoints.push(dsLine.p1);
-      auxArrayPoints.push(dsLine.p2);
-    });
-    //Remove point equals
-    arrayPoints = auxArrayPoints.filter(function(item, pos) {
-      return auxArrayPoints.indexOf(item) == pos;
-    });
-    d3.csv("/dataanalysis/index.csv", function(error, indexLines) {
-      var stop = 0;
-      indexLines.forEach(function(indexLine) {
-        arrayPoints.forEach(function(point) {
-          if(indexLine.p_index == point){
+    function clearMap(){
+      for (var i = 0; i < markers.length; i++) {
+        markers[i].setMap(null);
+      }
+      markers = [];
+      infowindows = [];
+    }
+
+    function addPoint(platitude, plongitude, picon, pindex, options){
+      var contentString = '<div><h4>Profile</h4>';
+
+      for (key in options) {
+        if (options[key] === undefined) { continue; }
+        var value = options[key];
+        if (Number(options[key])) {
+          var number = Number(options[key]);
+          value = Number.isInteger(number) ? number.toString() : parseFloat(Number(options[key]).toFixed(5)).toString();
+        }
+        contentString += '<b>' + key + '</b>: ' + value + '<br />';
+      }
+      contentString += '<button type="button" class="btn btn-primary show-button" onClick="runPass(1)">Show</button>';
+      contentString += '</div>';
+
+      var infowindow = new google.maps.InfoWindow({
+        content: contentString
+      });
+
+      var marker = new google.maps.Marker({
+        position: new google.maps.LatLng(platitude, plongitude),
+        map: map,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 7,
+          fillColor: picon === iconYellow ? '#F44336' : '#2196F3',
+          fillOpacity: 0.75,
+          strokeWeight: 0
+        },
+        pointId: pindex,
+        latitude: platitude,
+        longitude: plongitude,
+      });
+
+      marker.addListener('click', function() {
+        if (infowindowsOpened != null) {
+          infowindowsOpened.close();
+        }
+        infowindow.open(map, marker);
+        infowindowsOpened = infowindow;
+      })
+
+      infowindows.push(infowindow);
+      markers.push(marker);
+      return marker;
+    }
+
+    function refreshMap(){
+      var arrayPoints = [];
+      document.getElementById("seccondpass").disabled = true;
+      document.getElementById("pointInfo").value = "";
+      document.getElementById("firstAnalysis").style.display = "none";
+      document.getElementById("seccondAnalysis").style.display = "none";
+      clearMap();
+      var namefile = "/dataanalysis/dspoints/" + document.getElementById("range").options[document.getElementById("range").selectedIndex].value + "_" +(parseInt(document.getElementById("range").options[document.getElementById("range").selectedIndex].value)+1) + ".csv";
+      d3.csv(namefile, function(error, dsPointsLines) {
+        var auxArrayPoints = [];
+        dsPointsLines.forEach(function(dsLine) {
+          auxArrayPoints.push(dsLine.p1);
+          auxArrayPoints.push(dsLine.p2);
+        });
+        //Remove point equals
+        arrayPoints = auxArrayPoints.filter(function(item, pos) {
+          return auxArrayPoints.indexOf(item) == pos;
+        });
+        d3.csv("/dataanalysis/index.csv", function(error, indexLines) {
+          var stop = 0;
+          indexLines.forEach(function(indexLine) {
+            arrayPoints.forEach(function(point) {
+              if(indexLine.p_index == point){
+                addPoint(indexLine.latitude, indexLine.longitude, iconBlue, indexLine.p_index, indexLine).addListener('click', onPointClick);
+              }
+            });
+          });
+          if (isHeatMap) {
+    				isHeatMap = !isHeatMap;
+    				document.getElementById('heatMapUI').click();
+    			}
+        });
+      });
+      function onPointClick(event) {
+        document.getElementById("pointInfo").value = "ID: " + this.pointId + " - Latitude: " + this.latitude + " - Longitude: " + this.longitude;
+        pointChose = this.pointId;
+      }
+    }
+
+    function showFirstRequestOnMap(){
+      clearMap();
+      d3.csv("/dataanalysis/index.csv", function(error, indexLines) {
+        var stop = 0;
+        indexLines.forEach(function(indexLine) {
+          firstArrayPoints.array.forEach(function(point) {
+            if(indexLine.p_index == point){
+              addPoint(indexLine.latitude, indexLine.longitude, iconYellow, indexLine.p_index, indexLine).addListener('click', onPointClick);
+            }
+          });
+          if(indexLine.p_index == firstPoint){
             addPoint(indexLine.latitude, indexLine.longitude, iconBlue, indexLine.p_index, indexLine).addListener('click', onPointClick);
+            document.getElementById("firstAnalysis").style.display = "block";
+            document.getElementById("seccondAnalysis").style.display = "none";
+            document.getElementById("firstSelected").innerHTML = firstPoint;
+            document.getElementById("firstKPoints").innerHTML = firstArrayPoints.array.join(', ');
+            document.getElementById("firstSimilarity").innerHTML = firstArrayPoints.similarity;
+          }
+        });
+        if (isHeatMap) {
+  				isHeatMap = !isHeatMap;
+  				document.getElementById('heatMapUI').click();
+  			}
+      });
+      function onPointClick(event) {
+        document.getElementById("pointInfo").value = "ID: " + this.pointId + " - Latitude: " + this.latitude + " - Longitude: " + this.longitude;
+        pointChose = this.pointId;
+        if(pointChose != firstPoint) {
+          document.getElementById("seccondpass").disabled = false;
+        }
+        else{
+          document.getElementById("seccondpass").disabled = true;
+        }
+      }
+    }
+
+    function showSeccondRequestOnMap(jsonResponse){
+      clearMap();
+      d3.csv("/dataanalysis/index.csv", function(error, indexLines) {
+        var stop = 0;
+        indexLines.forEach(function(indexLine) {
+          firstArrayPoints.array.forEach(function(point) {
+            if(indexLine.p_index == point){
+              addPoint(indexLine.latitude, indexLine.longitude, iconYellow, indexLine.p_index, indexLine).addListener('click', onPointClick);
+            }
+          });
+          if(indexLine.p_index == firstPoint){
+            addPoint(indexLine.latitude, indexLine.longitude, iconBlue, indexLine.p_index, indexLine).addListener('click', onPointClick);
+          }
+          jsonResponse.array.forEach(function(point) {
+            if(indexLine.p_index == point){
+              addPoint(indexLine.latitude, indexLine.longitude, iconRed, indexLine.p_index, indexLine).addListener('click', onPointClick);
+            }
+          });
+          if(indexLine.p_index == pointChose){
+            addPoint(indexLine.latitude, indexLine.longitude, iconGreen, indexLine.p_index, indexLine).addListener('click', onPointClick);
+            document.getElementById("seccondAnalysis").style.display = "block";
+            document.getElementById("seccondSelected").innerHTML = pointChose;
+            document.getElementById("seccondKPoints").innerHTML = jsonResponse.array;
+            document.getElementById("seccondSimilarity").innerHTML = jsonResponse.similarity;
           }
         });
       });
-    });
-  });
-  function onPointClick(event) {
-    document.getElementById("pointInfo").value = "ID: " + this.pointId + " - Latitude: " + this.latitude + " - Longitude: " + this.longitude;
-    pointChose = this.pointId;
-  }
-}
+      function onPointClick(event) {
+        document.getElementById("pointInfo").value = "ID: " + this.pointId + " - Latitude: " + this.latitude + " - Longitude: " + this.longitude;
+        pointChose = this.pointId;
+        var disableSeccondPass = false;
+        firstArrayPoints.array.forEach(function(point) {
+          if(point == pointChose){
+           disableSeccondPass = true;
+         }
+       });
+        if(pointChose == firstPoint){
+          disableSeccondPass = true;
+        }
+        document.getElementById("seccondpass").disabled = disableSeccondPass;
+      }
+    }
 
-function showFirstRequestOnMap(){
-  clearMap();
-  d3.csv("/dataanalysis/index.csv", function(error, indexLines) {
-    var stop = 0;
-    indexLines.forEach(function(indexLine) {
-      firstArrayPoints.array.forEach(function(point) {
-        if(indexLine.p_index == point){
-          addPoint(indexLine.latitude, indexLine.longitude, iconYellow, indexLine.p_index, indexLine).addListener('click', onPointClick);
-        }
-      });
-      if(indexLine.p_index == firstPoint){
-        addPoint(indexLine.latitude, indexLine.longitude, iconBlue, indexLine.p_index, indexLine).addListener('click', onPointClick);
-        document.getElementById("firstAnalysis").style.display = "block";
-        document.getElementById("seccondAnalysis").style.display = "none";
-        document.getElementById("firstSelected").innerHTML = firstPoint;
-        document.getElementById("firstKPoints").innerHTML = firstArrayPoints.array.join(', ');
-        document.getElementById("firstSimilarity").innerHTML = firstArrayPoints.similarity;
+    function runPass(pass){
+      if(document.getElementById("pointInfo").value == ""){
+        alert("Any point selected!")
       }
-    });
-  });
-  function onPointClick(event) {
-    document.getElementById("pointInfo").value = "ID: " + this.pointId + " - Latitude: " + this.latitude + " - Longitude: " + this.longitude;
-    pointChose = this.pointId;
-    if(pointChose != firstPoint) {
-      document.getElementById("seccondpass").disabled = false;
-    }
-    else{
-      document.getElementById("seccondpass").disabled = true;
-    }
-  }
-}
-
-function showSeccondRequestOnMap(jsonResponse){
-  clearMap();
-  d3.csv("/dataanalysis/index.csv", function(error, indexLines) {
-    var stop = 0;
-    indexLines.forEach(function(indexLine) {
-      firstArrayPoints.array.forEach(function(point) {
-        if(indexLine.p_index == point){
-          addPoint(indexLine.latitude, indexLine.longitude, iconYellow, indexLine.p_index, indexLine).addListener('click', onPointClick);
-        }
-      });
-      if(indexLine.p_index == firstPoint){
-        addPoint(indexLine.latitude, indexLine.longitude, iconBlue, indexLine.p_index, indexLine).addListener('click', onPointClick);
-      }
-      jsonResponse.array.forEach(function(point) {
-        if(indexLine.p_index == point){
-          addPoint(indexLine.latitude, indexLine.longitude, iconRed, indexLine.p_index, indexLine).addListener('click', onPointClick);
-        }
-      });
-      if(indexLine.p_index == pointChose){
-        addPoint(indexLine.latitude, indexLine.longitude, iconGreen, indexLine.p_index, indexLine).addListener('click', onPointClick);
-        document.getElementById("seccondAnalysis").style.display = "block";
-        document.getElementById("seccondSelected").innerHTML = pointChose;
-        document.getElementById("seccondKPoints").innerHTML = jsonResponse.array;
-        document.getElementById("seccondSimilarity").innerHTML = jsonResponse.similarity;
-      }
-    });
-  });
-  function onPointClick(event) {
-    document.getElementById("pointInfo").value = "ID: " + this.pointId + " - Latitude: " + this.latitude + " - Longitude: " + this.longitude;
-    pointChose = this.pointId;
-    var disableSeccondPass = false;
-    firstArrayPoints.array.forEach(function(point) {
-      if(point == pointChose){
-       disableSeccondPass = true;
-     }
-   });
-    if(pointChose == firstPoint){
-      disableSeccondPass = true;
-    }
-    document.getElementById("seccondpass").disabled = disableSeccondPass;
-  }
-}
-var runningRequest = false;
-function runPass(pass){
-  if(document.getElementById("pointInfo").value == ""){
-    alert("Any point selected!")
-  }
-  else{
-    if(runningRequest == false){
-      runningRequest == true;
-      var loader = new XMLHttpRequest();
-      loader.onreadystatechange = function ()
-      {
-        if(this.status == 200 && this.readyState == XMLHttpRequest.DONE){
-          var jsonResponse = JSON.parse(this.responseText);
-          document.getElementById("pointInfo").value = "";
-          if(pass == 1){
-            firstPoint = pointChose;
-            firstArrayPoints = jsonResponse;
-            document.getElementById("seccondpass").disabled = true;
-            showFirstRequestOnMap();
+      else{
+        if(runningRequest == false){
+          runningRequest == true;
+          var loader = new XMLHttpRequest();
+          loader.onreadystatechange = function ()
+          {
+            if(this.status == 200 && this.readyState == XMLHttpRequest.DONE){
+              var jsonResponse = JSON.parse(this.responseText);
+              document.getElementById("pointInfo").value = "";
+              if(pass == 1){
+                firstPoint = pointChose;
+                firstArrayPoints = jsonResponse;
+                document.getElementById("seccondpass").disabled = true;
+                showFirstRequestOnMap();
+              }
+              else if(pass == 2){
+                showSeccondRequestOnMap(jsonResponse);
+              }
+              runningRequest == false;
+            }
           }
-          else if(pass == 2){
-            showSeccondRequestOnMap(jsonResponse);
-          }
-          runningRequest == false;
+          strSend = '/runiuga?timelimit=' + document.getElementById("timelimit").value + '&pointchose=' + pointChose + '&sigma=' + document.getElementById("sigma").value + '&kvalue=' + document.getElementById("kvalue").value;
+          loader.open('GET', strSend, true);
+          loader.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+          loader.send();
+        }
+        else{
+          alert("Wait finish before run again!");
         }
       }
-      strSend = '/runiuga?timelimit=' + document.getElementById("timelimit").value + '&pointchose=' + pointChose + '&sigma=' + document.getElementById("sigma").value + '&kvalue=' + document.getElementById("kvalue").value;
-      loader.open('GET', strSend, true);
-      loader.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-      loader.send();
     }
-    else{
-      alert("Wait finish before run again!");
-    }
-  }
-}
 
-</script>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCkb8SUi3_g9PJxJgGfydzLqmqIp3NpUeU&callback=initMap" async defer></script>
+    </script>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCkb8SUi3_g9PJxJgGfydzLqmqIp3NpUeU&&libraries=visualization&callback=initMap"></script>
 </body>
 </html>
