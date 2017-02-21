@@ -197,13 +197,6 @@
 	</style>
 </head>
 <body>
-	<!-- <nav class="navbar navbar-inverse">
-		<div class="container-fluid">
-			<div class="navbar-header">
-				<a class="navbar-brand" href="">GeoHighlight</a>
-			</div>
-		</div>
-	</nav> -->
 	<div class="sidebar">
     <div class="row">
       <div class="col-md-12">
@@ -213,19 +206,15 @@
 				<div class="well well-sm range-group">
 					<div id="hour-chart" class="chart">
 						<h3 class="title">{{ filter[0] }}</h3>
-						<!-- <div class="title">{{ filter[0] }}</div> -->
 					</div>
 					<div hidden id="payment-chart" class="chart">
 						<h3 class="title">{{ filter[1] }}</h3>
-						<!-- <div class="title">{{ filter[1] }}</div> -->
 					</div>
 					<div hidden id="passenger-chart" class="chart">
 						<h3 class="title">{{ filter[2] }}</h3>
-						<!-- <div class="title">{{ filter[2] }}</div> -->
 					</div>
 					<div hidden id="distance-chart" class="chart">
 						<h3 class="title">{{ filter[3] }}</h3>
-						<!-- <div class="title">{{ filter[3] }}</div> -->
 					</div>
 					<input type="button" class="btn btn-default" onClick="changeChart(this)" value="Previous">
 					<input type="button" class="btn btn-default pull-right" onClick="changeChart(this)" value="Next">
@@ -238,26 +227,9 @@
 	<div class="mapContainer">
     <div id="map-google"></div>
   </div>
-	<!-- <div id="body">
-		<aside id="totals"><span id="active">-</span> of <span id="total">-</span> rides selected.</aside>
-		<div id="maps">
-			<br>
-			<div id="map-google" class ="map"></div>
-			<div id="heart-map" hidden class ="map"></div>
-			<div id="normal-map" hidden class ="map"></div>
-		</div>
-	</div> -->
-
 	<script src="static/crossfilter.v1.min.js"></script>
 	<script src="static/d3.v3.min.js"></script>
-	<!--<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css" />-->
-	<link href="static/leaflet.css" rel="stylesheet">
-	<script src="static/leaflet.js"></script>
-	<script src="static/leaflet-heat.js"></script>
 	<script>
-	// var heartmap = L.map('heart-map').setView([40.760610,-73.975242], 11);
-	// var normalmap = L.map('normal-map').setView([40.760610,-73.975242], 11);
-	// var tileset2;
 	var heartmap, normalmap, tileset2;
 
 	var currentChartIndex = 0,
@@ -349,20 +321,6 @@
 	  mapGoogle.controls[google.maps.ControlPosition.RIGHT_TOP].push(heatMapDiv);
 	}
 
-	function desenharMap(){
-		//Create two tile layer to two maps (error if use same tile layer for two maps)
-		var tileset = L.tileLayer('http://{s}.tiles.wmflabs.org/bw-mapnik/{z}/{x}/{y}.png', {
-			maxZoom: 17,
-			attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-		});
-		tileset2 = L.tileLayer('http://{s}.tiles.wmflabs.org/bw-mapnik/{z}/{x}/{y}.png', {
-			maxZoom: 17,
-			attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-		});
-		tileset.addTo(heartmap);
-		tileset2.addTo(normalmap);
-	}
-
 	function changeChart(button) {
 
 		var charts = document.getElementsByClassName('chart');
@@ -381,10 +339,10 @@
 		charts[currentChartIndex].hidden = false;
 	}
 
-	//desenharMap();
 	function isNumber(n) {
 		return !isNaN(parseFloat(n)) && isFinite(n);
 	}
+
 	var heat, ride;
 	/*
 	Verificar range se for int e data, armazenar em array se for str
@@ -627,30 +585,6 @@
 				return [d['{{positions[0]}}'], d['{{positions[1]}}']]
 			});
 			reloadGoogleMaps(pointsfiltred);
-			if(heat != undefined) {heartmap.removeLayer(heat);}
-			heat = L.heatLayer(points);
-			heat.setOptions({max: 500, minOpacity: 0.7, radius: 15});
-			heat.addTo(heartmap);
-
-			//Create array of point tho droppoff and use "points" to pickup points and create normal map with polilines
-			normalmap.eachLayer(function (layer) {
-				if(tileset2 != layer){
-					normalmap.removeLayer(layer);
-				}
-
-			});
-			var latandlongpoints = pointsfiltred.map(function (d) {
-				pickp = new L.LatLng(d['{{positions[0]}}'], d['{{positions[1]}}']);
-				dropp = new L.LatLng(d['{{positions[2]}}'], d['{{positions[3]}}']);
-				var pointlist = [dropp, pickp];
-				return new L.Polyline(pointlist, {
-					color: 'blue',
-					weight: 3
-
-				});
-			});
-			var linesgroup = L.layerGroup(latandlongpoints);
-			linesgroup.addTo(normalmap);
 		}
 		// Whenever the brush moves, re-rendering everything.
 		function reloadGoogleMaps(points) {
