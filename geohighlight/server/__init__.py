@@ -11,6 +11,7 @@ from decouple import config
 from flask import Flask, render_template
 from flask_debugtoolbar import DebugToolbarExtension
 from flask_sqlalchemy import SQLAlchemy
+from flask_uploads import UploadSet, configure_uploads
 
 
 ################
@@ -37,13 +38,22 @@ db = SQLAlchemy(app)
 
 
 ###################
+##### uploads #####
+###################
+
+datasets = UploadSet('datasets', ('csv',))
+configure_uploads(app, (datasets))
+
+
+###################
 ### blueprints ####
 ###################
 
-# from geohighlight.server.user.views import user_blueprint
 from geohighlight.server.main.views import main_blueprint
-# app.register_blueprint(user_blueprint)
+from geohighlight.server.geohighlight.views import geohighlight_blueprint
+
 app.register_blueprint(main_blueprint)
+app.register_blueprint(geohighlight_blueprint)
 
 
 ########################

@@ -1,0 +1,18 @@
+{% extends "_base.html" %}
+
+{% block title %}- Upload a new dataset{% endblock %}
+
+{% block content %}
+<div class="jumbotron">
+  <div class="text-center">
+    <h1>Upload a new dataset</h1>
+    <p>Please, select a .CSV file.</p>
+    <form action="{{ url_for('geohighlight.upload') }}" method="POST" enctype="multipart/form-data">
+      <p>
+        <input type="file" name="dataset" accept=".csv" required><br><br>
+        <button type="submit">Upload</button>
+      </p>
+    </form>
+  </div>
+</div>
+{% endblock %}
