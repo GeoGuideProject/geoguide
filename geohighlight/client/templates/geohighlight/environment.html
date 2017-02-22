@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <title>Geo-Highlight Environment</title>
+    <!-- meta -->
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <!-- styles -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link href="{{url_for('static', filename='css/environment.css')}}" rel="stylesheet" media="screen">
+  </head>
+
+  <body data-dataset="{{ dataset_url }}">
+    <div class="sidebar">
+      <div class="row">
+        <div class="col-md-12" hidden>
+          <div class="control well  well-sm range-group">
+            <h3>Similarity Range</h3>
+            <div class="form-group select-range">
+              <label for="range">Range Limits:</label>
+              <select id="range" name="range" class="form-control">
+                <option value="0">0.0 ~ 0.1</option>
+                <option value="1">0.1 ~ 0.2</option>
+                <option value="2">0.2 ~ 0.3</option>
+                <option value="3">0.3 ~ 0.4</option>
+                <option value="4">0.4 ~ 0.5</option>
+                <option value="5">0.5 ~ 0.6</option>
+                <option value="6">0.6 ~ 0.7</option>
+                <option value="7">0.7 ~ 0.8</option>
+                <option value="8">0.8 ~ 0.9</option>
+                <option value="9">0.9 ~ 1.0</option>
+              </select>
+              <input type="button" class="btn btn-default show-button" onClick="refreshMap()" value="Show/Reset">
+            </div>
+          </div>
+        </div>
+        <div class="col-md-12">
+          <div class="control well  well-sm timelimit-group">
+            <h3>IUGA Definition</h3>
+            <div class="form-group">
+              <label for="timelimit">Time Limit (ms):</label>
+              <input type="number" id="timelimit" name="timelimit" value="100" min="100" max="20000" required class="form-control">
+            </div>
+            <div class="form-group">
+              <label for="sigma">Similarity (&sigma;):</label>
+              <input type="number" id="sigma" name="sigma" value="1.00" min="0.00" max="1.00" step="0.01" required class="form-control">
+            </div>
+            <div class="form-group">
+              <label for="kvalue">K-Points:</label>
+              <input type="number" id="kvalue" name="kvalue" value="1" min="1" max="50" required class="form-control">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row" hidden>
+        <div class="container-fluid">
+          <h3>Point Information:</h3>
+          <input type="text" name="pointInfo" id="pointInfo">
+          <input type="button" class="btn btn-success show-button" onClick="runPass(1)" value="First Pass">
+          <input type="button" id="seccondpass" class="btn btn-success show-button" onClick="runPass(2)" value="Seccond Pass" disabled>
+        </div>
+      </div>
+      <div class="row" hidden>
+        <div class="col-md-12">
+          <div class="control well well-sm divanalysis" id="firstAnalysis">
+            <h3>Analysis</h3>
+            <label for="basic-url">Selected:</label>
+            <p id="firstSelected"></p>
+            <label for="basic-url">Similarity:</label>
+            <p id="firstSimilarity"></p>
+            <label for="basic-url">Top K similar point:</label>
+            <p id="firstKPoints"></p>
+          </div>
+        </div>
+        <div class="col-md-6" hidden>
+          <div class="well  well-sm divanalysis" id="seccondAnalysis">
+            <h3>Seccond analysis</h3>
+            <label for="basic-url">Selected:</label>
+            <p id="seccondSelected"></p>
+            <label for="basic-url">Similarity:</label>
+            <p id="seccondSimilarity"></p>
+            <label for="basic-url">Top K similar point:</label>
+            <p id="seccondKPoints"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="mapContainer">
+      <div id="map"></div>
+    </div>
+
+    <script id="dataset_json" type="application/json">{{ dataset_json|safe }}</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="{{url_for('static', filename='js/environment.js')}}"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCkb8SUi3_g9PJxJgGfydzLqmqIp3NpUeU&&libraries=visualization&callback=initMap"></script>
+  </body>
+</html>
