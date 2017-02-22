@@ -3,16 +3,43 @@
 {% block title %}- Upload a new dataset{% endblock %}
 
 {% block content %}
-<div class="jumbotron">
-  <div class="text-center">
-    <h1>Upload a new dataset</h1>
-    <p>Please, select a .CSV file.</p>
-    <form action="{{ url_for('geohighlight.upload') }}" method="POST" enctype="multipart/form-data">
-      <p>
-        <input type="file" name="dataset" accept=".csv" required><br><br>
-        <button type="submit">Upload</button>
-      </p>
-    </form>
+<div class="container">
+  <div class="row">
+    <div class="col-md-4 col-md-offset-1">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h4>Select a dataset</h4>
+        </div>
+        <div class="panel-body">
+          There's no saved dataset.
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h4>Upload a dataset</h4>
+        </div>
+        <div class="panel-body">
+          <form action="{{ url_for('geohighlight.upload') }}" method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+              <label for="titleInputText">Title</label>
+              <input type="text" class="form-control" id="titleInputText" name="titleInputText" placeholder="Title" required>
+            </div>
+            <div class="form-group">
+              <label for="numberRowsInputNumber">Number of rows</label>
+              <input type="number" class="form-control" id="numberRowsInputNumber" name="numberRowsInputNumber" placeholder="Number of rows">
+            </div>
+            <div class="form-group">
+              <label for="datasetInputFile">Dataset</label>
+              <input type="file" id="datasetInputFile" name="datasetInputFile" accept=".csv" required>
+              <p class="help-block">Only .CSV will be accepted.</p>
+            </div>
+            <button type="submit" class="btn btn-default">Upload</button>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}
