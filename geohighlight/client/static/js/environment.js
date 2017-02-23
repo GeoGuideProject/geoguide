@@ -135,6 +135,7 @@ function processData(err, data) {
 function refreshMap() {
   clearMap()
   processData(undefined, datasetData)
+  iugaLastPointId = -1
 }
 
 function clearMap() {

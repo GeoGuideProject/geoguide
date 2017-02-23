@@ -2,6 +2,7 @@
 
 import json
 import pandas as pd
+import numpy as np
 from uuid import uuid4
 from flask import request, session, render_template, Blueprint, flash, redirect, url_for, jsonify, abort
 from geohighlight.server import db, datasets
@@ -61,7 +62,7 @@ def environment(selected_dataset):
         'longitude_attr': dataset.longitude_attr
     })
     vm['dataset_url'] = datasets.url(dataset.filename)
-    vm['dataset_headers'] = list(df.columns.values)
+    vm['dataset_headers'] = list(df.select_dtypes(include=[np.number]).columns)
     return render_template('geohighlight/environment.html', **vm)
 
 
