@@ -1,18 +1,16 @@
 'use strict'
 
 var pointChoice
-var firstPoint
-var firstArrayPoints
-var map
+var map = null
 var markers = []
-var markerData = []
 var infowindows = []
 var infowindowsOpened = null
 var runningRequest = false
-var heatmap
-var heatMap
+var heatmap = null
+var heatMap = null
 var heatMapPoints = []
 var isHeatMap = false
+var datasetData = []
 var datasetOptions = JSON.parse(document.querySelector('#dataset_json').innerHTML)
 
 function HeatMapControl(controlDiv, map) {
@@ -56,21 +54,25 @@ function initMap() {
   var mapType = new google.maps.StyledMapType([{
     featureType: "all",
     elementType: "all",
-    stylers: [{ saturation: -100 }]
-  }], { name: "Grayscale" });
+    stylers: [{
+      saturation: -100
+    }]
+  }], {
+    name: "Grayscale"
+  });
 
   map = new google.maps.Map(document.getElementById('map'), {
     zoom: 8,
     mapTypeControlOptions: {
-        mapTypeIds: [
-          google.maps.MapTypeId.ROADMAP,
-          google.maps.MapTypeId.HYBRID,
-          google.maps.MapTypeId.SATELLITE,
-          google.maps.MapTypeId.TERRAIN,
-          'grayscale'
-        ],
-        position: google.maps.ControlPosition.TOP_RIGHT,
-        style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
+      mapTypeIds: [
+        google.maps.MapTypeId.ROADMAP,
+        google.maps.MapTypeId.HYBRID,
+        google.maps.MapTypeId.SATELLITE,
+        google.maps.MapTypeId.TERRAIN,
+        'grayscale'
+      ],
+      position: google.maps.ControlPosition.TOP_RIGHT,
+      style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
     },
     streetViewControl: false
   });
@@ -95,14 +97,23 @@ function initMap() {
   var dataset_url = $('body').data('dataset')
 
   d3.csv(dataset_url, function(error, data) {
-    var latmed = d3.median(data, function(d) { return d[datasetOptions.latitude_attr]; })
-    var longmed = d3.median(data, function(d) { return d[datasetOptions.longitude_attr]; })
-    map.setCenter({lat: latmed, lng: longmed});
-    data.forEach(addPoint);
+    var latmed = d3.median(data, function(d) {
+      return d[datasetOptions.latitude_attr];
+    })
+    var longmed = d3.median(data, function(d) {
+      return d[datasetOptions.longitude_attr];
+    })
+    map.setCenter({
+      lat: latmed,
+      lng: longmed
+    });
+    data.forEach(function(data, index) {
+      addPoint(data, index)
+    });
   });
 }
 
-function clearMap(){
+function clearMap() {
   markers.forEach(function(marker) {
     marker.setMap(null);
   })
@@ -110,11 +121,15 @@ function clearMap(){
   infowindows = [];
 }
 
-function addPoint(data, index){
+function addPoint(data, index, color) {
+  datasetData[index] = data;
+
   var contentString = '<div><h4>Profile</h4>';
 
   for (var key in data) {
-    if (data[key] === undefined) { continue; }
+    if (data[key] === undefined) {
+      continue;
+    }
     var value = data[key];
     if (Number(data[key])) {
       var number = Number(data[key]);
@@ -122,7 +137,7 @@ function addPoint(data, index){
     }
     contentString += '<b>' + key + '</b>: <code>' + value + '</code><br />';
   }
-  contentString += '<br/><button type="button" class="btn btn-default">Show</button>';
+  contentString += '<br/><button type="button" class="btn btn-default" onclick="showPotentialPoints()">Show</button>';
   contentString += '</div>';
 
   var infowindow = new google.maps.InfoWindow({
@@ -135,7 +150,7 @@ function addPoint(data, index){
     icon: {
       path: google.maps.SymbolPath.CIRCLE,
       scale: 7,
-      fillColor: '#2196F3',
+      fillColor: (typeof color === 'string' ? color : '#2196F3'),
       fillOpacity: 0.75,
       strokeWeight: 0
     },
@@ -153,41 +168,31 @@ function addPoint(data, index){
 
   infowindows[marker.pointId] = infowindow;
   markers[marker.pointId] = marker;
-  markerData[marker.pointId] = data;
 }
 
-function runPass(pass){
-  if(document.getElementById("pointInfo").value == ""){
-    alert("Any point selected!")
-  }
-  else{
-    if(runningRequest == false){
-      runningRequest == true;
-      var loader = new XMLHttpRequest();
-      loader.onreadystatechange = function ()
-      {
-        if(this.status == 200 && this.readyState == XMLHttpRequest.DONE){
-          var jsonResponse = JSON.parse(this.responseText);
-          document.getElementById("pointInfo").value = "";
-          if(pass == 1){
-            firstPoint = pointChose;
-            firstArrayPoints = jsonResponse;
-            document.getElementById("seccondpass").disabled = true;
-            showFirstRequestOnMap();
-          }
-          else if(pass == 2){
-            showSeccondRequestOnMap(jsonResponse);
-          }
-          runningRequest == false;
-        }
+function showPotentialPoints() {
+  if (runningRequest === false) {
+    runningRequest == true;
+    var loader = new XMLHttpRequest();
+    loader.onreadystatechange = function() {
+      if (this.status == 200 && this.readyState == XMLHttpRequest.DONE) {
+        var jsonResponse = JSON.parse(this.responseText)
+        clearMap()
+        addPoint(datasetData[pointChoice], pointChoice, '#F44336')
+        jsonResponse.points.forEach(function(index) {
+          addPoint(datasetData[index], index)
+        })
       }
-      strSend = '/runiuga?timelimit=' + document.getElementById("timelimit").value + '&pointchose=' + pointChose + '&sigma=' + document.getElementById("sigma").value + '&kvalue=' + document.getElementById("kvalue").value;
-      loader.open('GET', strSend, true);
-      loader.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-      loader.send();
+      runningRequest == false;
     }
-    else{
-      alert("Wait finish before run again!");
-    }
+    var url = '/environment/' + datasetOptions.filename + '/' + pointChoice + '/iuga'
+
+    url += '?limit=' + document.getElementById("timelimit").value
+    url += '&sigma=' + document.getElementById("sigma").value
+    url += '&k=' + document.getElementById("kvalue").value
+
+    loader.open('GET', url, true);
+    // loader.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    loader.send();
   }
 }
