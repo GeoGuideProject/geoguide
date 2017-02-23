@@ -1,6 +1,7 @@
 'use strict'
 
-var pointChoice
+var pointChoice = -1
+var iugaLastPointId = -1
 var map = null
 var markers = []
 var infowindows = []
@@ -12,6 +13,21 @@ var heatMapPoints = []
 var isHeatMap = false
 var datasetData = []
 var datasetOptions = JSON.parse(document.querySelector('#dataset_json').innerHTML)
+var colorModifierElement = document.querySelector('#colorModifier')
+var colorModifier = colorModifierElement.value
+var colorModifierMax = {}
+
+var sizeModifierElement = document.querySelector('#sizeModifier')
+var sizeModifier = sizeModifierElement.value
+var sizeModifierMax = {}
+
+colorModifierElement.addEventListener('change', function(e) {
+  colorModifier = e.target.value
+})
+
+sizeModifierElement.addEventListener('change', function(e) {
+  sizeModifier = e.target.value
+})
 
 function HeatMapControl(controlDiv, map) {
   var control = this;
@@ -96,21 +112,29 @@ function initMap() {
 
   var dataset_url = $('body').data('dataset')
 
-  d3.csv(dataset_url, function(error, data) {
-    var latmed = d3.median(data, function(d) {
-      return d[datasetOptions.latitude_attr];
-    })
-    var longmed = d3.median(data, function(d) {
-      return d[datasetOptions.longitude_attr];
-    })
-    map.setCenter({
-      lat: latmed,
-      lng: longmed
-    });
-    data.forEach(function(data, index) {
-      addPoint(data, index)
-    });
+  d3.csv(dataset_url, processData);
+}
+
+function processData(err, data) {
+  var latmed = d3.median(data, function(d) {
+    return d[datasetOptions.latitude_attr];
+  })
+  var longmed = d3.median(data, function(d) {
+    return d[datasetOptions.longitude_attr];
+  })
+  calculateMaxModifiers(data)
+  map.setCenter({
+    lat: latmed,
+    lng: longmed
   });
+  data.forEach(function(data, index) {
+    addPoint(data, index)
+  });
+}
+
+function refreshMap() {
+  clearMap()
+  processData(undefined, datasetData)
 }
 
 function clearMap() {
@@ -119,6 +143,79 @@ function clearMap() {
   })
   markers = [];
   infowindows = [];
+}
+
+function calculateMaxModifiers(dataset) {
+  if (colorModifier !== '' && dataset[0][colorModifier]) {
+    console.log(colorModifierMax[colorModifier])
+    if (colorModifierMax[colorModifier] === undefined) {
+      colorModifierMax[colorModifier] = d3.max(dataset, function(d) {
+        var n = Number(d[colorModifier])
+        return n + (2 * Math.abs(n))
+      })
+    }
+  }
+  if (sizeModifier !== '' && dataset[0][sizeModifier]) {
+    if (sizeModifierMax[sizeModifier] === undefined) {
+      sizeModifierMax[sizeModifier] = d3.max(dataset, function(d) {
+        var n = Number(d[sizeModifier])
+        return n + (2 * Math.abs(n))
+      })
+    }
+  }
+}
+
+function refreshModifiers() {
+  calculateMaxModifiers(datasetData)
+  markers.forEach(function(marker) {
+    var data = datasetData[marker.pointId]
+    marker.setIcon(getIcon(data,  marker.pointId === iugaLastPointId ? '#F44336' : undefined))
+  })
+}
+
+function getIcon(data, color) {
+  var fillColor = '#2196F3'
+  var fillColors = [
+    '#e3f2fd',
+    '#bbdefb',
+    '#90caf9',
+    '#64b5f6',
+    '#42a5f5',
+    '#2196f3',
+    '#1e88e5',
+    '#1976d2',
+    '#1565c0',
+    '#0d47a1',
+    '#82b1ff',
+    '#448aff',
+    '#2979ff',
+    '#2962ff',
+  ]
+
+  if (colorModifier !== '' && data[colorModifier]) {
+    var value = Math.floor((Math.abs(Number(data[colorModifier])) / colorModifierMax[colorModifier]) * (fillColors.length - 1))
+    fillColor = fillColors[value]
+  }
+
+  if (typeof color === 'string') {
+    fillColor = color;
+  }
+
+  var size = 7
+  var sizes = [5, 7, 9, 11]
+
+  if (sizeModifier !== '' && data[sizeModifier]) {
+    var value = Math.floor((Math.abs(Number(data[sizeModifier])) / sizeModifierMax[sizeModifier]) * (sizes.length - 1))
+    size = sizes[value]
+  }
+
+  return {
+    path: google.maps.SymbolPath.CIRCLE,
+    scale: size,
+    fillColor: fillColor,
+    fillOpacity: 0.75,
+    strokeWeight: 0
+  }
 }
 
 function addPoint(data, index, color) {
@@ -147,13 +244,7 @@ function addPoint(data, index, color) {
   var marker = new google.maps.Marker({
     position: new google.maps.LatLng(data[datasetOptions.latitude_attr], data[datasetOptions.longitude_attr]),
     map: map,
-    icon: {
-      path: google.maps.SymbolPath.CIRCLE,
-      scale: 7,
-      fillColor: (typeof color === 'string' ? color : '#2196F3'),
-      fillOpacity: 0.75,
-      strokeWeight: 0
-    },
+    icon: getIcon(data, color),
     pointId: index,
   })
 
@@ -194,5 +285,6 @@ function showPotentialPoints() {
     loader.open('GET', url, true);
     // loader.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
     loader.send();
+    iugaLastPointId = pointChoice
   }
 }

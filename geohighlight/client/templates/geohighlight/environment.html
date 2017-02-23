@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
   <head>
     <meta charset="utf-8">
@@ -51,6 +51,29 @@
               <label for="kvalue">K-Points:</label>
               <input type="number" id="kvalue" name="kvalue" value="1" min="1" max="50" required class="form-control">
             </div>
+          </div>
+          <div class="control well  well-sm timelimit-group">
+            <h3>Highlight Parameters</h3>
+            <div class="form-group">
+              <label for="colorModifier">Color modifier:</label>
+              <select id="colorModifier" name="colorModifier" class="form-control">
+                <<option value="">None</option>
+                {% for header in dataset_headers %}
+                  <option value="{{header}}">{{header}}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="sizeModifier">Size modifier:</label>
+              <select id="sizeModifier" name="sizeModifier" class="form-control">
+                <<option value="">None</option>
+                {% for header in dataset_headers %}
+                  <option value="{{header}}">{{header}}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <input type="button" class="btn btn-default" onClick="refreshModifiers()" value="Update">
+            <input type="button" class="btn btn-default" onClick="refreshMap()" value="Restore">
           </div>
         </div>
       </div>

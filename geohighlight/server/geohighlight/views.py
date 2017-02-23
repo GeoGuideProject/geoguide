@@ -53,6 +53,7 @@ def environment(selected_dataset):
     if selected_dataset is None:
         return redirect(url_for('geohighlight.upload'))
     dataset = Dataset.query.filter_by(filename=selected_dataset).first_or_404()
+    df = pd.read_hdf(path_to_hdf5(dataset.filename), 'data')
     vm = {}
     vm['dataset_json'] = json.dumps({
         'filename': dataset.filename,
@@ -60,6 +61,7 @@ def environment(selected_dataset):
         'longitude_attr': dataset.longitude_attr
     })
     vm['dataset_url'] = datasets.url(dataset.filename)
+    vm['dataset_headers'] = list(df.columns.values)
     return render_template('geohighlight/environment.html', **vm)
 
 
@@ -100,9 +102,7 @@ def point_suggestions(selected_dataset, index):
         similarity=lambda x: x.similarity / greatest_distance,
         distance=lambda x: x.distance / greatest_distance
     )
-    similarity, diversity, points = run_iuga(index, k, limit, sigma, df_relation)
-    return jsonify({
-        'similarity': similarity,
-        'diversity': diversity,
-        'points': points
-    })
+
+    vm = {}
+    vm['similarity'], vm['diversity'], vm['points'] = run_iuga(index, k, limit, sigma, df_relation)
+    return jsonify(vm)
