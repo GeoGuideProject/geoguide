@@ -10,6 +10,7 @@ from flask_uploads import UploadNotAllowed
 from geohighlight.server.models import Dataset
 from geohighlight.server.geohighlight.helpers import save_as_hdf5, path_to_hdf5, harvestine_distance
 from geohighlight.server.iuga import run_iuga
+from geohighlight.server.similarity import cosine_similarity
 
 
 geohighlight_blueprint = Blueprint('geohighlight', __name__,)
@@ -85,24 +86,37 @@ def point_suggestions(selected_dataset, index):
     df = pd.read_hdf(path_to_hdf5(selected_dataset), 'data')
     dataset = Dataset.query.filter_by(filename=selected_dataset).first_or_404()
     point = df.loc[index]
-    df = df.loc[:, [dataset.latitude_attr, dataset.longitude_attr]]
+    numeric_columns = list(df.select_dtypes(include=[np.number]).columns)
+    numeric_columns = [c for c in numeric_columns if 'latitude' not in c and 'longitude' not in c]
+    df = df.loc[:, [dataset.latitude_attr, dataset.longitude_attr, *numeric_columns]]
+    point_numerics = [point[c] for c in numeric_columns]
     greatest_distance = 0
+    greatest_similarity = 0
 
     for row in df.itertuples():
         if index == row[0]:
             continue
+        if row[1] == 0 or row[2] == 0:
+            continue
         distance = harvestine_distance(point[dataset.latitude_attr], point[dataset.longitude_attr],
                                        row[1], row[2])
-        ds.append((index, row[0], distance, distance))
+        similarity = distance * cosine_similarity(point_numerics, row[3:])
+        # print(point_numerics)
+        # print(row[3:])
+        ds.append((index, row[0], similarity, distance))
         if distance > greatest_distance:
             greatest_distance = distance
+        if similarity > greatest_similarity:
+            greatest_similarity = similarity
 
     df_relation = pd.DataFrame(
         ds, columns=['index_a', 'index_b', 'similarity', 'distance']
     ).assign(
-        similarity=lambda x: x.similarity / greatest_distance,
+        similarity=lambda x: x.similarity / greatest_similarity,
         distance=lambda x: x.distance / greatest_distance
     )
+
+    print(df_relation)
 
     vm = {}
     vm['similarity'], vm['diversity'], vm['points'] = run_iuga(index, k, limit, sigma, df_relation)

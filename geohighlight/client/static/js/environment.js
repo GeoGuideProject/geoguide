@@ -148,7 +148,6 @@ function clearMap() {
 
 function calculateMaxModifiers(dataset) {
   if (colorModifier !== '' && dataset[0][colorModifier]) {
-    console.log(colorModifierMax[colorModifier])
     if (colorModifierMax[colorModifier] === undefined) {
       colorModifierMax[colorModifier] = d3.max(dataset, function(d) {
         var n = Number(d[colorModifier])

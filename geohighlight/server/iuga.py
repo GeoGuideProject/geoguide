@@ -109,10 +109,10 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, df):
         duration = (end_time - begin_time).microseconds / 1000.0
         total_time += duration
         if similarity_by_id[records[pointer]] < lowest_acceptable_similarity:
-            if not stop_visiting_once:
-                pointer = k
-            else:
+            if stop_visiting_once:
                 break
+            else:
+                pointer = k
 
     # print("end:", show(current_records, k, similarity_by_id, distance_by_id))
     # print("execution time (ms)", total_time)
