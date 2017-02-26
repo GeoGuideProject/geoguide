@@ -1,13 +1,16 @@
 import math
 import pandas as pd
 from geohighlight.server import datasets
+from geohighlight.server.models import AttributeType
 
 def path_to_hdf5(filename):
     return '{}.h5'.format(datasets.path(filename).rsplit('.', 1)[0])
 
 
-def save_as_hdf5(path_to_csv):
-    df = pd.read_csv(path_to_csv)
+def save_as_hdf5(dataset):
+    datetime_columns = [attr.description for attr in dataset.attributes if attr.type == AttributeType.datetime]
+    path_to_csv = datasets.path(dataset.filename)
+    df = pd.read_csv(path_to_csv, parse_dates=datetime_columns, infer_datetime_format=True)
     path_to_h5 = '{}.h5'.format(path_to_csv.rsplit('.', 1)[0])
     df.to_hdf(path_to_h5, 'data')
 

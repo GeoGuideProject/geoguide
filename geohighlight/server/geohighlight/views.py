@@ -7,10 +7,11 @@ from uuid import uuid4
 from flask import request, session, render_template, Blueprint, flash, redirect, url_for, jsonify, abort
 from geohighlight.server import db, datasets
 from flask_uploads import UploadNotAllowed
-from geohighlight.server.models import Dataset
+from geohighlight.server.models import Dataset, Attribute, AttributeType
 from geohighlight.server.geohighlight.helpers import save_as_hdf5, path_to_hdf5, harvestine_distance
 from geohighlight.server.iuga import run_iuga
-from geohighlight.server.similarity import cosine_similarity
+from geohighlight.server.similarity import cosine_similarity, jaccard_similarity
+from itertools import chain
 
 
 geohighlight_blueprint = Blueprint('geohighlight', __name__,)
@@ -24,7 +25,6 @@ def upload():
         try:
             uploaded = request.files['datasetInputFile']
             filename = datasets.save(uploaded, name='{}.'.format(uuid4()))
-            save_as_hdf5(datasets.path(filename))
             title = request.form['titleInputText']
             number_of_rows = None
             if request.form['numberRowsInputNumber']:
@@ -35,10 +35,18 @@ def upload():
             longitude_attr = None
             if request.form['longitudeAttrInputText']:
                 longitude_attr = request.form['longitudeAttrInputText']
+            datetime_attr = []
+            if request.form['datetimeAttrInputText']:
+                datetime_attr = [attr.strip() for attr in request.form['datetimeAttrInputText'].split(',')]
             dataset = Dataset(title, filename, number_of_rows, latitude_attr, longitude_attr)
             db.session.add(dataset)
             db.session.commit()
+            for attr in datetime_attr:
+                attribute = Attribute(attr, AttributeType.datetime, dataset.id)
+                db.session.add(attribute)
+                db.session.commit()
             session['SELECTED_DATASET'] = filename
+            save_as_hdf5(dataset)
             return redirect(url_for('geohighlight.environment'))
         except UploadNotAllowed:
             flash('This file is not allowed.', 'error')
@@ -60,7 +68,8 @@ def environment(selected_dataset):
     vm['dataset_json'] = json.dumps({
         'filename': dataset.filename,
         'latitude_attr': dataset.latitude_attr,
-        'longitude_attr': dataset.longitude_attr
+        'longitude_attr': dataset.longitude_attr,
+        'attributes': [dict(description=attr.description, type=attr.type.value) for attr in dataset.attributes]
     })
     vm['dataset_url'] = datasets.url(dataset.filename)
     vm['dataset_headers'] = list(df.select_dtypes(include=[np.number]).columns)
@@ -85,14 +94,16 @@ def point_suggestions(selected_dataset, index):
     ds = []
     df = pd.read_hdf(path_to_hdf5(selected_dataset), 'data')
     dataset = Dataset.query.filter_by(filename=selected_dataset).first_or_404()
+    datetime_columns = [attr.description for attr in dataset.attributes if attr.type == AttributeType.datetime]
+    len_datetime_columns = len(datetime_columns)
     point = df.loc[index]
     numeric_columns = list(df.select_dtypes(include=[np.number]).columns)
-    numeric_columns = [c for c in numeric_columns if 'latitude' not in c and 'longitude' not in c]
-    df = df.loc[:, [dataset.latitude_attr, dataset.longitude_attr, *numeric_columns]]
+    numeric_columns = [c for c in numeric_columns if 'latitude' not in c and 'longitude' not in c and not df[c].isnull().any()]
+    df = df.loc[:, [dataset.latitude_attr, dataset.longitude_attr, *numeric_columns, *datetime_columns]]
     point_numerics = [point[c] for c in numeric_columns]
+    point_datetimes = list(chain.from_iterable([[point[c].hour, point[c].minute, point[c].weekday()] for c in datetime_columns]))
     greatest_distance = 0
     greatest_similarity = 0
-
     for row in df.itertuples():
         if index == row[0]:
             continue
@@ -100,9 +111,11 @@ def point_suggestions(selected_dataset, index):
             continue
         distance = harvestine_distance(point[dataset.latitude_attr], point[dataset.longitude_attr],
                                        row[1], row[2])
-        similarity = distance * cosine_similarity(point_numerics, row[3:])
-        # print(point_numerics)
-        # print(row[3:])
+        row_datetimes = list(chain.from_iterable([[d.hour, d.minute, d.weekday()] for d in row[-len_datetime_columns:]]))
+        row_numerics = row[3:-len_datetime_columns]
+        similarity_i = (1 + jaccard_similarity(point_datetimes, row_datetimes))
+        similarity_ii = (1 + cosine_similarity(point_numerics, row_numerics))
+        similarity = similarity_i + similarity_ii
         ds.append((index, row[0], similarity, distance))
         if distance > greatest_distance:
             greatest_distance = distance
@@ -115,8 +128,6 @@ def point_suggestions(selected_dataset, index):
         similarity=lambda x: x.similarity / greatest_similarity,
         distance=lambda x: x.distance / greatest_distance
     )
-
-    print(df_relation)
 
     vm = {}
     vm['similarity'], vm['diversity'], vm['points'] = run_iuga(index, k, limit, sigma, df_relation)
