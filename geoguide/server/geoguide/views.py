@@ -1,23 +1,23 @@
-# geohighlight/server/geohighlight/views.py
+# geoguide/server/geoguide/views.py
 
 import json
 import pandas as pd
 import numpy as np
 from uuid import uuid4
 from flask import request, session, render_template, Blueprint, flash, redirect, url_for, jsonify, abort
-from geohighlight.server import db, datasets
+from geoguide.server import db, datasets
 from flask_uploads import UploadNotAllowed
-from geohighlight.server.models import Dataset, Attribute, AttributeType
-from geohighlight.server.geohighlight.helpers import save_as_hdf5, path_to_hdf5, harvestine_distance
-from geohighlight.server.iuga import run_iuga
-from geohighlight.server.similarity import cosine_similarity, jaccard_similarity
+from geoguide.server.models import Dataset, Attribute, AttributeType
+from geoguide.server.geoguide.helpers import save_as_hdf5, path_to_hdf5, harvestine_distance
+from geoguide.server.iuga import run_iuga
+from geoguide.server.similarity import cosine_similarity, jaccard_similarity
 from itertools import chain
 
 
-geohighlight_blueprint = Blueprint('geohighlight', __name__,)
+geoguide_blueprint = Blueprint('geoguide', __name__,)
 
 
-@geohighlight_blueprint.route('/upload', methods=['GET', 'POST'])
+@geoguide_blueprint.route('/upload', methods=['GET', 'POST'])
 def upload():
     vm = {}
     vm['datasets'] = Dataset.query.all()
@@ -47,21 +47,21 @@ def upload():
                 db.session.commit()
             session['SELECTED_DATASET'] = filename
             save_as_hdf5(dataset)
-            return redirect(url_for('geohighlight.environment'))
+            return redirect(url_for('geoguide.environment'))
         except UploadNotAllowed:
             flash('This file is not allowed.', 'error')
-        return redirect(url_for('geohighlight.upload'))
-    return render_template('geohighlight/upload.html', **vm)
+        return redirect(url_for('geoguide.upload'))
+    return render_template('geoguide/upload.html', **vm)
 
 
-@geohighlight_blueprint.route('/environment', defaults={'selected_dataset': None})
-@geohighlight_blueprint.route('/environment/<selected_dataset>')
+@geoguide_blueprint.route('/environment', defaults={'selected_dataset': None})
+@geoguide_blueprint.route('/environment/<selected_dataset>')
 def environment(selected_dataset):
     if selected_dataset is None:
         if 'SELECTED_DATASET' in session:
             selected_dataset = session['SELECTED_DATASET']
     if selected_dataset is None:
-        return redirect(url_for('geohighlight.upload'))
+        return redirect(url_for('geoguide.upload'))
     dataset = Dataset.query.filter_by(filename=selected_dataset).first_or_404()
     df = pd.read_hdf(path_to_hdf5(dataset.filename), 'data')
     vm = {}
@@ -73,16 +73,16 @@ def environment(selected_dataset):
     })
     vm['dataset_url'] = datasets.url(dataset.filename)
     vm['dataset_headers'] = list(df.select_dtypes(include=[np.number]).columns)
-    return render_template('geohighlight/environment.html', **vm)
+    return render_template('geoguide/environment.html', **vm)
 
 
-@geohighlight_blueprint.route('/environment/<selected_dataset>/<int:index>')
+@geoguide_blueprint.route('/environment/<selected_dataset>/<int:index>')
 def point_details(selected_dataset, index):
     df = pd.read_hdf(path_to_hdf5(selected_dataset), 'data')
     return df.loc[index].to_json(), 200, {'Content-Type': 'application/json'}
 
 
-@geohighlight_blueprint.route('/environment/<selected_dataset>/<int:index>/iuga')
+@geoguide_blueprint.route('/environment/<selected_dataset>/<int:index>/iuga')
 def point_suggestions(selected_dataset, index):
     k = int(request.args['k'])
     sigma = float(request.args['sigma'])

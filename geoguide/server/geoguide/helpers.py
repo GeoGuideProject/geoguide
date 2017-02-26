@@ -1,7 +1,7 @@
 import math
 import pandas as pd
-from geohighlight.server import datasets
-from geohighlight.server.models import AttributeType
+from geoguide.server import datasets
+from geoguide.server.models import AttributeType
 
 def path_to_hdf5(filename):
     return '{}.h5'.format(datasets.path(filename).rsplit('.', 1)[0])

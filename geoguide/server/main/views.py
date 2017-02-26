@@ -1,4 +1,4 @@
-# geohighlight/server/main/views.py
+# geoguide/server/main/views.py
 
 
 #################

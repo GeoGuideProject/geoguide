@@ -1,4 +1,4 @@
-# geohighlight/server/config.py
+# geoguide/server/config.py
 
 import os
 from decouple import config

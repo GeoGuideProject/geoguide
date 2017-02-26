@@ -1,7 +1,7 @@
 import pandas as pd
 import datetime
 from random import randint
-from geohighlight.server import diversity
+from geoguide.server import diversity
 
 
 def get_distances_of(elements, k, distance_by_id):

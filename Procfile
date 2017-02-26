@@ -1,1 +1,1 @@
-web: gunicorn geohighlight:app --log-file=-
+web: gunicorn geoguide:app --log-file=-

@@ -12,7 +12,7 @@
         </div>
         <div class="panel-body">
           {% for dataset in datasets %}
-            <li><a href="{{url_for('geohighlight.environment', selected_dataset=dataset.filename)}}">{{ dataset.title }}</a></li>
+            <li><a href="{{url_for('geoguide.environment', selected_dataset=dataset.filename)}}">{{ dataset.title }}</a></li>
           {% else %}
             Unbelievable! No datasets here so far.
           {% endfor %}
@@ -25,7 +25,7 @@
           <h4>Upload a dataset</h4>
         </div>
         <div class="panel-body">
-          <form action="{{ url_for('geohighlight.upload') }}" method="POST" enctype="multipart/form-data">
+          <form action="{{ url_for('geoguide.upload') }}" method="POST" enctype="multipart/form-data">
             <div class="form-group">
               <label for="titleInputText">Title</label>
               <input type="text" class="form-control" id="titleInputText" name="titleInputText" placeholder="Title" required>

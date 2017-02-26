@@ -1,8 +1,8 @@
-# geohighlight/server/models.py
+# geoguide/server/models.py
 
 import datetime
 import enum
-from geohighlight.server import app, db
+from geoguide.server import app, db
 from sqlalchemy_utils import ChoiceType
 
 
