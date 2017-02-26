@@ -23,7 +23,7 @@ def save_as_hdf(dataset):
     else:
         df = df[(df[dataset.latitude_attr] != 0) & (df[dataset.longitude_attr] != 0)]
     path_to_h5 = '{}.h5'.format(path_to_csv.rsplit('.', 1)[0])
-    df.to_csv(path_to_csv)
+    df.to_csv(path_to_csv, index=False)
     df.to_hdf(path_to_h5, 'data')
 
 

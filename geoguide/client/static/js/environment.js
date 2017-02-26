@@ -289,7 +289,7 @@ function addPoint(data, index, color) {
   var contentString = '<div id="infowindow' + data.pointId + '"><h4>Profile</h4>';
 
   Object.keys(data).forEach(function(key) {
-    if (data[key] === undefined) {
+    if (data[key] === undefined || key === 'pointId') {
       return
     }
     var value = data[key];
