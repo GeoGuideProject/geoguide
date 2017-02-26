@@ -30,11 +30,11 @@ def upload():
             if request.form['numberRowsInputNumber']:
                 number_of_rows = int(request.form['numberRowsInputNumber'])
             latitude_attr = None
-            if request.form['latitudeAttrInputText']:
-                latitude_attr = request.form['latitudeAttrInputText']
+            if request.form['latitudeAttrSelect']:
+                latitude_attr = request.form['latitudeAttrSelect']
             longitude_attr = None
-            if request.form['longitudeAttrInputText']:
-                longitude_attr = request.form['longitudeAttrInputText']
+            if request.form['longitudeAttrSelect']:
+                longitude_attr = request.form['longitudeAttrSelect']
             datetime_attr = []
             if request.form['datetimeAttrInputText']:
                 datetime_attr = [attr.strip() for attr in request.form['datetimeAttrInputText'].split(',')]

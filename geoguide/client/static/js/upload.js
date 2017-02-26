@@ -3,33 +3,42 @@
 function identityLatLng(headers) {
   var potentialLatitudes = []
   var potentialLongitudes = []
-  var latitudeAttrInputElement = document.getElementById('latitudeAttrInputText')
-  var longitudeAttrInputElement = document.getElementById('longitudeAttrInputText')
+  var latitudeAttrSelectElement = document.getElementById('latitudeAttrSelect')
+  var longitudeAttSelectElement = document.getElementById('longitudeAttrSelect')
+  console.log(latitudeAttrSelect, longitudeAttrSelect)
   headers.forEach(function(header) {
     if (/([Ll]atitude)/.test(header)) {
       potentialLatitudes.push(header)
+      var option = document.createElement('option')
+      option.text = header
+      option.value = header
+      latitudeAttrSelectElement.add(option)
       return
     }
     if (/([Ll]ongitude)/.test(header)) {
       potentialLongitudes.push(header)
+      var option = document.createElement('option')
+      option.text = header
+      option.value = header
+      longitudeAttrSelect.add(option)
       return
     }
   })
   if (potentialLatitudes.length > 0) {
-    latitudeAttrInputElement.value = potentialLatitudes[0]
+    latitudeAttrSelectElement.value = potentialLatitudes[0]
     if (potentialLatitudes.length > 1) {
-      latitudeAttrInputElement.parentElement.removeAttribute('hidden')
+      latitudeAttrSelectElement.parentElement.removeAttribute('hidden')
     }
   } else {
-    latitudeAttrInputElement.parentElement.removeAttribute('hidden')
+    latitudeAttrSelectElement.parentElement.removeAttribute('hidden')
   }
   if (potentialLongitudes.length > 0) {
-    longitudeAttrInputElement.value = potentialLongitudes[0]
+    longitudeAttSelectElement.value = potentialLongitudes[0]
     if (potentialLongitudes.length > 1) {
-      longitudeAttrInputElement.parentElement.removeAttribute('hidden')
+      longitudeAttSelectElement.parentElement.removeAttribute('hidden')
     }
   } else {
-    longitudeAttrInputElement.parentElement.removeAttribute('hidden')
+    longitudeAttSelectElement.parentElement.removeAttribute('hidden')
   }
 }
 
