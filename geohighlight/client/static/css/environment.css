@@ -17,7 +17,7 @@ html, body {
   height: 100%;
   z-index: 1000;
   padding: 1em;
-  width: 20em;
+  width: 30em;
   pointer-events: none;
 }
 
@@ -65,4 +65,44 @@ html, body {
   padding-left: 5px;
   padding-right: 5px;
   pointer-events: auto;
+}
+
+.chart {
+  /*display: inline-block;*/
+  height: 180px;
+  margin-bottom: 10px;
+}
+
+.reset {
+  padding-left: 1em;
+  font-size: smaller;
+  color: #ccc;
+}
+
+.background.bar {
+  fill: #ccc;
+}
+
+.foreground.bar {
+  fill: steelblue;
+}
+
+.axis path, .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.axis text {
+  font: 10px sans-serif;
+}
+
+.brush rect.extent {
+  fill: steelblue;
+  fill-opacity: .125;
+}
+
+.brush .resize path {
+  fill: #eee;
+  stroke: #666;
 }

@@ -57,13 +57,14 @@ def environment(selected_dataset):
     dataset = Dataset.query.filter_by(filename=selected_dataset).first_or_404()
     df = pd.read_hdf(path_to_hdf5(dataset.filename), 'data')
     vm = {}
+    vm['dataset_url'] = datasets.url(dataset.filename)
+    vm['dataset_headers'] = list(df.select_dtypes(include=[np.number]).columns)
     vm['dataset_json'] = json.dumps({
         'filename': dataset.filename,
         'latitude_attr': dataset.latitude_attr,
-        'longitude_attr': dataset.longitude_attr
+        'longitude_attr': dataset.longitude_attr,
+        'headers': vm['dataset_headers'],
     })
-    vm['dataset_url'] = datasets.url(dataset.filename)
-    vm['dataset_headers'] = list(df.select_dtypes(include=[np.number]).columns)
     return render_template('geohighlight/environment.html', **vm)
 
 

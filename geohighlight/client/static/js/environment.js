@@ -12,10 +12,13 @@ var heatMap = null
 var heatMapPoints = []
 var isHeatMap = false
 var datasetData = []
+var dataFiltered = null
 var datasetOptions = JSON.parse(document.querySelector('#dataset_json').innerHTML)
+var datasetHeaders = datasetOptions.headers;
 var colorModifierElement = document.querySelector('#colorModifier')
 var colorModifier = colorModifierElement.value
 var colorModifierMax = {}
+var currentChartIndex = 0
 
 var sizeModifierElement = document.querySelector('#sizeModifier')
 var sizeModifier = sizeModifierElement.value
@@ -78,7 +81,7 @@ function initMap() {
   });
 
   map = new google.maps.Map(document.getElementById('map'), {
-    zoom: 8,
+    zoom: 12,
     mapTypeControlOptions: {
       mapTypeIds: [
         google.maps.MapTypeId.ROADMAP,
@@ -112,7 +115,10 @@ function initMap() {
 
   var dataset_url = $('body').data('dataset')
 
-  d3.csv(dataset_url, processData);
+  d3.csv(dataset_url, function(err, data){
+    processData(err, data);
+    processFilter();
+  });
 }
 
 function processData(err, data) {
@@ -128,8 +134,79 @@ function processData(err, data) {
     lng: longmed
   });
   data.forEach(function(data, index) {
+    data.pointId = index;
     addPoint(data, index)
   });
+}
+
+function processFilter(){
+
+  initFilters(datasetData);
+
+  createChartFilter(datasetHeaders, onDataFiltered);
+
+  var charts = document.getElementsByClassName('chart')[0].hidden = false;
+
+  function onDataFiltered(newData) {
+    for (var i = 0; i < markers.length; i++) {
+      markers[i].hasMarker = false;
+    }
+
+    newData.forEach(function(data, index) {
+      if (markers.length > 0) {
+        var pointAlreadyExist = false;
+        for (var i = 0; i < markers.length; i++) {
+          if (markers[i].pointId == data.pointId)
+          {
+            markers[i].hasMarker = true;
+            pointAlreadyExist = true;
+            break;
+          }
+        }
+        if (pointAlreadyExist)
+          return;
+      }
+      addPoint(data, index)
+    });
+
+    var oldPoints = markers.length - newData.length;
+    var i = 0;
+    while(oldPoints > 0)
+    {
+      if (!markers[i].hasMarker)
+      {
+        markers[i].setMap(null);
+        markers.splice(i, 1);
+        oldPoints--;
+      }
+      else {
+        i++;
+      }
+    }
+
+    if (isHeatMap) {
+      isHeatMap = !isHeatMap;
+      document.getElementById('heatMapUI').click();
+    }
+  };
+}
+
+function changeCurrentChart(button) {
+
+  var charts = document.getElementsByClassName('chart');
+
+  charts[currentChartIndex].hidden = true;
+
+  switch (button.value) {
+    case 'Previous':
+      currentChartIndex = currentChartIndex == 0 ? charts.length - 1 : currentChartIndex - 1;
+      break;
+    case 'Next':
+      currentChartIndex = currentChartIndex == charts.length - 1 ? 0 : currentChartIndex + 1;
+      break;
+  }
+
+  charts[currentChartIndex].hidden = false;
 }
 
 function refreshMap() {
@@ -245,7 +322,8 @@ function addPoint(data, index, color) {
     position: new google.maps.LatLng(data[datasetOptions.latitude_attr], data[datasetOptions.longitude_attr]),
     map: map,
     icon: getIcon(data, color),
-    pointId: index,
+    pointId: datasetData[index].pointId,
+    hasMarker: true,
   })
 
   marker.addListener('click', function() {
@@ -258,7 +336,7 @@ function addPoint(data, index, color) {
   })
 
   infowindows[marker.pointId] = infowindow;
-  markers[marker.pointId] = marker;
+  markers.push(marker);
 }
 
 function showPotentialPoints() {
