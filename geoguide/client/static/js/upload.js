@@ -54,6 +54,13 @@ function identifyDatetime(headers) {
   datetimeAttrInputElement.parentElement.removeAttribute('hidden')
 }
 
+function identifyNumberOfRows(contents) {
+  var n = (contents.match(/\n/g) || []).length;
+  var numberNowsInputElement = document.getElementById('numberRowsInputNumber')
+  numberRowsInputNumber.value = n.toString()
+  numberRowsInputNumber.parentElement.removeAttribute('hidden')
+}
+
 function normalizeHeaders(headers) {
   return headers.map(function(header) {
     return header.replace(/^"|"$/g, '')
@@ -67,11 +74,12 @@ if (window.File && window.FileReader && window.FileList && window.Blob) {
     if (f) {
       var r = new FileReader();
       r.onload = function(e) {
-        var contents = e.target.result;
+        var contents = e.target.result.trim();
         var headers = contents.substr(0, contents.indexOf('\n')).split(',')
         headers = normalizeHeaders(headers)
         identifyDatetime(headers)
         identityLatLng(headers)
+        identifyNumberOfRows(contents)
       }
       r.readAsText(f);
     }

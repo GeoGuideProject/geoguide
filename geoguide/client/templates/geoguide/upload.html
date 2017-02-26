@@ -31,13 +31,13 @@
               <input type="text" class="form-control" id="titleInputText" name="titleInputText" placeholder="Title" required>
             </div>
             <div class="form-group">
-              <label for="numberRowsInputNumber">Number of rows</label>
-              <input type="number" class="form-control" id="numberRowsInputNumber" name="numberRowsInputNumber" placeholder="Number of rows">
-            </div>
-            <div class="form-group">
               <label for="datasetInputFile">Dataset</label>
               <input type="file" id="datasetInputFile" name="datasetInputFile" accept=".csv" required>
               <p class="help-block">Only .CSV will be accepted.</p>
+            </div>
+            <div class="form-group" hidden>
+              <label for="numberRowsInputNumber">Number of rows</label>
+              <input type="number" class="form-control" id="numberRowsInputNumber" name="numberRowsInputNumber" placeholder="Number of rows">
             </div>
             <div class="form-group" hidden>
               <label for="latitudeAttrSelect">Latitude Attribute</label>
@@ -50,7 +50,7 @@
               </select>
             </div>
             <div class="form-group" hidden>
-              <label for="datetimeAttrInputText">Datetime Attribute</label>
+              <label for="datetimeAttrInputText">Datetime Attributes</label>
               <input type="text" class="form-control" id="datetimeAttrInputText" name="datetimeAttrInputText" placeholder="Datetime Attribute(s)" required>
             </div>
             <button type="submit" class="btn btn-default">Upload</button>
