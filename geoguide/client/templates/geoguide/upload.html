@@ -12,7 +12,7 @@
         </div>
         <div class="panel-body">
           {% for dataset in datasets %}
-            <li><a href="{{url_for('geohighlight.environment', selected_dataset=dataset.filename)}}">{{ dataset.title }}</a></li>
+            <li><a href="{{url_for('geoguide.environment', selected_dataset=dataset.filename)}}">{{ dataset.title }} ({{dataset.number_of_rows}})</a></li>
           {% else %}
             Unbelievable! No datasets here so far.
           {% endfor %}
@@ -25,14 +25,10 @@
           <h4>Upload a dataset</h4>
         </div>
         <div class="panel-body">
-          <form action="{{ url_for('geohighlight.upload') }}" method="POST" enctype="multipart/form-data">
+          <form action="{{ url_for('geoguide.upload') }}" method="POST" enctype="multipart/form-data">
             <div class="form-group">
               <label for="titleInputText">Title</label>
               <input type="text" class="form-control" id="titleInputText" name="titleInputText" placeholder="Title" required>
-            </div>
-            <div class="form-group">
-              <label for="numberRowsInputNumber">Number of rows</label>
-              <input type="number" class="form-control" id="numberRowsInputNumber" name="numberRowsInputNumber" placeholder="Number of rows">
             </div>
             <div class="form-group">
               <label for="datasetInputFile">Dataset</label>
@@ -40,12 +36,22 @@
               <p class="help-block">Only .CSV will be accepted.</p>
             </div>
             <div class="form-group" hidden>
-              <label for="latitudeAttrInputText">Latitude Attribute</label>
-              <input type="text" class="form-control" id="latitudeAttrInputText" name="latitudeAttrInputText" placeholder="Latitude Attribute" required>
+              <label for="numberRowsInputNumber">Number of rows</label>
+              <input type="number" class="form-control" id="numberRowsInputNumber" name="numberRowsInputNumber" placeholder="Number of rows">
             </div>
             <div class="form-group" hidden>
-              <label for="longitudeAttrInputText">Longitude Attribute</label>
-              <input type="text" class="form-control" id="longitudeAttrInputText" name="longitudeAttrInputText" placeholder="Longitude Attribute" required>
+              <label for="latitudeAttrSelect">Latitude Attribute</label>
+              <select class="form-control" id="latitudeAttrSelect" name="latitudeAttrSelect" required>
+              </select>
+            </div>
+            <div class="form-group" hidden>
+              <label for="longitudeAttrSelect">Longitude Attribute</label>
+              <select class="form-control" id="longitudeAttrSelect" name="longitudeAttrSelect" required>
+              </select>
+            </div>
+            <div class="form-group" hidden>
+              <label for="datetimeAttrInputText">Datetime Attributes</label>
+              <input type="text" class="form-control" id="datetimeAttrInputText" name="datetimeAttrInputText" placeholder="Datetime Attribute(s)" required>
             </div>
             <button type="submit" class="btn btn-default">Upload</button>
           </form>

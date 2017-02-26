@@ -1,4 +1,4 @@
-# geohighlight/server/__init__.py
+# geoguide/server/__init__.py
 
 
 #################
@@ -25,7 +25,7 @@ app = Flask(
 )
 
 
-app_settings = config('APP_SETTINGS', 'geohighlight.server.config.ProductionConfig')
+app_settings = config('APP_SETTINGS', 'geoguide.server.config.ProductionConfig')
 app.config.from_object(app_settings)
 
 
@@ -49,11 +49,11 @@ configure_uploads(app, (datasets))
 ### blueprints ####
 ###################
 
-from geohighlight.server.main.views import main_blueprint
-from geohighlight.server.geohighlight.views import geohighlight_blueprint
+from geoguide.server.main.views import main_blueprint
+from geoguide.server.geoguide.views import geoguide_blueprint
 
 app.register_blueprint(main_blueprint)
-app.register_blueprint(geohighlight_blueprint)
+app.register_blueprint(geoguide_blueprint)
 
 
 ########################

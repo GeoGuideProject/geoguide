@@ -1,4 +1,4 @@
-# GeoHighlight
+# GeoGuide
 
 #### Use python 3.X.X
 

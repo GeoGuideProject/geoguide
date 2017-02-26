@@ -1,16 +1,16 @@
-# geohighlight/server/tests/base.py
+# geoguide/server/tests/base.py
 
 
 from flask_testing import TestCase
 
-from geohighlight.server import app, db
-# from geohighlight.server.models import User
+from geoguide.server import app, db
+# from geoguide.server.models import User
 
 
 class BaseTestCase(TestCase):
 
     def create_app(self):
-        app.config.from_object('geohighlight.server.config.TestingConfig')
+        app.config.from_object('geoguide.server.config.TestingConfig')
         return app
 
     def setUp(self):

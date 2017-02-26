@@ -1,4 +1,4 @@
-# [Geo-Highlight](https://geo-highlight.herokuapp.com)
+# [GeoGuide](https://geo-highlight.herokuapp.com)
 
 ## Quick Start
 

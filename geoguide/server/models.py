@@ -1,7 +1,9 @@
-# geohighlight/server/models.py
+# geoguide/server/models.py
 
 import datetime
-from geohighlight.server import app, db
+import enum
+from geoguide.server import app, db
+from sqlalchemy_utils import ChoiceType
 
 
 class Dataset(db.Model):
@@ -14,7 +16,9 @@ class Dataset(db.Model):
     filename = db.Column(db.String(40), nullable=False)
     latitude_attr = db.Column(db.String(50))
     longitude_attr = db.Column(db.String(50))
+    attributes = db.relationship('Attribute', backref='dataset')
     created_at = db.Column(db.DateTime, nullable=False)
+    indexed_at = db.Column(db.DateTime)
 
 
     def __init__(self, title, filename, number_of_rows=None, latitude_attr=None, longitude_attr=None):
@@ -28,3 +32,25 @@ class Dataset(db.Model):
 
     def __repr__(self):
         return '<Dataset {}>'.format(self.filename)
+
+
+class AttributeType(enum.Enum):
+    datetime = 1
+
+
+class Attribute(db.Model):
+
+    __tablename__ = 'attributes'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    description = db.Column(db.String(50), nullable=False)
+    type = db.Column(ChoiceType(AttributeType, impl=db.Integer()))
+    dataset_id = db.Column(db.Integer, db.ForeignKey('datasets.id'), nullable=False)
+
+    def __init__(self, description, type, dataset_id):
+        self.description = description
+        self.type = type
+        self.dataset_id = dataset_id
+
+    def __repr__(self):
+        return '<Attribute {}>'.format(self.description)

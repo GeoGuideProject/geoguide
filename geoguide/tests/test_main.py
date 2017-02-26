@@ -1,4 +1,4 @@
-# geohighlight/server/tests/test_main.py
+# geoguide/server/tests/test_main.py
 
 
 import unittest
@@ -13,7 +13,7 @@ class TestMainBlueprint(BaseTestCase):
         response = self.client.get('/', follow_redirects=True)
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'Spatio-temporal Predictive Analysis of Urban Data', response.data)
-        self.assertIn(b'Geo-Highlight Environment', response.data)
+        self.assertIn(b'GeoGuide Environment', response.data)
 
     def test_404(self):
         # Ensure 404 error is handled.

@@ -1,7 +1,7 @@
 import pandas as pd
 import datetime
 from random import randint
-from geohighlight.server import diversity
+from geoguide.server import diversity
 
 
 def get_distances_of(elements, k, distance_by_id):
@@ -46,7 +46,11 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, df):
 
     # read input data frame
     for row in df.itertuples():
+        if int(row[1]) > input_g:
+            break
         to_id = int(row[2])
+        if to_id == input_g:
+            continue
         similarities[to_id] = float(row[3])
         distances[to_id] = float(row[4])
 
@@ -86,19 +90,19 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, df):
     # greedy algorithm
     pointer = k - 1
     nb_iterations = 0
-    while total_time < time_limit and pointer < len(records):
+    pointer_limit = len(records) - 1
+    while total_time < time_limit and pointer < pointer_limit:
         nb_iterations += 1
         pointer += 1
         redundancy_flag = False
-        for i in range(0, k):
+        for i in range(k):
             if current_records[i] == records[pointer]:
                 redundancy_flag = True
                 break
         if redundancy_flag:
             continue
         begin_time = datetime.datetime.now()
-        current_distances = get_distances_of(
-            current_records, k, distance_by_id)
+        current_distances = get_distances_of(current_records, k, distance_by_id)
         current_diversity = diversity.diversity(current_distances)
         new_records = make_new_records(current_records, pointer, k, records)
         new_distances = get_distances_of(new_records, k, distance_by_id)
