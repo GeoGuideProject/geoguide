@@ -3,16 +3,15 @@
 var pointChoice = -1
 var iugaLastPointId = -1
 var map = null
-var markers = []
-var infowindows = []
+var markers = {}
+var infowindows = {}
 var infowindowsOpened = null
 var runningRequest = false
 var heatmap = null
 var heatMap = null
 var heatMapPoints = []
 var isHeatMap = false
-var datasetData = []
-var dataFiltered = null
+var datasetData = {}
 var datasetOptions = JSON.parse(document.querySelector('#dataset_json').innerHTML)
 var datasetHeaders = datasetOptions.headers;
 var colorModifierElement = document.querySelector('#colorModifier')
@@ -47,7 +46,7 @@ function HeatMapControl(controlDiv, map) {
   heatMapUI.appendChild(heatMapText);
 
   heatMapUI.addEventListener('click', function() {
-    heatMapPoints = markers.map(function(marker) {
+    heatMapPoints = Object.values(markers).map(function(marker) {
       marker.setVisible(isHeatMap);
       return marker.position;
     });
@@ -69,7 +68,6 @@ function HeatMapControl(controlDiv, map) {
 }
 
 function initMap() {
-  // Create a map object and specify the DOM element for display.
   var mapType = new google.maps.StyledMapType([{
     featureType: "all",
     elementType: "all",
@@ -115,7 +113,7 @@ function initMap() {
 
   var dataset_url = $('body').data('dataset')
 
-  d3.csv(dataset_url, function(err, data){
+  d3.csv(dataset_url, function(err, data) {
     processData(err, data);
     processFilter();
   });
@@ -141,50 +139,31 @@ function processData(err, data) {
   });
 }
 
-function processFilter(){
-
-  initFilters(datasetData);
-
+function processFilter() {
+  initFilters(Object.values(datasetData));
   createChartFilter(datasetHeaders, onDataFiltered);
 
   var charts = document.getElementsByClassName('chart')[0].hidden = false;
 
   function onDataFiltered(newData) {
-    for (var i = 0; i < markers.length; i++) {
-      markers[i].hasMarker = false;
-    }
+    Object.keys(markers).forEach(function(x) {
+      markers[x].hasMarker = false
+    })
 
     newData.forEach(function(data, index) {
-      if (markers.length > 0) {
-        var pointAlreadyExist = false;
-        for (var i = 0; i < markers.length; i++) {
-          if (markers[i].pointId == data.pointId)
-          {
-            markers[i].hasMarker = true;
-            pointAlreadyExist = true;
-            break;
-          }
-        }
-        if (pointAlreadyExist)
-          return;
+      if (markers[data.pointId] === undefined) {
+        addPoint(data, index)
+      } else {
+        markers[data.pointId].hasMarker = true
       }
-      addPoint(data, index)
-    });
+    })
 
-    var oldPoints = markers.length - newData.length;
-    var i = 0;
-    while(oldPoints > 0)
-    {
-      if (!markers[i].hasMarker)
-      {
-        markers[i].setMap(null);
-        markers.splice(i, 1);
-        oldPoints--;
+    Object.keys(markers).forEach(function(x) {
+      if (markers[x].hasMarker === false) {
+        markers[x].setMap(null)
+        delete markers[x]
       }
-      else {
-        i++;
-      }
-    }
+    })
 
     if (isHeatMap) {
       isHeatMap = !isHeatMap;
@@ -193,10 +172,16 @@ function processFilter(){
   };
 }
 
+
+function resetFilters() {
+  var n = document.getElementsByClassName('chart').length || 0
+  for (var i = 0; i < n; i++) {
+    window.reset(i)
+  }
+}
+
 function changeCurrentChart(button) {
-
   var charts = document.getElementsByClassName('chart');
-
   charts[currentChartIndex].hidden = true;
 
   switch (button.value) {
@@ -213,16 +198,17 @@ function changeCurrentChart(button) {
 
 function refreshMap() {
   clearMap()
-  processData(undefined, datasetData)
+  processData(undefined, Object.values(datasetData))
+  resetFilters()
   iugaLastPointId = -1
 }
 
 function clearMap() {
-  markers.forEach(function(marker) {
-    marker.setMap(null);
+  Object.keys(markers).forEach(function(x) {
+    markers[x].setMap(null)
   })
-  markers = [];
-  infowindows = [];
+  markers = {}
+  infowindows = {}
 }
 
 function calculateMaxModifiers(dataset) {
@@ -245,10 +231,10 @@ function calculateMaxModifiers(dataset) {
 }
 
 function refreshModifiers() {
-  calculateMaxModifiers(datasetData)
-  markers.forEach(function(marker) {
-    var data = datasetData[marker.pointId]
-    marker.setIcon(getIcon(data,  marker.pointId === iugaLastPointId ? '#F44336' : undefined))
+  calculateMaxModifiers(Object.values(datasetData))
+  Object.keys(markers).forEach(function(x) {
+    var data = datasetData[markers[x].pointId]
+    markers[x].setIcon(getIcon(data, data.pointId === iugaLastPointId ? '#F44336' : undefined))
   })
 }
 
@@ -298,13 +284,13 @@ function getIcon(data, color) {
 }
 
 function addPoint(data, index, color) {
-  datasetData[index] = data;
+  datasetData[data.pointId] = data;
 
-  var contentString = '<div id="infowindow' + index + '"><h4>Profile</h4>';
+  var contentString = '<div id="infowindow' + data.pointId + '"><h4>Profile</h4>';
 
-  for (var key in data) {
+  Object.keys(data).forEach(function(key) {
     if (data[key] === undefined) {
-      continue;
+      return
     }
     var value = data[key];
     if (Number(data[key])) {
@@ -312,7 +298,7 @@ function addPoint(data, index, color) {
       value = Number.isInteger(number) ? number.toString() : parseFloat(Number(data[key]).toFixed(5)).toString();
     }
     contentString += '<b>' + key + '</b>: <code>' + value + '</code><br />';
-  }
+  })
   contentString += '<br/><button type="button" class="btn btn-default" onclick="showPotentialPoints()">Show</button>';
   contentString += '</div>';
 
@@ -324,7 +310,7 @@ function addPoint(data, index, color) {
     position: new google.maps.LatLng(data[datasetOptions.latitude_attr], data[datasetOptions.longitude_attr]),
     map: map,
     icon: getIcon(data, color),
-    pointId: datasetData[index].pointId,
+    pointId: data.pointId,
     hasMarker: true,
   })
 
@@ -333,8 +319,8 @@ function addPoint(data, index, color) {
       infowindowsOpened.close();
     }
     infowindow.open(map, marker);
-    infowindowsOpened = infowindow;
-    pointChoice = this.pointId;
+    infowindowsOpened = infowindow
+    pointChoice = this.pointId
     if (datasetOptions.indexed === false) {
       var btnElement = document.querySelector('#infowindow' + this.pointId + ' button')
 
@@ -343,12 +329,12 @@ function addPoint(data, index, color) {
     }
   })
 
-  if (markers[marker.pointId]) {
-    marker.setMap(null);
+  if (markers[marker.pointId] !== undefined) {
+    marker.setMap(null)
   }
 
-  infowindows[marker.pointId] = infowindow;
-  markers.push(marker);
+  infowindows[marker.pointId] = infowindow
+  markers[marker.pointId] = marker
 }
 
 function showPotentialPoints() {
@@ -367,8 +353,7 @@ function showPotentialPoints() {
             }
             addPoint(datasetData[index], index)
           })
-        }
-        else if (this.status === 202) {
+        } else if (this.status === 202) {
           alert('Not ready yet.')
         }
         runningRequest = false;
@@ -381,14 +366,12 @@ function showPotentialPoints() {
     url += '&k=' + document.getElementById("kvalue").value
 
     loader.open('GET', url, true);
-    // loader.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
     loader.send();
     iugaLastPointId = pointChoice
   }
 }
 
 function isDatasetReady() {
-  console.log(datasetOptions.indexed)
   if (datasetOptions.indexed === false) {
     var req = new XMLHttpRequest();
     req.onreadystatechange = function() {

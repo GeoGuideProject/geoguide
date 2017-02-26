@@ -3,7 +3,7 @@ var chartD3CrossfilterFilter = null;
 var chartD3CrossfilterAll = null;
 var chartD3CrossfilterData = null;
 
-var initFilters = function(dataset){
+var initFilters = function(dataset) {
   chartD3CrossfilterDataset = dataset;
   chartD3CrossfilterFilter = crossfilter(dataset);
   chartD3CrossfilterAll = chartD3CrossfilterFilter.groupAll();
@@ -15,18 +15,26 @@ var createChartFilter = function(fields, onDataFiltered, timeDelay = 300) {
 
   fields.forEach(function(field) {
 
-    var filterData = chartD3CrossfilterFilter.dimension(function(d) { return Number(d[field])});
-    var filterGroup = filterData.group(function(d) {return d});
-    var filterDataMin = d3.min(chartD3CrossfilterDataset, function(d) { return Number(d[field])});
-    var filterDataMax = d3.max(chartD3CrossfilterDataset, function(d) { return Number(d[field])});
+    var filterData = chartD3CrossfilterFilter.dimension(function(d) {
+      return Number(d[field])
+    });
+    var filterGroup = filterData.group(function(d) {
+      return d
+    });
+    var filterDataMin = d3.min(chartD3CrossfilterDataset, function(d) {
+      return Number(d[field])
+    });
+    var filterDataMax = d3.max(chartD3CrossfilterDataset, function(d) {
+      return Number(d[field])
+    });
 
     charts.push(
       barChart()
       .dimension(filterData)
       .group(filterGroup)
       .x(d3.scale.linear()
-      .domain([filterDataMin-1, filterDataMax])
-      .rangeRound([0, 275]))
+        .domain([filterDataMin - 1, filterDataMax + 1])
+        .rangeRound([0, 275]))
     );
 
     if (chartD3CrossfilterData == null) {
@@ -36,28 +44,33 @@ var createChartFilter = function(fields, onDataFiltered, timeDelay = 300) {
 
   var chart = d3.selectAll(".chart")
     .data(charts)
-    .each(function(chart) { chart.on("brush", renderAll).on("brushend", renderAll); });
+    .each(function(chart) {
+      chart.on("brush", renderAll).on("brushend", renderAll);
+    });
 
   d3.selectAll("#total")
     .text(chartD3CrossfilterFilter.size());
-    renderAll();
+  renderAll();
 
   function render(method) {
     d3.select(this).call(method);
 
   }
 
-  function reloadMaps(){
+  function reloadMaps() {
     var pointsfiltered = chartD3CrossfilterData.top(Infinity);
     onDataFiltered(pointsfiltered);
   }
 
   var timerMaps;
+
   function renderAll() {
     chart.each(render);
     d3.select("#active").text(chartD3CrossfilterAll.value());
 
-    if(timerMaps != undefined){ clearTimeout(timerMaps); }
+    if (timerMaps != undefined) {
+      clearTimeout(timerMaps);
+    }
 
     timerMaps = setTimeout(reloadMaps, timeDelay);
   }
@@ -78,60 +91,67 @@ var createChartFilter = function(fields, onDataFiltered, timeDelay = 300) {
 function barChart() {
   if (!barChart.id) barChart.id = 0;
 
-  var margin = {top: 10, right: 10, bottom: 20, left: 10},
-  x,
-  y = d3.scale.linear().range([130, 0]),
-  id = barChart.id++,
-  axis = d3.svg.axis().orient("bottom"),
-  brush = d3.svg.brush(),
-  brushDirty,
-  dimension,
-  group,
-  round;
+  var margin = {
+      top: 10,
+      right: 10,
+      bottom: 20,
+      left: 10
+    },
+    x,
+    y = d3.scale.linear().range([130, 0]),
+    id = barChart.id++,
+    axis = d3.svg.axis().orient("bottom"),
+    brush = d3.svg.brush(),
+    brushDirty,
+    dimension,
+    group,
+    round;
 
   function chart(div) {
     var width = x.range()[1],
-    height = y.range()[0];
+      height = y.range()[0];
 
     y.domain([0, group.top(1)[0].value]);
 
     div.each(function() {
       var div = d3.select(this),
-      g = div.select("g");
+        g = div.select("g");
 
       // Create the skeletal chart.
       if (g.empty()) {
         div.select(".title").append("a")
-        .attr("href", "javascript:reset(" + id + ")")
-        .attr("class", "reset")
-        .text("reset")
-        .style("display", "none");
+          .attr("href", "javascript:reset(" + id + ")")
+          .attr("class", "reset")
+          .text("reset")
+          .style("display", "none");
 
         g = div.append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+          .attr("width", width + margin.left + margin.right)
+          .attr("height", height + margin.top + margin.bottom)
+          .append("g")
+          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
         g.append("clipPath")
-        .attr("id", "clip-" + id)
-        .append("rect")
-        .attr("width", width)
-        .attr("height", height);
+          .attr("id", "clip-" + id)
+          .append("rect")
+          .attr("width", width)
+          .attr("height", height);
 
         g.selectAll(".bar")
-        .data(["background", "foreground"])
-        .enter().append("path")
-        .attr("class", function(d) { return d + " bar"; })
-        .datum(group.all());
+          .data(["background", "foreground"])
+          .enter().append("path")
+          .attr("class", function(d) {
+            return d + " bar";
+          })
+          .datum(group.all());
 
         g.selectAll(".foreground.bar")
-        .attr("clip-path", "url(#clip-" + id + ")");
+          .attr("clip-path", "url(#clip-" + id + ")");
 
         g.append("g")
-        .attr("class", "axis")
-        .attr("transform", "translate(0," + height + ")")
-        .call(axis);
+          .attr("class", "axis")
+          .attr("transform", "translate(0," + height + ")")
+          .call(axis);
 
         // Initialize the brush component with pretty resize handles.
         var gBrush = g.append("g").attr("class", "brush").call(brush);
@@ -146,13 +166,13 @@ function barChart() {
         div.select(".title a").style("display", brush.empty() ? "none" : null);
         if (brush.empty()) {
           g.selectAll("#clip-" + id + " rect")
-          .attr("x", 0)
-          .attr("width", width);
+            .attr("x", 0)
+            .attr("width", width);
         } else {
           var extent = brush.extent();
           g.selectAll("#clip-" + id + " rect")
-          .attr("x", x(extent[0]))
-          .attr("width", x(extent[1]) - x(extent[0]));
+            .attr("x", x(extent[0]))
+            .attr("width", x(extent[1]) - x(extent[0]));
         }
       }
 
@@ -161,9 +181,9 @@ function barChart() {
 
     function barPath(groups) {
       var path = [],
-      i = -1,
-      n = groups.length,
-      d;
+        i = -1,
+        n = groups.length,
+        d;
       while (++i < n) {
         d = groups[i];
         path.push("M", x(d.key), ",", height, "V", y(d.value), "h9V", height);
@@ -173,17 +193,17 @@ function barChart() {
 
     function resizePath(d) {
       var e = +(d == "e"),
-      x = e ? 1 : -1,
-      y = height / 3;
-      return "M" + (.5 * x) + "," + y
-      + "A6,6 0 0 " + e + " " + (6.5 * x) + "," + (y + 6)
-      + "V" + (2 * y - 6)
-      + "A6,6 0 0 " + e + " " + (.5 * x) + "," + (2 * y)
-      + "Z"
-      + "M" + (2.5 * x) + "," + (y + 8)
-      + "V" + (2 * y - 8)
-      + "M" + (4.5 * x) + "," + (y + 8)
-      + "V" + (2 * y - 8);
+        x = e ? 1 : -1,
+        y = height / 3;
+      return "M" + (.5 * x) + "," + y +
+        "A6,6 0 0 " + e + " " + (6.5 * x) + "," + (y + 6) +
+        "V" + (2 * y - 6) +
+        "A6,6 0 0 " + e + " " + (.5 * x) + "," + (2 * y) +
+        "Z" +
+        "M" + (2.5 * x) + "," + (y + 8) +
+        "V" + (2 * y - 8) +
+        "M" + (4.5 * x) + "," + (y + 8) +
+        "V" + (2 * y - 8);
     }
   }
 
@@ -194,14 +214,14 @@ function barChart() {
 
   brush.on("brush.chart", function() {
     var g = d3.select(this.parentNode),
-    extent = brush.extent();
+      extent = brush.extent();
     if (round) g.select(".brush")
-    .call(brush.extent(extent = extent.map(round)))
-    .selectAll(".resize")
-    .style("display", null);
+      .call(brush.extent(extent = extent.map(round)))
+      .selectAll(".resize")
+      .style("display", null);
     g.select("#clip-" + id + " rect")
-    .attr("x", x(extent[0]))
-    .attr("width", x(extent[1]) - x(extent[0]));
+      .attr("x", x(extent[0]))
+      .attr("width", x(extent[1]) - x(extent[0]));
     dimension.filterRange(extent);
   });
 
