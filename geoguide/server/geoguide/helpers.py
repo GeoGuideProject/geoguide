@@ -5,7 +5,6 @@ import numpy as np
 from itertools import chain
 from geoguide.server import app, db, datasets
 from geoguide.server.models import AttributeType
-from geoguide.server.iuga import run_iuga
 from geoguide.server.similarity import cosine_similarity, jaccard_similarity
 
 
@@ -17,7 +16,14 @@ def save_as_hdf(dataset):
     datetime_columns = [attr.description for attr in dataset.attributes if attr.type == AttributeType.datetime]
     path_to_csv = datasets.path(dataset.filename)
     df = pd.read_csv(path_to_csv, parse_dates=datetime_columns, infer_datetime_format=True)
+    if len(app.config['GEOGUIDE_BOUNDARIES']) == 4:
+        lat_min, lat_max, lng_min, lng_max = app.config['GEOGUIDE_BOUNDARIES']
+        df = df[((lat_min < df[dataset.latitude_attr]) & (df[dataset.latitude_attr] < lat_max)) &
+                ((lng_min < df[dataset.longitude_attr]) & (df[dataset.longitude_attr] < lng_max))]
+    else:
+        df = df[(df[dataset.latitude_attr] != 0) & (df[dataset.longitude_attr] != 0)]
     path_to_h5 = '{}.h5'.format(path_to_csv.rsplit('.', 1)[0])
+    df.to_csv(path_to_csv)
     df.to_hdf(path_to_h5, 'data')
 
 

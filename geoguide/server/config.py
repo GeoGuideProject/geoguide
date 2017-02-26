@@ -1,7 +1,7 @@
 # geoguide/server/config.py
 
 import os
-from decouple import config
+from decouple import config, Csv
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -15,6 +15,7 @@ class BaseConfig(object):
     DEBUG_TB_INTERCEPT_REDIRECTS = config('DEBUG_TB_INTERCEPT_REDIRECTS', False)
     SQLALCHEMY_TRACK_MODIFICATIONS = config('SQLALCHEMY_TRACK_MODIFICATIONS', False)
     UPLOADS_DEFAULT_DEST = config('UPLOADS_DEFAULT_DEST', os.path.join(basedir, 'uploads'))
+    GEOGUIDE_BOUNDARIES = config('GEOGUIDE_BOUNDARIES', '', cast=Csv(float))
 
 
 class DevelopmentConfig(BaseConfig):
