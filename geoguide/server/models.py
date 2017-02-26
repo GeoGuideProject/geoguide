@@ -18,6 +18,7 @@ class Dataset(db.Model):
     longitude_attr = db.Column(db.String(50))
     attributes = db.relationship('Attribute', backref='dataset')
     created_at = db.Column(db.DateTime, nullable=False)
+    indexed_at = db.Column(db.DateTime)
 
 
     def __init__(self, title, filename, number_of_rows=None, latitude_attr=None, longitude_attr=None):

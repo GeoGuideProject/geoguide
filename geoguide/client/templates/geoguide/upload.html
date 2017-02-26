@@ -12,7 +12,7 @@
         </div>
         <div class="panel-body">
           {% for dataset in datasets %}
-            <li><a href="{{url_for('geoguide.environment', selected_dataset=dataset.filename)}}">{{ dataset.title }}</a></li>
+            <li><a href="{{url_for('geoguide.environment', selected_dataset=dataset.filename)}}">{{ dataset.title }} ({{dataset.number_of_rows}})</a></li>
           {% else %}
             Unbelievable! No datasets here so far.
           {% endfor %}

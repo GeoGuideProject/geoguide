@@ -257,24 +257,36 @@ function addPoint(data, index, color) {
     pointChoice = this.pointId;
   })
 
+  if (markers[marker.pointId]) {
+    marker.setMap(null);
+  }
+
   infowindows[marker.pointId] = infowindow;
   markers[marker.pointId] = marker;
 }
 
 function showPotentialPoints() {
   if (runningRequest === false) {
-    runningRequest == true;
+    runningRequest = true;
     var loader = new XMLHttpRequest();
     loader.onreadystatechange = function() {
-      if (this.status == 200 && this.readyState == XMLHttpRequest.DONE) {
-        var jsonResponse = JSON.parse(this.responseText)
-        clearMap()
-        addPoint(datasetData[pointChoice], pointChoice, '#F44336')
-        jsonResponse.points.forEach(function(index) {
-          addPoint(datasetData[index], index)
-        })
+      if (this.readyState === XMLHttpRequest.DONE) {
+        if (this.status === 200) {
+          var jsonResponse = JSON.parse(this.responseText)
+          clearMap()
+          addPoint(datasetData[pointChoice], pointChoice, '#F44336')
+          jsonResponse.points.forEach(function(index) {
+            if (index === pointChoice) {
+              return
+            }
+            addPoint(datasetData[index], index)
+          })
+        }
+        else if (this.status === 202) {
+          alert('Not ready yet.')
+        }
+        runningRequest = false;
       }
-      runningRequest == false;
     }
     var url = '/environment/' + datasetOptions.filename + '/' + pointChoice + '/iuga'
 
