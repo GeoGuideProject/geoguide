@@ -112,7 +112,9 @@ function initMap() {
 
   var dataset_url = $('body').data('dataset')
 
-  d3.csv(dataset_url, processData);
+  d3.csv(dataset_url, processData)
+
+  isDatasetReady()
 }
 
 function processData(err, data) {
@@ -221,7 +223,7 @@ function getIcon(data, color) {
 function addPoint(data, index, color) {
   datasetData[index] = data;
 
-  var contentString = '<div><h4>Profile</h4>';
+  var contentString = '<div id="infowindow' + index + '"><h4>Profile</h4>';
 
   for (var key in data) {
     if (data[key] === undefined) {
@@ -255,6 +257,12 @@ function addPoint(data, index, color) {
     infowindow.open(map, marker);
     infowindowsOpened = infowindow;
     pointChoice = this.pointId;
+    if (datasetOptions.indexed === false) {
+      var btnElement = document.querySelector('#infowindow' + this.pointId + ' button')
+
+      btnElement.setAttribute('disabled', 'disabled')
+      btnElement.setAttribute('title', 'This dataset isn\'t ready yet.')
+    }
   })
 
   if (markers[marker.pointId]) {
@@ -298,5 +306,28 @@ function showPotentialPoints() {
     // loader.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
     loader.send();
     iugaLastPointId = pointChoice
+  }
+}
+
+function isDatasetReady() {
+  console.log(datasetOptions.indexed)
+  if (datasetOptions.indexed === false) {
+    var req = new XMLHttpRequest();
+    req.onreadystatechange = function() {
+      if (this.status === 200 && this.readyState === XMLHttpRequest.DONE) {
+        datasetOptions = JSON.parse(this.responseText)
+        if (datasetOptions.indexed === false) {
+          setTimeout(isDatasetReady, 1000);
+        } else if (pointChoice >= 0) {
+          var btnElement = document.querySelector('#infowindow' + pointChoice + ' button')
+
+          btnElement.removeAttribute('disabled')
+          btnElement.removeAttribute('title')
+        }
+      }
+    }
+    var url = '/environment/' + datasetOptions.filename + '/details'
+    req.open('GET', url, true)
+    req.send()
   }
 }

@@ -71,12 +71,24 @@ def environment(selected_dataset):
         'filename': dataset.filename,
         'latitude_attr': dataset.latitude_attr,
         'longitude_attr': dataset.longitude_attr,
+        'indexed': (dataset.indexed_at is not None),
         'attributes': [dict(description=attr.description, type=attr.type.value) for attr in dataset.attributes]
     })
     vm['dataset_url'] = datasets.url(dataset.filename)
     vm['dataset_headers'] = list(df.select_dtypes(include=[np.number]).columns)
     return render_template('geoguide/environment.html', **vm)
 
+
+@geoguide_blueprint.route('/environment/<selected_dataset>/details')
+def dataset_datails(selected_dataset):
+    dataset = Dataset.query.filter_by(filename=selected_dataset).first_or_404()
+    return jsonify({
+        'filename': dataset.filename,
+        'latitude_attr': dataset.latitude_attr,
+        'longitude_attr': dataset.longitude_attr,
+        'indexed': (dataset.indexed_at is not None),
+        'attributes': [dict(description=attr.description, type=attr.type.value) for attr in dataset.attributes]
+    })
 
 @geoguide_blueprint.route('/environment/<selected_dataset>/<int:index>')
 def point_details(selected_dataset, index):
