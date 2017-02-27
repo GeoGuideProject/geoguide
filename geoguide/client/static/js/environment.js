@@ -172,7 +172,6 @@ function processFilter() {
   };
 }
 
-
 function resetFilters() {
   var n = document.getElementsByClassName('chart').length || 0
   for (var i = 0; i < n; i++) {
@@ -364,6 +363,23 @@ function showPotentialPoints() {
     url += '?limit=' + document.getElementById("timelimit").value
     url += '&sigma=' + document.getElementById("sigma").value
     url += '&k=' + document.getElementById("kvalue").value
+
+    if (document.querySelector('#onlyfilteredpoints').checked) {
+      if (Object.keys(datasetData).length != Object.keys(markers).length) {
+        var filtered_points = Object.keys(markers).map(function(x) {
+          return markers[x].pointId;
+        });
+        url += '&filtered_points=' + filtered_points.join(',')
+
+        if (document.getElementById("kvalue").value > filtered_points.length) {
+          alert("You don't have enough filtered points")
+          runningRequest = false
+          return
+        }
+      }
+    } else {
+      resetFilters();
+    }
 
     loader.open('GET', url, true);
     loader.send();
