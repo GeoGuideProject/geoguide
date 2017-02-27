@@ -24,13 +24,20 @@ html, body {
 .sidebar .control {
   pointer-events: auto;
   background: #fff;
-  box-shadow: 0 2px 6px rgba(0,0,0,.3);
+  box-shadow: 0 1px 3px rgba(0,0,0,.15);
+  border: 2px solid #fff;
+  border-radius: 3px;
 }
 
-.sidebar .control h3 {
+.sidebar .control .title {
   margin-top: 0;
-  font-size: 1.3em;
+  font-size: 1em;
   font-weight: 500;
+  cursor: pointer;
+}
+
+.sidebar .control .collapse {
+  margin-top: 1em;
 }
 
 .mapContainer {
@@ -51,7 +58,7 @@ html, body {
   background-color: #fff;
   border: 2px solid #fff;
   border-radius: 3px;
-  box-shadow: 0 2px 6px rgba(0,0,0,.3);
+  box-shadow: 0 1px 3px rgba(0,0,0,.15);
   cursor: pointer;
   margin-right: 10px;
   text-align: center;
@@ -59,8 +66,9 @@ html, body {
 
 #heatMapText {
   color: rgb(25,25,25);
-  font-family: Roboto, Arial, sans-serif;
-  font-size: 15px;
+  /*font-family: Roboto, Arial, sans-serif;*/
+  font-weight: 500;
+  /*font-size: 1em;*/
   line-height: 25px;
   padding-left: 5px;
   padding-right: 5px;

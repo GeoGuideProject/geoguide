@@ -1,15 +1,15 @@
 'use strict'
 
-function identityLatLng(headers) {
+function identityLatLng (headers) {
   var potentialLatitudes = []
   var potentialLongitudes = []
   var latitudeAttrSelectElement = document.getElementById('latitudeAttrSelect')
   var longitudeAttSelectElement = document.getElementById('longitudeAttrSelect')
-  console.log(latitudeAttrSelect, longitudeAttrSelect)
-  headers.forEach(function(header) {
+  headers.forEach(function (header) {
+    var option
     if (/([Ll]atitude)/.test(header)) {
       potentialLatitudes.push(header)
-      var option = document.createElement('option')
+      option = document.createElement('option')
       option.text = header
       option.value = header
       latitudeAttrSelectElement.add(option)
@@ -17,10 +17,10 @@ function identityLatLng(headers) {
     }
     if (/([Ll]ongitude)/.test(header)) {
       potentialLongitudes.push(header)
-      var option = document.createElement('option')
+      option = document.createElement('option')
       option.text = header
       option.value = header
-      longitudeAttrSelect.add(option)
+      longitudeAttSelectElement.add(option)
       return
     }
   })
@@ -42,10 +42,10 @@ function identityLatLng(headers) {
   }
 }
 
-function identifyDatetime(headers) {
+function identifyDatetime (headers) {
   var potentialDatetimes = []
   var datetimeAttrInputElement = document.getElementById('datetimeAttrInputText')
-  headers.forEach(function(header) {
+  headers.forEach(function (header) {
     if (/time$/.test(header)) {
       potentialDatetimes.push(header)
     }
@@ -54,38 +54,37 @@ function identifyDatetime(headers) {
   datetimeAttrInputElement.parentElement.removeAttribute('hidden')
 }
 
-function identifyNumberOfRows(contents) {
-  var n = (contents.match(/\n/g) || []).length;
-  var numberNowsInputElement = document.getElementById('numberRowsInputNumber')
-  numberRowsInputNumber.value = n.toString()
-  numberRowsInputNumber.parentElement.removeAttribute('hidden')
+function identifyNumberOfRows (contents) {
+  var n = (contents.match(/\n/g) || []).length
+  var numberRowsInputElement = document.getElementById('numberRowsInputNumber')
+  numberRowsInputElement.value = n.toString()
+  numberRowsInputElement.parentElement.removeAttribute('hidden')
 }
 
-function normalizeHeaders(headers) {
-  return headers.map(function(header) {
+function normalizeHeaders (headers) {
+  return headers.map(function (header) {
     return header.replace(/^"|"$/g, '')
   })
 }
 
-if (window.File && window.FileReader && window.FileList && window.Blob) {
-  function readSingleFile(evt) {
-    var f = evt.target.files[0];
-
-    if (f) {
-      var r = new FileReader();
-      r.onload = function(e) {
-        var contents = e.target.result.trim();
-        var headers = contents.substr(0, contents.indexOf('\n')).split(',')
-        headers = normalizeHeaders(headers)
-        identifyDatetime(headers)
-        identityLatLng(headers)
-        identifyNumberOfRows(contents)
-      }
-      r.readAsText(f);
+function readSingleFile (evt) {
+  var f = evt.target.files[0]
+  if (f) {
+    var r = new window.FileReader()
+    r.onload = function (e) {
+      var contents = e.target.result.trim()
+      var headers = contents.substr(0, contents.indexOf('\n')).split(',')
+      headers = normalizeHeaders(headers)
+      identifyDatetime(headers)
+      identityLatLng(headers)
+      identifyNumberOfRows(contents)
     }
+    r.readAsText(f)
   }
+}
 
-  document.getElementById('datasetInputFile').addEventListener('change', readSingleFile, false);
+if (window.File && window.FileReader && window.FileList && window.Blob) {
+  document.getElementById('datasetInputFile').addEventListener('change', readSingleFile, false)
 } else {
   document.getElementById('latitudeAttrInputText').parentElement.removeAttribute('hidden')
   document.getElementById('longitudeAttrInputText').parentElement.removeAttribute('hidden')

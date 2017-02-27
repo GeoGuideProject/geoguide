@@ -42,7 +42,7 @@ function HeatMapControl(controlDiv, map) {
 
   var heatMapText = document.createElement('div');
   heatMapText.id = 'heatMapText';
-  heatMapText.innerHTML = 'Heat';
+  heatMapText.innerHTML = 'Heatmap';
   heatMapUI.appendChild(heatMapText);
 
   heatMapUI.addEventListener('click', function() {
@@ -59,7 +59,7 @@ function HeatMapControl(controlDiv, map) {
       heatMapText.innerHTML = 'Normal';
     } else {
       heatmap.setMap(null);
-      heatMapText.innerHTML = 'Heat';
+      heatMapText.innerHTML = 'Heatmap';
     }
     if (infowindowsOpened != null) {
       infowindowsOpened.close();
@@ -91,7 +91,12 @@ function initMap() {
       position: google.maps.ControlPosition.TOP_RIGHT,
       style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
     },
-    streetViewControl: false
+    disableDefaultUI: true,
+    zoomControl: true,
+    mapTypeControl: true,
+    zoomControlOptions: {
+      position: google.maps.ControlPosition.RIGHT_BOTTOM,
+    }
   });
 
   map.mapTypes.set('grayscale', mapType);
@@ -109,7 +114,7 @@ function initMap() {
   heatMapDiv.index = 1;
   heatMapDiv.style['padding-top'] = '10px';
   heatMapDiv.style['pointer-events'] = 'none';
-  map.controls[google.maps.ControlPosition.RIGHT_TOP].push(heatMapDiv);
+  map.controls[google.maps.ControlPosition.TOP_RIGHT].push(heatMapDiv);
 
   var dataset_url = $('body').data('dataset')
 

@@ -17,41 +17,40 @@
       <div class="row">
         <div class="col-md-12">
           <div class="control well well-sm">
-            <h3>Highlight Parameters</h3>
-            <div class="form-horizontal">
-              <div class="form-group">
-                <label for="colorModifier" class="col-sm-4 control-label">Color modifier:</label>
-                <div class="col-sm-8">
-                <select id="colorModifier" name="colorModifier" class="form-control">
-                  <<option value="">None</option>
-                  {% for header in dataset_headers %}
-                    <option value="{{header}}">{{header}}</option>
-                  {% endfor %}
-                </select>
+            <div class="title" data-toggle="collapse" data-target="#collapseGeoGuideParameters">GeoGuide Parameters <span class="pull-right"><span class="caret"></span></span></div>
+            <div class="collapse" id="collapseGeoGuideParameters">
+              <div class="form-horizontal">
+                <div class="form-group">
+                  <label for="colorModifier" class="col-sm-4 control-label">Color modifier:</label>
+                  <div class="col-sm-8">
+                  <select id="colorModifier" name="colorModifier" class="form-control">
+                    <<option value="">None</option>
+                    {% for header in dataset_headers %}
+                      <option value="{{header}}">{{header}}</option>
+                    {% endfor %}
+                  </select>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="sizeModifier" class="col-sm-4 control-label">Size modifier:</label>
+                  <div class="col-sm-8">
+                  <select id="sizeModifier" name="sizeModifier" class="form-control">
+                    <<option value="">None</option>
+                    {% for header in dataset_headers %}
+                      <option value="{{header}}">{{header}}</option>
+                    {% endfor %}
+                  </select>
+                </div>
                 </div>
               </div>
-              <div class="form-group">
-                <label for="sizeModifier" class="col-sm-4 control-label">Size modifier:</label>
-                <div class="col-sm-8">
-                <select id="sizeModifier" name="sizeModifier" class="form-control">
-                  <<option value="">None</option>
-                  {% for header in dataset_headers %}
-                    <option value="{{header}}">{{header}}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              </div>
+              <input type="button" class="btn btn-default" onClick="refreshModifiers()" value="Update">
+              <input type="button" class="btn btn-default" onClick="refreshMap()" value="Restore">
             </div>
-            <input type="button" class="btn btn-default" onClick="refreshModifiers()" value="Update">
-            <input type="button" class="btn btn-default" onClick="refreshMap()" value="Restore">
           </div>
           <div class="control well well-sm">
-            <h3>IUGA Definition</h3>
-            <span>
-              <label>Only filtered points:</label>
-              <input type="checkbox" id="onlyfilteredpoints" >
-            </span>
-            <div class="form-horizontal">
+            <div class="title" data-toggle="collapse" data-target="#collapseIUGADefinition">IUGA Definition <span class="pull-right"><span class="caret"></span></span></div>
+            <div class="collapse" id="collapseIUGADefinition">
+              <div class="form-horizontal">
               <div class="form-group">
                 <label for="timelimit" class="col-sm-4 control-label">Time Limit (ms):</label>
                 <div class="col-sm-8">
@@ -61,29 +60,41 @@
               <div class="form-group">
                 <label for="sigma" class="col-sm-4 control-label">Similarity (&sigma;):</label>
                 <div class="col-sm-8">
-                <input type="number" id="sigma" name="sigma" value="1.00" min="0.00" max="1.00" step="0.01" required class="form-control">
-              </div>
+                  <input type="number" id="sigma" name="sigma" value="1.00" min="0.00" max="1.00" step="0.01" required class="form-control">
+                </div>
               </div>
               <div class="form-group">
                 <label for="kvalue" class="col-sm-4 control-label">K-Points:</label>
                 <div class="col-sm-8">
-                <input type="number" id="kvalue" name="kvalue" value="1" min="1" max="50" required class="form-control">
+                  <input type="number" id="kvalue" name="kvalue" value="1" min="1" max="50" required class="form-control">
+                </div>
               </div>
+              <div class="form-group">
+                <div class="col-sm-offset-4 col-sm-8">
+                  <div class="checkbox">
+                    <label>
+                      <input type="checkbox" id="onlyfilteredpoints"> Only filtered points
+                    </label>
+                  </div>
+                </div>
               </div>
+            </div>
             </div>
           </div>
           <div class="control well well-sm">
-            <h3>Filters</h3>
-            <span id="active">-</span> of <span id="total">-</span> rows selected.</aside>
-            <div class="well well-sm range-group">
-              {% for header in dataset_headers %}
-                <div hidden class="chart">
-                  <h3 class="title">{{ header }}</h3>
-                </div>
-              {% endfor %}
+            <div class="title" data-toggle="collapse" data-target="#collapseFilters">Filters <span class="pull-right"><span class="caret"></span></span></div>
+            <div class="collapse" id="collapseFilters">
+              <span id="active">-</span> of <span id="total">-</span> rows selected.</aside>
+              <div class="well well-sm range-group">
+                {% for header in dataset_headers %}
+                  <div hidden class="chart">
+                    <h3 class="title">{{ header }}</h3>
+                  </div>
+                {% endfor %}
+              </div>
+              <input type="button" class="btn btn-default" onClick="changeCurrentChart(this)" value="Previous">
+              <input type="button" class="btn btn-default pull-right" onClick="changeCurrentChart(this)" value="Next">
             </div>
-            <input type="button" class="btn btn-default" onClick="changeCurrentChart(this)" value="Previous">
-            <input type="button" class="btn btn-default pull-right" onClick="changeCurrentChart(this)" value="Next">
           </div>
         </div>
       </div>
