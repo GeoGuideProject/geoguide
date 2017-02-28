@@ -254,28 +254,26 @@ function getIcon(data, color) {
     '#1e88e5',
     '#1976d2',
     '#1565c0',
-    '#0d47a1',
-    '#82b1ff',
-    '#448aff',
-    '#2979ff',
-    '#2962ff',
+    '#0d47a1'
   ]
 
   if (colorModifier !== '' && data[colorModifier]) {
-    var value = Math.floor((Math.abs(Number(data[colorModifier])) / colorModifierMax[colorModifier]) * (fillColors.length - 1))
+    var n = Number(data[colorModifier])
+    n += (2 * Math.abs(n))
+    var value = Math.floor((n / colorModifierMax[colorModifier]) * (fillColors.length - 1))
     fillColor = fillColors[value]
   }
 
   if (typeof color === 'string') {
-    fillColor = color;
+    fillColor = color
   }
 
   var size = 7
-  var sizes = [5, 7, 9, 11]
 
   if (sizeModifier !== '' && data[sizeModifier]) {
-    var value = Math.floor((Math.abs(Number(data[sizeModifier])) / sizeModifierMax[sizeModifier]) * (sizes.length - 1))
-    size = sizes[value]
+    var n = Number(data[sizeModifier])
+    n += (2 * Math.abs(n))
+    size = 5 + ((n / sizeModifierMax[sizeModifier]) * 6)
   }
 
   return {
