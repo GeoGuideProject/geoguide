@@ -1,21 +1,52 @@
-# GeoHighlight
+# [GeoGuide](https://geoguide.herokuapp.com)
 
-#### Use python 3.X.X
+## Quick Start
 
-#### To run the tool, first install all requirements using pip, Then run gunicorn web server or app.py:
+### Basics
 
-```shell
-#Instaling requirements:
+1. Create and activate a virtualenv
+1. Install the requirements
 
-pip install -r requirements.txt
+### Set Environment Variables
 
-#Running the server:
-
-gunicorn wsgi:app
-#or
-python app.py
-
+```sh
+$ cp .env.example .env
 ```
 
-#### Deploy:
- The branch "deploy" is set to auto deploy on Heroku.
+Set a new APP_KEY and you are ready to go
+
+### Create DB
+
+```sh
+$ python manage.py create_db
+$ python manage.py db init
+$ python manage.py db migrate
+```
+
+### Run the Application
+
+```sh
+$ python manage.py runserver
+```
+
+So access the application at the address [http://localhost:5000/](http://localhost:5000/)
+
+> Want to specify a different port?
+
+> ```sh
+> $ python manage.py runserver -h 0.0.0.0 -p 8080
+> ```
+
+### Testing
+
+Without coverage:
+
+```sh
+$ python manage.py test
+```
+
+With coverage:
+
+```sh
+$ python manage.py cov
+```

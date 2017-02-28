@@ -1,0 +1,108 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  font-family: 'Roboto', 'Arial', sans-serif;
+  font-size: 12px;
+}
+
+.controlContainer {
+  padding-left: 10px;
+  padding-top: 10px;
+  pointer-events: none;
+}
+
+.control {
+  pointer-events: auto;
+  width: 30em;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.15);
+  border: 2px solid #fff;
+  border-radius: 3px;
+  margin-bottom: 10px;
+}
+
+.control .title {
+  margin-top: 0;
+  font-size: 1em;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.control .collapse {
+  margin-top: 1em;
+}
+
+.mapContainer {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+#map {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+}
+
+#heatMapUI {
+  background-color: #fff;
+  border: 2px solid #fff;
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.15);
+  cursor: pointer;
+  text-align: center;
+}
+
+#heatMapText {
+  color: rgb(25,25,25);
+  font-weight: 500;
+  line-height: 25px;
+  padding-left: 5px;
+  padding-right: 5px;
+  pointer-events: auto;
+}
+
+.chart {
+  height: 180px;
+  margin-bottom: 10px;
+}
+
+.reset {
+  padding-left: 1em;
+  font-size: smaller;
+  color: #ccc;
+}
+
+.background.bar {
+  fill: #BBDEFB;
+}
+
+.foreground.bar {
+  fill: #2196F3;
+}
+
+.axis path, .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.axis text {
+  font: 10px sans-serif;
+}
+
+.brush rect.extent {
+  fill: steelblue;
+  fill-opacity: .125;
+}
+
+.brush .resize path {
+  fill: #eee;
+  stroke: #666;
+}

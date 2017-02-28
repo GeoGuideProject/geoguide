@@ -1,0 +1,122 @@
+body {
+  font-family: "Lato", "Heveltica", sans-serif;
+  color: #0c0c0c;
+}
+
+.container {
+  width: 100%;
+  background: #ECE9E6; /* fallback for old browsers */
+  background: -webkit-linear-gradient(to left, #ECE9E6 , #FFFFFF); /* Chrome 10-25, Safari 5.1-6 */
+  background: linear-gradient(to left, #ECE9E6 , #FFFFFF); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+}
+
+.container-title {
+  text-align: center;
+  padding: 2em 2.5em 5em 2.5em;
+  margin-bottom: 2em;
+}
+
+.container-title h1 {
+  font-size: 2.5em;
+  margin-bottom: .75em;
+}
+
+.container-title p {
+  font-size: 1.25em;
+}
+
+.container-title a {
+  margin-top: 0.5em;
+  padding: 0.5em 1.75em;
+}
+
+@media only screen and (min-width : 992px) {
+  .container-title a {
+    font-size: 1.5em;
+  }
+}
+
+.container-logo {
+  margin-top: 3.5em;
+  text-align: center;
+}
+
+.container-logo img {
+  height: 5em;
+  vertical-align: middle;
+  margin-bottom: 2em;
+}
+
+.container-logo img:first-child {
+  margin-right: 1em;
+}
+
+.container-logo img:last-child {
+  margin-left: 1em;
+}
+
+.container-info {
+  border: 1px solid #ccc;
+  border-bottom: 0px;
+  -webkit-box-shadow: 0px -2px 6px rgba(155,155,155,.3);
+  box-shadow: 0px -2px 6px rgba(155,155,155,.3);
+  padding: 2.5em;
+  background: #fdfdfd;
+}
+
+.container-info h2 {
+  font-size: 1.75em;
+  margin-bottom: 1em;
+}
+
+.container-info section {
+  margin-bottom: 2.5em;
+}
+
+.container-info section:last-child {
+  margin-bottom: .5em;
+}
+
+.container-info .container-member {
+  margin: 0 0 3em;
+}
+
+.container-info-text {
+  font-size: 1.1em;
+  color: #0f0f0f;
+  text-align: justify;
+}
+
+.container-member {
+  text-align: center;
+}
+
+.container-member img {
+  border-radius: 50%;
+}
+
+.container-member h3 {
+  font-size: 1.25em;
+}
+
+.container-member p {
+  color: #7c7c7c;
+}
+
+footer {
+  background: #0c0c0c;
+  color: #fff;
+  padding: 2em;
+  -webkit-box-shadow: 0px -2px 6px rgba(155,155,155,.3);
+  box-shadow: 0px -2px 6px rgba(155,155,155,.3);
+}
+
+footer .address {
+  font-size: 1.15em;
+}
+
+@media only screen and (min-width : 992px) {
+  footer .address:last-child {
+    text-align: right;
+  }
+}

@@ -1,0 +1,48 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>GeoGuide - Data Analysis</title>
+    <link href="/static/bootstrap.min.css" rel="stylesheet">
+  </head>
+  <body>
+  <style>
+    body{
+      text-align: center;
+    }
+  </style>
+  <nav class="navbar navbar-inverse">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="#">GeoGuide</a>
+      </div>
+    </div>
+  </nav>
+  <div class="page-header"><br><br><br>
+    <h1>
+      Wait! <small>Running analysis algorithm.</small>
+    </h1><br><br>
+    <img src="/static/images/ajax-loader.gif" height="25">
+  </div>
+  <script>
+    timmer = setTimeout(sendNewRequest, 5000);
+    function sendNewRequest(){
+      var loader = new XMLHttpRequest();
+      loader.onreadystatechange = function ()
+        {
+          if(this.status == 200){
+            console.log(this.status);
+            window.location.replace("/dataanalysis");
+          }
+          else if(this.status == 201){
+            console.log(this.status);
+            clearTimeout(timmer);
+            timmer = setTimeout(sendNewRequest, 5000);
+          }
+      }
+      loader.open('POST', '/isfinish', true);
+      loader.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+      loader.send('null');
+    }
+  </script>
+  </body>
+</html>
