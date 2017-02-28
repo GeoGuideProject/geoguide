@@ -13,7 +13,7 @@ var heatMapPoints = []
 var isHeatMap = false
 var datasetData = {}
 var datasetOptions = JSON.parse(document.querySelector('#dataset_json').innerHTML)
-var datasetHeaders = datasetOptions.headers;
+var datasetFilters = datasetOptions.headers;
 var colorModifierElement = document.querySelector('#colorModifier')
 var colorModifier = colorModifierElement.value
 var colorModifierMax = {}
@@ -145,7 +145,10 @@ function processData(err, data) {
   });
 }
 
-function processFilter(dataset = datasetData, filters = datasetHeaders) {
+function processFilter(dataset, filters) {
+  dataset = dataset || datasetData
+  filters = filters || datasetFilters
+
   d3.selectAll('.chart > svg').remove()
 
   initFilters(Object.values(dataset));

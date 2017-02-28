@@ -88,11 +88,11 @@ html, body {
 }
 
 .background.bar {
-  fill: #ccc;
+  fill: #BBDEFB;
 }
 
 .foreground.bar {
-  fill: steelblue;
+  fill: #2196F3;
 }
 
 .axis path, .axis line {
