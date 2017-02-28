@@ -119,10 +119,11 @@ function initMap() {
   var dataset_url = $('body').data('dataset')
 
   d3.csv(dataset_url, function(err, data) {
-    processData(err, data);
-    processFilter();
+    processData(err, data)
+    processFilter()
   });
 
+  document.getElementsByClassName('chart')[0].hidden = false
   isDatasetReady()
 }
 
@@ -144,11 +145,11 @@ function processData(err, data) {
   });
 }
 
-function processFilter() {
-  initFilters(Object.values(datasetData));
-  createChartFilter(datasetHeaders, onDataFiltered);
+function processFilter(dataset = datasetData, filters = datasetHeaders) {
+  d3.selectAll('.chart > svg').remove()
 
-  var charts = document.getElementsByClassName('chart')[0].hidden = false;
+  initFilters(Object.values(dataset));
+  createChartFilter(filters, onDataFiltered)
 
   function onDataFiltered(newData) {
     Object.keys(markers).forEach(function(x) {
@@ -157,14 +158,14 @@ function processFilter() {
 
     newData.forEach(function(data, index) {
       if (markers[data.pointId] === undefined) {
-        addPoint(data, index)
+        addPoint(data, index, data.pointId === iugaLastPointId ? '#F44336' : undefined)
       } else {
         markers[data.pointId].hasMarker = true
       }
     })
 
     Object.keys(markers).forEach(function(x) {
-      if (markers[x].hasMarker === false) {
+      if (markers[x].hasMarker === false && markers[x].pointId !== iugaLastPointId) {
         markers[x].setMap(null)
         delete markers[x]
       }
@@ -203,7 +204,7 @@ function changeCurrentChart(button) {
 function refreshMap() {
   clearMap()
   processData(undefined, Object.values(datasetData))
-  resetFilters()
+  processFilter()
   iugaLastPointId = -1
 }
 
@@ -349,14 +350,17 @@ function showPotentialPoints() {
       if (this.readyState === XMLHttpRequest.DONE) {
         if (this.status === 200) {
           var jsonResponse = JSON.parse(this.responseText)
+          var points = []
           clearMap()
-          addPoint(datasetData[pointChoice], pointChoice, '#F44336')
           jsonResponse.points.forEach(function(index) {
             if (index === pointChoice) {
               return
             }
             addPoint(datasetData[index], index)
+            points.push(datasetData[index])
           })
+          processFilter(points)
+          addPoint(datasetData[pointChoice], pointChoice, '#F44336')
         } else if (this.status === 202) {
           alert('Not ready yet.')
         }
@@ -376,7 +380,7 @@ function showPotentialPoints() {
         });
         url += '&filtered_points=' + filtered_points.join(',')
 
-        if (document.getElementById("kvalue").value > filtered_points.length) {
+        if (document.getElementById("kvalue").value > filtered_points.length - 2) {
           alert("You don't have enough filtered points")
           runningRequest = false
           return

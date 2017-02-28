@@ -4,6 +4,15 @@ var chartD3CrossfilterAll = null;
 var chartD3CrossfilterData = null;
 
 var initFilters = function(dataset) {
+
+  if (chartD3CrossfilterFilter != null) {
+    chartD3CrossfilterFilter.remove()
+    chartD3CrossfilterDataset = null
+    chartD3CrossfilterFilter = null
+    chartD3CrossfilterAll = null
+    chartD3CrossfilterData = null
+  }
+
   chartD3CrossfilterDataset = dataset;
   chartD3CrossfilterFilter = crossfilter(dataset);
   chartD3CrossfilterAll = chartD3CrossfilterFilter.groupAll();
