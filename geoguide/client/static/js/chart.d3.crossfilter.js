@@ -1,3 +1,5 @@
+'use strict'
+
 var chartD3CrossfilterDataset = null;
 var chartD3CrossfilterFilter = null;
 var chartD3CrossfilterAll = null;

@@ -1,7 +1,7 @@
 'use strict'
 
 var pointChoice = -1
-var iugaLastPointId = -1
+var iugaLastId = -1
 var map = null
 var markers = {}
 var infowindows = {}
@@ -114,7 +114,11 @@ function initMap() {
   heatMapDiv.index = 1;
   heatMapDiv.style['padding-top'] = '10px';
   heatMapDiv.style['pointer-events'] = 'none';
-  map.controls[google.maps.ControlPosition.TOP_RIGHT].push(heatMapDiv);
+
+  map.controls[google.maps.ControlPosition.TOP_RIGHT].push(heatMapDiv)
+
+  var customControlsLeftTopElement = document.getElementById('customControlsLeftTop')
+  map.controls[google.maps.ControlPosition.LEFT_TOP].push(customControlsLeftTopElement)
 
   var dataset_url = $('body').data('dataset')
 
@@ -140,7 +144,6 @@ function processData(err, data) {
     lng: longmed
   });
   data.forEach(function(data, index) {
-    data.pointId = index;
     addPoint(data, index)
   });
 }
@@ -160,15 +163,15 @@ function processFilter(dataset, filters) {
     })
 
     newData.forEach(function(data, index) {
-      if (markers[data.pointId] === undefined) {
-        addPoint(data, index, data.pointId === iugaLastPointId ? '#F44336' : undefined)
+      if (markers[data.id] === undefined) {
+        addPoint(data, data.id, data.id === iugaLastId ? '#F44336' : undefined)
       } else {
-        markers[data.pointId].hasMarker = true
+        markers[data.id].hasMarker = true
       }
     })
 
     Object.keys(markers).forEach(function(x) {
-      if (markers[x].hasMarker === false && markers[x].pointId !== iugaLastPointId) {
+      if (markers[x].hasMarker === false && markers[x].id !== iugaLastId) {
         markers[x].setMap(null)
         delete markers[x]
       }
@@ -208,7 +211,7 @@ function refreshMap() {
   clearMap()
   processData(undefined, Object.values(datasetData))
   processFilter()
-  iugaLastPointId = -1
+  iugaLastId = -1
 }
 
 function clearMap() {
@@ -241,8 +244,8 @@ function calculateMaxModifiers(dataset) {
 function refreshModifiers() {
   calculateMaxModifiers(Object.values(datasetData))
   Object.keys(markers).forEach(function(x) {
-    var data = datasetData[markers[x].pointId]
-    markers[x].setIcon(getIcon(data, data.pointId === iugaLastPointId ? '#F44336' : undefined))
+    var data = datasetData[markers[x].id]
+    markers[x].setIcon(getIcon(data, data.id === iugaLastId ? '#F44336' : undefined))
   })
 }
 
@@ -292,12 +295,12 @@ function getIcon(data, color) {
 }
 
 function addPoint(data, index, color) {
-  datasetData[data.pointId] = data;
+  datasetData[data.id] = data;
 
-  var contentString = '<div id="infowindow' + data.pointId + '"><h4>Profile</h4>';
+  var contentString = '<div id="infowindow' + data.id + '"><h4>Profile</h4>';
 
   Object.keys(data).forEach(function(key) {
-    if (data[key] === undefined || key === 'pointId') {
+    if (data[key] === undefined || key === 'id') {
       return
     }
     var value = data[key];
@@ -318,7 +321,7 @@ function addPoint(data, index, color) {
     position: new google.maps.LatLng(data[datasetOptions.latitude_attr], data[datasetOptions.longitude_attr]),
     map: map,
     icon: getIcon(data, color),
-    pointId: data.pointId,
+    id: data.id,
     hasMarker: true,
   })
 
@@ -328,21 +331,21 @@ function addPoint(data, index, color) {
     }
     infowindow.open(map, marker);
     infowindowsOpened = infowindow
-    pointChoice = this.pointId
+    pointChoice = this.id
     if (datasetOptions.indexed === false) {
-      var btnElement = document.querySelector('#infowindow' + this.pointId + ' button')
+      var btnElement = document.querySelector('#infowindow' + this.id + ' button')
 
       btnElement.setAttribute('disabled', 'disabled')
       btnElement.setAttribute('title', 'This dataset isn\'t ready yet.')
     }
   })
 
-  if (markers[marker.pointId] !== undefined) {
+  if (markers[marker.id] !== undefined) {
     marker.setMap(null)
   }
 
-  infowindows[marker.pointId] = infowindow
-  markers[marker.pointId] = marker
+  infowindows[marker.id] = infowindow
+  markers[marker.id] = marker
 }
 
 function showPotentialPoints() {
@@ -353,21 +356,21 @@ function showPotentialPoints() {
       if (this.readyState === XMLHttpRequest.DONE) {
         if (this.status === 200) {
           var jsonResponse = JSON.parse(this.responseText)
-          var points = []
+          var points = {}
           clearMap()
-          jsonResponse.points.forEach(function(index) {
-            if (index === pointChoice) {
+          addPoint(datasetData[pointChoice], pointChoice, '#F44336')
+          jsonResponse.points.forEach(function (id) {
+            if (id === pointChoice) {
               return
             }
-            addPoint(datasetData[index], index)
-            points.push(datasetData[index])
+            addPoint(datasetData[id], id)
+            points[id] = datasetData[id]
           })
           processFilter(points)
-          addPoint(datasetData[pointChoice], pointChoice, '#F44336')
         } else if (this.status === 202) {
-          alert('Not ready yet.')
+          window.alert('Not ready yet.')
         }
-        runningRequest = false;
+        runningRequest = false
       }
     }
     var url = '/environment/' + datasetOptions.filename + '/' + pointChoice + '/iuga'
@@ -379,7 +382,7 @@ function showPotentialPoints() {
     if (document.querySelector('#onlyfilteredpoints').checked) {
       if (Object.keys(datasetData).length != Object.keys(markers).length) {
         var filtered_points = Object.keys(markers).map(function(x) {
-          return markers[x].pointId;
+          return markers[x].id
         });
         url += '&filtered_points=' + filtered_points.join(',')
 
@@ -390,28 +393,29 @@ function showPotentialPoints() {
         }
       }
     } else {
-      resetFilters();
+      resetFilters()
     }
 
-    loader.open('GET', url, true);
-    loader.send();
-    iugaLastPointId = pointChoice
+    loader.open('GET', url, true)
+    loader.send()
+    iugaLastId = pointChoice
   }
 }
 
-function isDatasetReady() {
+function isDatasetReady () {
   if (datasetOptions.indexed === false) {
-    var req = new XMLHttpRequest();
-    req.onreadystatechange = function() {
-      if (this.status === 200 && this.readyState === XMLHttpRequest.DONE) {
+    var req = new window.XMLHttpRequest()
+    req.onreadystatechange = function () {
+      if (this.status === 200 && this.readyState === window.XMLHttpRequest.DONE) {
         datasetOptions = JSON.parse(this.responseText)
         if (datasetOptions.indexed === false) {
-          setTimeout(isDatasetReady, 1000);
+          setTimeout(isDatasetReady, 1000)
         } else if (pointChoice >= 0) {
           var btnElement = document.querySelector('#infowindow' + pointChoice + ' button')
-
-          btnElement.removeAttribute('disabled')
-          btnElement.removeAttribute('title')
+          if (btnElement !== null) {
+            btnElement.removeAttribute('disabled')
+            btnElement.removeAttribute('title')
+          }
         }
       }
     }

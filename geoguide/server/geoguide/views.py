@@ -12,7 +12,6 @@ from geoguide.server.geoguide.helpers import save_as_hdf, path_to_hdf, harvestin
 from geoguide.server.iuga import run_iuga
 from geoguide.server.similarity import cosine_similarity, jaccard_similarity
 from itertools import chain
-from threading import Thread
 
 
 geoguide_blueprint = Blueprint('geoguide', __name__,)
@@ -48,7 +47,6 @@ def upload():
                 db.session.commit()
             session['SELECTED_DATASET'] = filename
             save_as_hdf(dataset)
-            Thread(target=lambda: index_dataset(dataset)).start()
             return redirect(url_for('geoguide.environment'))
         except UploadNotAllowed:
             flash('This file is not allowed.', 'error')
