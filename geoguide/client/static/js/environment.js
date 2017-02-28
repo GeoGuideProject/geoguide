@@ -184,13 +184,6 @@ function processFilter(dataset, filters) {
   };
 }
 
-function resetFilters() {
-  var n = document.getElementsByClassName('chart').length || 0
-  for (var i = 0; i < n; i++) {
-    window.reset(i)
-  }
-}
-
 function changeCurrentChart(button) {
   var charts = document.getElementsByClassName('chart');
   charts[currentChartIndex].hidden = true;
@@ -392,8 +385,6 @@ function showPotentialPoints() {
           return
         }
       }
-    } else {
-      resetFilters()
     }
 
     loader.open('GET', url, true)
