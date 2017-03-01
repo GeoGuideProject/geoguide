@@ -343,6 +343,7 @@ function showPotentialPoints() {
   if (runningRequest === false) {
     runningRequest = true;
     var loader = new XMLHttpRequest();
+    var params = null;
     loader.onreadystatechange = function() {
       if (this.readyState === XMLHttpRequest.DONE) {
         if (this.status === 200) {
@@ -375,7 +376,7 @@ function showPotentialPoints() {
         var filtered_points = Object.keys(markers).map(function(x) {
           return markers[x].id
         });
-        url += '&filtered_points=' + filtered_points.join(',')
+        params = 'filtered_points=' + filtered_points.join(',')
 
         if (document.getElementById("kvalue").value > filtered_points.length - 2) {
           alert("You don't have enough filtered points")
@@ -384,9 +385,9 @@ function showPotentialPoints() {
         }
       }
     }
-
-    loader.open('GET', url, true)
-    loader.send()
+    loader.open('POST', url, true)
+    loader.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
+    loader.send(params)
     iugaLastId = pointChoice
   }
 }

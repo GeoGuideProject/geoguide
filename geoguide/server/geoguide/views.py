@@ -96,13 +96,13 @@ def point_details(selected_dataset, index):
     return df.loc[index].to_json(), 200, {'Content-Type': 'application/json'}
 
 
-@geoguide_blueprint.route('/environment/<selected_dataset>/<int:index>/iuga')
+@geoguide_blueprint.route('/environment/<selected_dataset>/<int:index>/iuga', methods=['POST'])
 def point_suggestions(selected_dataset, index):
     k = int(request.args['k'])
     sigma = float(request.args['sigma'])
     limit = float(request.args['limit'])
 
-    filtered_points = request.args.get('filtered_points', default='')
+    filtered_points = request.form.get('filtered_points', default='')
     if filtered_points:
         filtered_points = [int(x) for x in filtered_points.split(',')]
 
