@@ -44,7 +44,7 @@ var createChartFilter = function(fields, onDataFiltered, timeDelay = 300) {
       .dimension(filterData)
       .group(filterGroup)
       .x(d3.scale.linear()
-        .domain([filterDataMin - 1, filterDataMax + 1])
+        .domain([filterDataMin - (filterDataMin/10), filterDataMax + (filterDataMax/10)])
         .rangeRound([0, 275]))
     );
 
