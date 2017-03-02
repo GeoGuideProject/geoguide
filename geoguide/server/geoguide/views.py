@@ -103,8 +103,7 @@ def point_suggestions(selected_dataset, index):
     limit = float(request.args['limit'])
 
     filtered_points = request.form.get('filtered_points', default='')
-    if filtered_points:
-        filtered_points = [int(x) for x in filtered_points.split(',')]
+    filtered_points = [int(x) for x in filtered_points.split(',') if x]
 
     if k <= 0 or sigma < 0 or sigma > 1 or limit <= 0:
         abort(401)
@@ -112,9 +111,7 @@ def point_suggestions(selected_dataset, index):
     dataset = Dataset.query.filter_by(filename=selected_dataset).first_or_404()
     if dataset.indexed_at is None:
         return jsonify(dict(message='Not ready yet.')), 202
-    df_relation = pd.read_hdf(path_to_hdf(dataset), 'relation')
-    if filtered_points:
-        df_relation = df_relation[(df_relation['index_a'].isin(filtered_points)) & (df_relation['index_b'].isin(filtered_points))]
+
     vm = {}
-    vm['similarity'], vm['diversity'], vm['points'] = run_iuga(index, k, limit, sigma, df_relation)
+    vm['similarity'], vm['diversity'], vm['points'] = run_iuga(index, k, limit, sigma, dataset, filtered_points)
     return jsonify(vm)

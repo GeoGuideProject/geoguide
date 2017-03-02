@@ -1,7 +1,10 @@
 import pandas as pd
 import datetime
 from random import randint
-from geoguide.server import diversity
+from geoguide.server import app, diversity
+from geoguide.server.geoguide.helpers import path_to_hdf
+
+CHUNKSIZE = app.config['CHUNKSIZE']
 
 
 def get_distances_of(elements, k, distance_by_id):
@@ -18,7 +21,7 @@ def make_new_records(elements, new_element, k, records):
     return output
 
 
-def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, df):
+def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset, filtered_points=[]):
     # parameters
     k = k_value
 
@@ -45,14 +48,19 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, df):
     distances = {}
 
     # read input data frame
-    for row in df.itertuples():
-        if int(row[1]) > input_g:
-            break
-        to_id = int(row[2])
-        if to_id == input_g:
-            continue
-        similarities[to_id] = float(row[3])
-        distances[to_id] = float(row[4])
+    store = pd.HDFStore(path_to_hdf(dataset))
+    for df in store.select('relation', chunksize=CHUNKSIZE):
+        if filtered_points:
+            df = df[(df['id_a'].isin(filtered_points)) & (df['id_b'].isin(filtered_points))]
+        for row in df.itertuples():
+            if int(row[1]) > input_g:
+                break
+            to_id = int(row[2])
+            if to_id == input_g:
+                continue
+            similarities[to_id] = float(row[3])
+            distances[to_id] = float(row[4])
+    store.close()
 
     # sorting similarities and distances in descending order
     similarities_sorted = sorted(
