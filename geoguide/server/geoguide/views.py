@@ -66,7 +66,7 @@ def environment(selected_dataset):
     df = pd.read_hdf(path_to_hdf(dataset), 'data')
     vm = {}
     vm['dataset_headers'] = list(df.select_dtypes(include=[np.number]).columns)
-    vm['dataset_headers'] = [c for c in vm['dataset_headers'] if 'latitude' not in c and 'longitude' not in c]
+    vm['dataset_headers'] = [c for c in vm['dataset_headers'] if 'latitude' not in c and 'longitude' not in c and 'id' not in c]
     vm['dataset_json'] = json.dumps({
         'filename': dataset.filename,
         'latitude_attr': dataset.latitude_attr,

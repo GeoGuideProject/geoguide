@@ -19,7 +19,6 @@ COV = coverage.coverage(
 COV.start()
 
 from geoguide.server import app, db
-# from geoguide.server.models import User
 
 
 migrate = Migrate(app, db)

@@ -32,7 +32,7 @@ def save_as_hdf(dataset):
                     ((lng_min < df[dataset.longitude_attr]) & (df[dataset.longitude_attr] < lng_max))]
         else:
             df = df[(df[dataset.latitude_attr] != 0) & (df[dataset.longitude_attr] != 0)]
-        df.to_csv(csv_path, index_label='id', header=is_first, mode='a')
+        df.to_csv(csv_path, index_label='geoguide_id', header=is_first, mode='a')
         if is_first:
             store.put('data', df, format='table')
         else:
@@ -62,7 +62,7 @@ def index_dataset(dataset):
         datetime_columns = [attr.description for attr in dataset.attributes if attr.type == AttributeType.datetime]
         len_datetime_columns = len(datetime_columns)
         numeric_columns = list(df.select_dtypes(include=[np.number]).columns)
-        numeric_columns = [c for c in numeric_columns if 'latitude' not in c and 'longitude' not in c and not df[c].isnull().any()]
+        numeric_columns = [c for c in numeric_columns if 'latitude' not in c and 'longitude' not in c and 'id' not in c and not df[c].isnull().any()]
         df = df.loc[:, [dataset.latitude_attr, dataset.longitude_attr, *numeric_columns, *datetime_columns]]
         greatest_distance = 0
         greatest_similarity = 0
@@ -72,26 +72,26 @@ def index_dataset(dataset):
         ds = []
         tmp_store = pd.HDFStore(tmp_hdf_path)
         for row_a in df.itertuples():
-            print('Current:', x)
             if row_a[1] == 0 or row_a[2] == 0:
                 x += 1
                 continue
             if row_a[0] not in ds_datetimes:
-                ds_datetimes[row_a[0]] = list(chain.from_iterable([[d.hour, d.minute, d.weekday()] for d in row_a[-len_datetime_columns:]]))
+                ds_datetimes[row_a[0]] = list(chain.from_iterable([[d.hour, d.minute, d.weekday()] for d in row_a[-len_datetime_columns:]])) if len_datetime_columns else []
             if row_a[0] not in ds_numerics:
-                ds_numerics[row_a[0]] = row_a[3:-len_datetime_columns]
+                ds_numerics[row_a[0]] = row_a[3:-len_datetime_columns] if len_datetime_columns else row_a[3:]
             for row_b in df.iloc[x:].itertuples():
                 if row_b[1] == 0 or row_b[2] == 0:
                     continue
                 if row_b[0] not in ds_datetimes:
-                    ds_datetimes[row_b[0]] = list(chain.from_iterable([[d.hour, d.minute, d.weekday()] for d in row_b[-len_datetime_columns:]]))
+                    ds_datetimes[row_b[0]] = list(chain.from_iterable([[d.hour, d.minute, d.weekday()] for d in row_b[-len_datetime_columns:]])) if len_datetime_columns else []
                 if row_b[0] not in ds_numerics:
-                    ds_numerics[row_b[0]] = row_b[3:-len_datetime_columns]
+                    ds_numerics[row_b[0]] = row_b[3:-len_datetime_columns] if len_datetime_columns else row_b[3:]
                 distance = harvestine_distance(row_a[1], row_a[2],
                                                row_b[1], row_b[2])
-                similarity_i = (1 + jaccard_similarity(ds_datetimes[row_a[0]], ds_datetimes[row_b[0]]))
-                similarity_ii = (1 + cosine_similarity(ds_numerics[row_a[0]], ds_numerics[row_b[0]]))
+                similarity_i = jaccard_similarity(ds_datetimes[row_a[0]], ds_datetimes[row_b[0]])
+                similarity_ii = cosine_similarity(ds_numerics[row_a[0]], ds_numerics[row_b[0]])
                 similarity = similarity_i + similarity_ii
+                print('Current:', row_a[0], row_b[0], similarity, distance)
                 ds.append((row_a[0], row_b[0], similarity, distance))
                 if distance > greatest_distance:
                     greatest_distance = distance

@@ -163,10 +163,10 @@ function processFilter(dataset, filters) {
     })
 
     newData.forEach(function(data, index) {
-      if (markers[data.id] === undefined) {
-        addPoint(data, data.id, data.id === iugaLastId ? '#F44336' : undefined)
+      if (markers[data.geoguide_id] === undefined) {
+        addPoint(data, data.geoguide_id, data.geoguide_id === iugaLastId ? '#F44336' : undefined)
       } else {
-        markers[data.id].hasMarker = true
+        markers[data.geoguide_id].hasMarker = true
       }
     })
 
@@ -238,7 +238,7 @@ function refreshModifiers() {
   calculateMaxModifiers(Object.values(datasetData))
   Object.keys(markers).forEach(function(x) {
     var data = datasetData[markers[x].id]
-    markers[x].setIcon(getIcon(data, data.id === iugaLastId ? '#F44336' : undefined))
+    markers[x].setIcon(getIcon(data, data.geoguide_id === iugaLastId ? '#F44336' : undefined))
   })
 }
 
@@ -286,12 +286,12 @@ function getIcon(data, color) {
 }
 
 function addPoint(data, index, color) {
-  datasetData[data.id] = data;
+  datasetData[data.geoguide_id] = data;
 
-  var contentString = '<div id="infowindow' + data.id + '"><h4>Profile</h4>';
+  var contentString = '<div id="infowindow' + data.geoguide_id + '"><h4>Profile</h4>';
 
   Object.keys(data).forEach(function(key) {
-    if (data[key] === undefined || key === 'id') {
+    if (data[key] === undefined || key === 'geoguide_id') {
       return
     }
     var value = data[key];
@@ -312,7 +312,7 @@ function addPoint(data, index, color) {
     position: new google.maps.LatLng(data[datasetOptions.latitude_attr], data[datasetOptions.longitude_attr]),
     map: map,
     icon: getIcon(data, color),
-    id: data.id,
+    id: data.geoguide_id,
     hasMarker: true,
   })
 
