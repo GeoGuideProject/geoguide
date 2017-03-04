@@ -301,7 +301,7 @@ function addPoint(data, index, color) {
     }
     contentString += '<b>' + key + '</b>: <code>' + value + '</code><br />';
   })
-  contentString += '<br/><button type="button" class="btn btn-default" onclick="showPotentialPoints()">Show</button>';
+  contentString += '<br/><button type="button" class="btn btn-default" onclick="showPotentialPoints()">Explore</button>';
   contentString += '</div>';
 
   var infowindow = new google.maps.InfoWindow({
