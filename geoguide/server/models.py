@@ -16,7 +16,7 @@ class Dataset(db.Model):
     filename = db.Column(db.String(40), nullable=False)
     latitude_attr = db.Column(db.String(50))
     longitude_attr = db.Column(db.String(50))
-    attributes = db.relationship('Attribute', backref='dataset')
+    attributes = db.relationship('Attribute', backref='dataset', cascade='all, delete-orphan')
     created_at = db.Column(db.DateTime, nullable=False)
     indexed_at = db.Column(db.DateTime)
 

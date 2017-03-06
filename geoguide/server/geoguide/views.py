@@ -1,6 +1,7 @@
 # geoguide/server/geoguide/views.py
 
 import json
+import os.path
 import pandas as pd
 import numpy as np
 from uuid import uuid4
@@ -17,8 +18,6 @@ geoguide_blueprint = Blueprint('geoguide', __name__,)
 
 @geoguide_blueprint.route('/upload', methods=['GET', 'POST'])
 def upload():
-    vm = {}
-    vm['datasets'] = Dataset.query.all()
     if request.method == 'POST' and 'datasetInputFile' in request.files:
         try:
             uploaded = request.files['datasetInputFile']
@@ -49,6 +48,16 @@ def upload():
         except UploadNotAllowed:
             flash('This file is not allowed.', 'error')
         return redirect(url_for('geoguide.upload'))
+    vm = {}
+    vm['datasets'] = Dataset.query.all()
+    needs_reload = False
+    for dataset in vm['datasets']:
+        if not os.path.isfile(datasets.path(dataset.filename)):
+            db.session.delete(dataset)
+            needs_reload = True
+    if needs_reload:
+        db.session.commit()
+        vm['datasets'] = Dataset.query.all()
     return render_template('geoguide/upload.html', **vm)
 
 
