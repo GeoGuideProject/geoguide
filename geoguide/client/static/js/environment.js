@@ -17,6 +17,7 @@ var datasetFilters = datasetOptions.headers;
 var colorModifierElement = document.querySelector('#colorModifier')
 var colorModifier = colorModifierElement.value
 var colorModifierMax = {}
+var chartsPerPage = 2
 var currentChartIndex = 0
 
 var sizeModifierElement = document.querySelector('#sizeModifier')
@@ -125,9 +126,15 @@ function initMap() {
   d3.csv(dataset_url, function(err, data) {
     processData(err, data)
     processFilter()
-  });
+  })
 
-  document.getElementsByClassName('chart')[0].hidden = false
+  var charts = document.getElementsByClassName('chart')
+  var i = 0;
+  for (var i = 0; i < chartsPerPage; i++) {
+    charts[i].hidden = false;
+  }
+  document.querySelector('#filtersPerPage').selectedIndex = chartsPerPage - 1
+
   isDatasetReady()
 }
 
@@ -185,19 +192,44 @@ function processFilter(dataset, filters) {
 }
 
 function changeCurrentChart(button) {
-  var charts = document.getElementsByClassName('chart');
-  charts[currentChartIndex].hidden = true;
+  var charts = $('.chart');
+  var first, last;
+
+  charts.attr('hidden', true);
 
   switch (button.value) {
     case 'Previous':
-      currentChartIndex = currentChartIndex == 0 ? charts.length - 1 : currentChartIndex - 1;
+      first = charts[0];
+      last = charts[charts.length - 1];
+      $(first).parent().prepend(last);
       break;
     case 'Next':
-      currentChartIndex = currentChartIndex == charts.length - 1 ? 0 : currentChartIndex + 1;
+      first = charts[0];
+      last = charts[charts.length - 1];
+      $(last).parent().append(first);
       break;
   }
+  charts = $('.chart');
+  for (var i = 0; i < chartsPerPage; i++) {
+    $(charts[i]).attr('hidden', false);
+  }
+}
 
-  charts[currentChartIndex].hidden = false;
+function updateFiltersPage() {
+  var e = document.querySelector('#filtersPerPage')
+  var value = e.options[e.selectedIndex].value
+  var charts = $('.chart');
+
+  if (value == '*') {
+    charts.attr('hidden', false);
+  }
+  else {
+    charts.attr('hidden', true);
+    chartsPerPage = Number(value);
+    for (var i = 0; i < chartsPerPage; i++) {
+      $(charts[i]).attr('hidden', false);
+    }
+  }
 }
 
 function refreshMap() {

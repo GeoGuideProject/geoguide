@@ -17,7 +17,7 @@ html, body {
 
 .control {
   pointer-events: auto;
-  width: 30em;
+  width: 32em;
   background: #fff;
   box-shadow: 0 1px 3px rgba(0,0,0,.15);
   border: 2px solid #fff;
@@ -66,6 +66,11 @@ html, body {
   padding-left: 5px;
   padding-right: 5px;
   pointer-events: auto;
+}
+
+#controlCharts {
+  max-height: 37em;
+  overflow-y: auto;
 }
 
 .chart {
