@@ -3,6 +3,7 @@
 var pointChoice = -1
 var iugaLastId = -1
 var map = null
+var markerClusterer = null
 var markers = {}
 var infowindows = {}
 var infowindowsOpened = null
@@ -57,9 +58,11 @@ function HeatMapControl(controlDiv, map) {
     if (isHeatMap) {
       heatmap.setData(heatMapPoints);
       heatmap.setMap(map);
+      markerClusterer.clearMarkers();
       heatMapText.innerHTML = 'Normal';
     } else {
       heatmap.setMap(null);
+      markerClusterer.addMarkers(Object.values(markers));
       heatMapText.innerHTML = 'Heatmap';
     }
     if (infowindowsOpened != null) {
@@ -102,6 +105,11 @@ function initMap() {
 
   map.mapTypes.set('grayscale', mapType);
   map.setMapTypeId('grayscale');
+
+  markerClusterer = new MarkerClusterer(map, [], {
+      imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m',
+      maxZoom: 13,
+  });
 
   heatmap = new google.maps.visualization.HeatmapLayer({
     data: heatMapPoints,
@@ -150,9 +158,12 @@ function processData(err, data) {
     lat: latmed,
     lng: longmed
   });
+
   data.forEach(function(data, index) {
     addPoint(data, index)
   });
+
+  markerClusterer.addMarkers(Object.values(markers))
 }
 
 function processFilter(dataset, filters) {
@@ -165,6 +176,8 @@ function processFilter(dataset, filters) {
   createChartFilter(filters, onDataFiltered)
 
   function onDataFiltered(newData) {
+    markerClusterer.clearMarkers()
+
     Object.keys(markers).forEach(function(x) {
       markers[x].hasMarker = false
     })
@@ -179,10 +192,11 @@ function processFilter(dataset, filters) {
 
     Object.keys(markers).forEach(function(x) {
       if (markers[x].hasMarker === false && markers[x].id !== iugaLastId) {
-        markers[x].setMap(null)
         delete markers[x]
       }
     })
+
+    markerClusterer.addMarkers(Object.values(markers))
 
     if (isHeatMap) {
       isHeatMap = !isHeatMap;
@@ -240,9 +254,7 @@ function refreshMap() {
 }
 
 function clearMap() {
-  Object.keys(markers).forEach(function(x) {
-    markers[x].setMap(null)
-  })
+  markerClusterer.clearMarkers()
   markers = {}
   infowindows = {}
 }
@@ -342,7 +354,7 @@ function addPoint(data, index, color) {
 
   var marker = new google.maps.Marker({
     position: new google.maps.LatLng(data[datasetOptions.latitude_attr], data[datasetOptions.longitude_attr]),
-    map: map,
+    // map: map,
     icon: getIcon(data, color),
     id: data.geoguide_id,
     hasMarker: true,
@@ -363,12 +375,16 @@ function addPoint(data, index, color) {
     }
   })
 
-  if (markers[marker.id] !== undefined) {
-    marker.setMap(null)
-  }
+  // if (markers[marker.id] !== undefined) {
+  //   marker.setMap(null)
+  // }
+
+  // markerClusterer.addMarker(marker)
 
   infowindows[marker.id] = infowindow
   markers[marker.id] = marker
+
+  return markers[marker.id]
 }
 
 function showPotentialPoints() {
@@ -391,6 +407,7 @@ function showPotentialPoints() {
             points[id] = datasetData[id]
           })
           processFilter(points)
+          markerClusterer.addMarkers(Object.values(markers))
         } else if (this.status === 202) {
           window.alert('Not ready yet.')
         }
