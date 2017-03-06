@@ -8,10 +8,8 @@ from flask import request, session, render_template, Blueprint, flash, redirect,
 from geoguide.server import db, datasets
 from flask_uploads import UploadNotAllowed
 from geoguide.server.models import Dataset, Attribute, AttributeType
-from geoguide.server.geoguide.helpers import save_as_hdf, path_to_hdf, harvestine_distance, index_dataset
+from geoguide.server.geoguide.helpers import save_as_hdf, path_to_hdf
 from geoguide.server.iuga import run_iuga
-from geoguide.server.similarity import cosine_similarity, jaccard_similarity
-from itertools import chain
 
 
 geoguide_blueprint = Blueprint('geoguide', __name__,)
@@ -66,7 +64,7 @@ def environment(selected_dataset):
     df = pd.read_hdf(path_to_hdf(dataset), 'data')
     vm = {}
     vm['dataset_headers'] = list(df.select_dtypes(include=[np.number]).columns)
-    vm['dataset_headers'] = [c for c in vm['dataset_headers'] if 'latitude' not in c and 'longitude' not in c and 'id' not in c]
+    vm['dataset_headers'] = [c for c in vm['dataset_headers'] if 'latitude' not in c and 'longitude' not in c and 'id' not in c and not df[c].isnull().any() and df[c].unique().shape[0] > 3]
     vm['dataset_json'] = json.dumps({
         'filename': dataset.filename,
         'latitude_attr': dataset.latitude_attr,

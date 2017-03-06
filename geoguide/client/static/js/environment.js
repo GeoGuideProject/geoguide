@@ -129,19 +129,22 @@ function initMap() {
   var customControlsLeftTopElement = document.getElementById('customControlsLeftTop')
   map.controls[google.maps.ControlPosition.LEFT_TOP].push(customControlsLeftTopElement)
 
-  var dataset_url = $('body').data('dataset')
+  var dataset_url = document.querySelector('body').dataset['dataset']
 
   d3.csv(dataset_url, function(err, data) {
     processData(err, data)
     processFilter()
   })
 
-  var charts = document.getElementsByClassName('chart')
-  var i = 0;
-  for (var i = 0; i < chartsPerPage; i++) {
-    charts[i].hidden = false;
+  var charts = document.querySelectorAll('.chart')
+  Array.prototype.slice.call(charts, 0, chartsPerPage).forEach(function (chart) {
+    chart.hidden = false
+  })
+
+  var selectElement = document.querySelector('#filtersPerPage')
+  if (selectElement) {
+      selectElement.selectedIndex = chartsPerPage - 1
   }
-  document.querySelector('#filtersPerPage').selectedIndex = chartsPerPage - 1
 
   isDatasetReady()
 }
@@ -205,43 +208,50 @@ function processFilter(dataset, filters) {
   };
 }
 
-function changeCurrentChart(button) {
-  var charts = $('.chart');
-  var first, last;
+function changeCurrentChart (button) {
+  var charts = document.querySelectorAll('.chart')
+  var first, last
 
-  charts.attr('hidden', true);
+  charts.forEach(function (e) {
+    e.hidden = true
+  })
+
+  first = charts[0]
+  last = charts[charts.length - 1]
 
   switch (button.value) {
     case 'Previous':
-      first = charts[0];
-      last = charts[charts.length - 1];
-      $(first).parent().prepend(last);
-      break;
+      first.parentElement.insertBefore(last, first)
+      break
     case 'Next':
-      first = charts[0];
-      last = charts[charts.length - 1];
-      $(last).parent().append(first);
-      break;
+      last.parentElement.appendChild(first)
+      break
+    default:
+      break
   }
-  charts = $('.chart');
+  charts = document.querySelectorAll('.chart')
   for (var i = 0; i < chartsPerPage; i++) {
-    $(charts[i]).attr('hidden', false);
+    charts[i].hidden = false
   }
 }
 
 function updateFiltersPage() {
   var e = document.querySelector('#filtersPerPage')
   var value = e.options[e.selectedIndex].value
-  var charts = $('.chart');
+  var charts = document.querySelectorAll('.chart')
 
   if (value == '*') {
-    charts.attr('hidden', false);
+    charts.forEach(function(e) {
+      e.hidden = false
+    })
   }
   else {
-    charts.attr('hidden', true);
+    charts.forEach(function(e) {
+      e.hidden = true
+    })
     chartsPerPage = Number(value);
     for (var i = 0; i < chartsPerPage; i++) {
-      $(charts[i]).attr('hidden', false);
+      charts[i].hidden = false
     }
   }
 }

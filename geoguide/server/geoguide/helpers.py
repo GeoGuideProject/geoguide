@@ -36,7 +36,6 @@ def save_as_hdf(dataset):
         if is_first:
             store.put('data', df, format='table')
         else:
-            print(df.columns)
             store.append('data', df)
         is_first = False
 
@@ -62,7 +61,7 @@ def index_dataset(dataset):
         datetime_columns = [attr.description for attr in dataset.attributes if attr.type == AttributeType.datetime]
         len_datetime_columns = len(datetime_columns)
         numeric_columns = list(df.select_dtypes(include=[np.number]).columns)
-        numeric_columns = [c for c in numeric_columns if 'latitude' not in c and 'longitude' not in c and 'id' not in c and not df[c].isnull().any()]
+        numeric_columns = [c for c in numeric_columns if 'latitude' not in c and 'longitude' not in c and 'id' not in c and not df[c].isnull().any() and df[c].unique().shape[0] > 3]
         df = df.loc[:, [dataset.latitude_attr, dataset.longitude_attr, *numeric_columns, *datetime_columns]]
         greatest_distance = 0
         greatest_similarity = 0

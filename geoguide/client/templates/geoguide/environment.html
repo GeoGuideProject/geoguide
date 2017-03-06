@@ -82,7 +82,7 @@
     <div class="control well well-sm">
       <div class="title" data-toggle="collapse" data-target="#collapseFilters">Filters <span class="pull-right"><span class="caret"></span></span></div>
       <div class="collapse in" id="collapseFilters">
-        {% if dataset_headers %}
+        {% if dataset_headers|length > 1 %}
           <div class="form-horizontal">
             <div class="form-group">
               <label for="filtersPerPage" class="col-sm-4 control-label"># filters:</label>
@@ -111,8 +111,10 @@
           </div>
           {% endfor %}
         </div>
+        {% if dataset_headers|length > 1 %}
         <input type="button" class="btn btn-default btn-sm" onClick="changeCurrentChart(this)" value="Previous">
         <input type="button" class="btn btn-default btn-sm pull-right" onClick="changeCurrentChart(this)" value="Next">
+        {% endif %}
       </div>
     </div>
   </div>
