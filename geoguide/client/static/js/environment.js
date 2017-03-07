@@ -5,6 +5,7 @@ var iugaLastId = -1
 var map = null
 var markerClusterer = null
 var markers = {}
+var iugaPoints = null
 var infowindows = {}
 var infowindowsOpened = null
 var runningRequest = false
@@ -277,6 +278,7 @@ function refreshMap() {
   processData(undefined, Object.values(datasetData))
   processFilter()
   iugaLastId = -1
+  iugaPoints = null
 }
 
 function clearMap() {
@@ -326,6 +328,22 @@ function getIcon(data, color) {
     '#1565c0',
     '#0d47a1'
   ]
+  var sizeBonus = 0;
+
+  if (data.geoguide_id == iugaLastId) {
+    fillColor = '#F44336'
+    sizeBonus = 2
+  }
+  else if (iugaPoints) {
+    fillColor = '#BBDEFB'
+    Object.keys(iugaPoints).forEach(function (id) {
+      if (data.geoguide_id == id) {
+        fillColor = '#0D47A1'
+        sizeBonus = 1
+        return
+      }
+    })
+  }
 
   if (colorModifier !== '' && data[colorModifier]) {
     var n = Number(data[colorModifier])
@@ -348,7 +366,7 @@ function getIcon(data, color) {
 
   return {
     path: google.maps.SymbolPath.CIRCLE,
-    scale: size,
+    scale: size + sizeBonus,
     fillColor: fillColor,
     fillOpacity: 0.75,
     strokeWeight: 0
@@ -371,7 +389,7 @@ function addPoint(data, index, color) {
     }
     contentString += '<b>' + key + '</b>: <code>' + value + '</code><br />';
   })
-  contentString += '<br/><button type="button" class="btn btn-default" onclick="showPotentialPoints()">Explore</button>';
+  contentString += '<br/><button type="button" class="btn btn-default" onclick="showPotentialPoints(this)">Explore</button>';
   contentString += '</div>';
 
   var infowindow = new google.maps.InfoWindow({
@@ -413,31 +431,53 @@ function addPoint(data, index, color) {
   return markers[marker.id]
 }
 
-function showPotentialPoints() {
+function showPotentialPoints(e) {
   if (runningRequest === false) {
     runningRequest = true;
     var loader = new XMLHttpRequest();
     var params = null;
+    var icon = null;
+    var oldText = e.innerHTML;
+    iugaPoints = null;
     loader.onreadystatechange = function() {
       if (this.readyState === XMLHttpRequest.DONE) {
         if (this.status === 200) {
           var jsonResponse = JSON.parse(this.responseText)
-          var points = {}
+          //var points = {}
           clearMap()
-          addPoint(datasetData[pointChoice], pointChoice, '#F44336')
+          iugaPoints = {}
+          // Object.keys(markers).forEach(function (id) {
+          //   icon = markers[id].getIcon()
+          //   icon.fillColor = '#BBDEFB'
+          //   markers[id].setIcon(icon)
+          // })
+
+          // icon = markers[pointChoice].getIcon()
+          // icon.fillColor = '#F44336'
+          // markers[pointChoice].setIcon(icon)
+          //addPoint(datasetData[pointChoice], pointChoice, '#F44336')
           jsonResponse.points.forEach(function (id) {
             if (id === pointChoice) {
               return
             }
-            addPoint(datasetData[id], id)
-            points[id] = datasetData[id]
+            // addPoint(datasetData[id], id)
+            // points[id] = datasetData[id]
+            iugaPoints[id] = datasetData[id]
+            // iugaPoints[id] = datasetData[id]
+            // icon = markers[id].getIcon()
+            // icon.fillColor = '#0D47A1'
+            // markers[id].setIcon(icon)
           })
-          processFilter(points)
+          Object.values(datasetData).forEach(function(data, index) {
+            addPoint(data, index)
+          })
+          //processFilter(points)
           markerClusterer.addMarkers(Object.values(markers))
         } else if (this.status === 202) {
           window.alert('Not ready yet.')
         }
         runningRequest = false
+        e.innerHTML = oldText;
       }
     }
     var url = '/environment/' + datasetOptions.filename + '/' + pointChoice + '/iuga'
@@ -460,6 +500,7 @@ function showPotentialPoints() {
         }
       }
     }
+    e.innerHTML = 'Loading...'
     loader.open('POST', url, true)
     loader.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
     loader.send(params)
