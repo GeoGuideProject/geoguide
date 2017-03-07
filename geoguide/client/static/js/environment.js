@@ -212,6 +212,10 @@ function changeCurrentChart (button) {
   var charts = document.querySelectorAll('.chart')
   var first, last
 
+  if (chartsPerPage === charts.length) {
+    return
+  }
+
   charts.forEach(function (e) {
     e.hidden = true
   })
@@ -241,6 +245,7 @@ function updateFiltersPage() {
   var charts = document.querySelectorAll('.chart')
 
   if (value == '*') {
+    chartsPerPage = charts.length
     charts.forEach(function(e) {
       e.hidden = false
     })
@@ -254,10 +259,21 @@ function updateFiltersPage() {
       charts[i].hidden = false
     }
   }
+
+  var buttonsContainer = document.querySelector('#collapseFilters .buttons')
+  buttonsContainer.hidden = chartsPerPage === charts.length
+}
+
+function resetFilters() {
+  var charts = document.querySelectorAll('.chart')
+  charts.forEach(function (_, i) {
+    reset(i)
+  })
 }
 
 function refreshMap() {
   clearMap()
+  resetFilters()
   processData(undefined, Object.values(datasetData))
   processFilter()
   iugaLastId = -1

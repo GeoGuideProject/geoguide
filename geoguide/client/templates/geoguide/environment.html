@@ -112,8 +112,10 @@
           {% endfor %}
         </div>
         {% if dataset_headers|length > 1 %}
-        <input type="button" class="btn btn-default btn-sm" onClick="changeCurrentChart(this)" value="Previous">
-        <input type="button" class="btn btn-default btn-sm pull-right" onClick="changeCurrentChart(this)" value="Next">
+        <div class="buttons">
+          <input type="button" class="btn btn-default btn-sm" onClick="changeCurrentChart(this)" value="Previous">
+          <input type="button" class="btn btn-default btn-sm pull-right" onClick="changeCurrentChart(this)" value="Next">
+        </div>
         {% endif %}
       </div>
     </div>
