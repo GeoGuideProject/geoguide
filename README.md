@@ -4,8 +4,19 @@
 
 ### Basics
 
-1. Create and activate a virtualenv
-1. Install the requirements
+Create and activate a virtualenv
+
+```sh
+$ sudo pip install virtualenv # if not installed
+$ virtualenv env -p python3
+$ source env/bin/activate
+```
+
+Install the requirements
+
+```sh
+$ pip install -r requirements-sqlite.txt
+```
 
 ### Set Environment Variables
 
@@ -13,7 +24,13 @@
 $ cp .env.example .env
 ```
 
-Set a new APP_KEY and you are ready to go
+Generate a new APP_KEY
+
+```sh
+$ python generate_key.py
+```
+
+Copy and paste at APP_KEY in `.env` file
 
 ### Create DB
 

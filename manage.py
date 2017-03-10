@@ -79,5 +79,13 @@ def create_data():
     pass
 
 
+@manager.command
+def generate_key():
+    """Generate a new key."""
+    import random
+    chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
+    print(''.join(random.choice(chars) for i in range(50)))
+
+
 if __name__ == '__main__':
     manager.run()
