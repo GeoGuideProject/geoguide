@@ -42,4 +42,4 @@ def diversity_calculator_expo(users_list):
 
 
 def diversity(elements):
-    return diversity_calculator_expo(elements)
+    return diversity_calculator_geo(elements)

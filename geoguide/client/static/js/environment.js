@@ -5,7 +5,7 @@ var iugaLastId = -1
 var map = null
 var markerClusterer = null
 var markers = {}
-var iugaPoints = null
+var iugaPoints = []
 var infowindows = {}
 var infowindowsOpened = null
 var runningRequest = false
@@ -109,7 +109,7 @@ function initMap() {
 
   markerClusterer = new MarkerClusterer(map, [], {
       imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m',
-      maxZoom: 13,
+      maxZoom: 11,
   });
 
   heatmap = new google.maps.visualization.HeatmapLayer({
@@ -278,7 +278,7 @@ function refreshMap() {
   processData(undefined, Object.values(datasetData))
   processFilter()
   iugaLastId = -1
-  iugaPoints = null
+  iugaPoints = []
 }
 
 function clearMap() {
@@ -310,13 +310,16 @@ function refreshModifiers() {
   calculateMaxModifiers(Object.values(datasetData))
   Object.keys(markers).forEach(function(x) {
     var data = datasetData[markers[x].id]
-    markers[x].setIcon(getIcon(data, data.geoguide_id === iugaLastId ? '#F44336' : undefined))
+    markers[x].setIcon(getIcon(data))
   })
 }
 
-function getIcon(data, color) {
-  var fillColor = '#2196F3'
-  var fillColors = [
+function getIcon (data) {
+  /* constants */
+  var normalfillColor = '#2196F3'
+  var selectedFillColor = '#F44336'
+  var iugaFillColor = '#FFC107'
+  var normalFillColors = [
     '#e3f2fd',
     '#bbdefb',
     '#90caf9',
@@ -328,40 +331,49 @@ function getIcon(data, color) {
     '#1565c0',
     '#0d47a1'
   ]
-  var sizeBonus = 0;
+  var iugaFillColors = [
+    '#fff8e1',
+    '#ffecb3',
+    '#ffe082',
+    '#ffd54f',
+    '#ffca28',
+    '#ffc107',
+    '#ffb300',
+    '#ffa000',
+    '#ff8f00',
+    '#ff6f00'
+  ]
 
-  if (data.geoguide_id == iugaLastId) {
-    fillColor = '#F44336'
-    sizeBonus = 2
-  }
-  else if (iugaPoints) {
-    fillColor = '#BBDEFB'
-    Object.keys(iugaPoints).forEach(function (id) {
-      if (data.geoguide_id == id) {
-        fillColor = '#0D47A1'
-        sizeBonus = 1
-        return
-      }
-    })
-  }
+  /* default */
+  var fillColor = normalfillColor
+  var size = 7
+  var sizeBonus = 0
+  var isIugaPoint = iugaPoints.indexOf(Number(data.geoguide_id)) > -1
 
   if (colorModifier !== '' && data[colorModifier]) {
     var n = Number(data[colorModifier])
     n += (2 * Math.abs(n))
-    var value = Math.floor((n / colorModifierMax[colorModifier]) * (fillColors.length - 1))
-    fillColor = fillColors[value]
+    var value = Math.floor((n / colorModifierMax[colorModifier]) * (normalFillColors.length - 1))
+    fillColor = isIugaPoint ? iugaFillColors[value] : normalFillColors[value]
+  } else if (isIugaPoint) {
+    fillColor = iugaFillColor
   }
-
-  if (typeof color === 'string') {
-    fillColor = color
-  }
-
-  var size = 7
 
   if (sizeModifier !== '' && data[sizeModifier]) {
     var n = Number(data[sizeModifier])
     n += (2 * Math.abs(n))
     size = 5 + ((n / sizeModifierMax[sizeModifier]) * 6)
+  }
+
+  if (isIugaPoint) {
+    size = 7
+    sizeBonus = 2
+  }
+
+  if (data.geoguide_id === iugaLastId) {
+    fillColor = selectedFillColor
+    size = 7
+    sizeBonus = 2
   }
 
   return {
@@ -399,9 +411,9 @@ function addPoint(data, index, color) {
   var marker = new google.maps.Marker({
     position: new google.maps.LatLng(data[datasetOptions.latitude_attr], data[datasetOptions.longitude_attr]),
     // map: map,
-    icon: getIcon(data, color),
+    icon: getIcon(data),
     id: data.geoguide_id,
-    hasMarker: true,
+    hasMarker: true
   })
 
   marker.addListener('click', function() {
@@ -443,35 +455,31 @@ function showPotentialPoints(e) {
       if (this.readyState === XMLHttpRequest.DONE) {
         if (this.status === 200) {
           var jsonResponse = JSON.parse(this.responseText)
-          //var points = {}
-          clearMap()
-          iugaPoints = {}
-          // Object.keys(markers).forEach(function (id) {
-          //   icon = markers[id].getIcon()
-          //   icon.fillColor = '#BBDEFB'
-          //   markers[id].setIcon(icon)
-          // })
+          iugaPoints = []
 
-          // icon = markers[pointChoice].getIcon()
-          // icon.fillColor = '#F44336'
-          // markers[pointChoice].setIcon(icon)
-          //addPoint(datasetData[pointChoice], pointChoice, '#F44336')
           jsonResponse.points.forEach(function (id) {
             if (id === pointChoice) {
               return
             }
-            // addPoint(datasetData[id], id)
-            // points[id] = datasetData[id]
-            iugaPoints[id] = datasetData[id]
-            // iugaPoints[id] = datasetData[id]
-            // icon = markers[id].getIcon()
-            // icon.fillColor = '#0D47A1'
-            // markers[id].setIcon(icon)
+            iugaPoints.push(Number(id))
           })
-          Object.values(datasetData).forEach(function(data, index) {
-            addPoint(data, index)
-          })
-          //processFilter(points)
+
+          if (document.querySelector('#onlyfilteredpoints').checked) {
+            markerClusterer.clearMarkers()
+            Object.keys(markers).forEach(function(x) {
+              markers[x].setIcon(getIcon(datasetData[x]))
+            })
+            if (infowindowsOpened != null) {
+              infowindowsOpened.close()
+            }
+          } else {
+            resetFilters()
+            clearMap()
+            Object.values(datasetData).forEach(function (data, index) {
+              addPoint(data, index)
+            })
+          }
+
           markerClusterer.addMarkers(Object.values(markers))
         } else if (this.status === 202) {
           window.alert('Not ready yet.')
