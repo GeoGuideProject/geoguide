@@ -40,6 +40,12 @@ $ python manage.py db init
 $ python manage.py db migrate
 ```
 
+### Get a dataset
+
+You can [download a .zip](https://github.com/gustavoguerino/GeoHIghlight/archive/datasets.zip) with all current supported datasets.
+
+Feel free to try another dataset.
+
 ### Run the Application
 
 ```sh
