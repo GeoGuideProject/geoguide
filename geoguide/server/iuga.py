@@ -138,4 +138,4 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset
         dicToArray.append(current_records[i])
     my_distances = get_distances_of(current_records, k, distance_by_id)
     my_diversity = diversity.diversity(my_distances)
-    return [min_similarity, round(my_diversity, 2), dicToArray]
+    return [min_similarity, round(my_diversity, 2), sorted(dicToArray)]

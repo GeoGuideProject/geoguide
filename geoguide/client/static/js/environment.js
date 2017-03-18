@@ -66,7 +66,7 @@ function HeatMapControl(controlDiv, map) {
       markerClusterer.addMarkers(Object.values(markers));
       heatMapText.innerHTML = 'Heatmap';
     }
-    if (infowindowsOpened != null) {
+    if (infowindowsOpened) {
       infowindowsOpened.close();
     }
   });
@@ -200,6 +200,10 @@ function processFilter(dataset, filters) {
       }
     })
 
+    colorModifierMax = {}
+    sizeModifierMax = {}
+    refreshModifiers()
+
     markerClusterer.addMarkers(Object.values(markers))
 
     if (isHeatMap) {
@@ -307,7 +311,9 @@ function calculateMaxModifiers(dataset) {
 }
 
 function refreshModifiers() {
-  calculateMaxModifiers(Object.values(datasetData))
+  calculateMaxModifiers(Object.keys(markers).map(function(x) {
+    return datasetData[x]
+  }))
   Object.keys(markers).forEach(function(x) {
     var data = datasetData[markers[x].id]
     markers[x].setIcon(getIcon(data))
@@ -388,10 +394,10 @@ function getIcon (data) {
 function addPoint(data, index, color) {
   datasetData[data.geoguide_id] = data;
 
-  var contentString = '<div id="infowindow' + data.geoguide_id + '"><h4>Profile</h4>';
+  var contentString = '<div id="infowindow' + data.geoguide_id + '"><h4>Profile</h4><div style="max-height: 30em; overflow-y: auto; margin-bottom: 1em">';
 
   Object.keys(data).forEach(function(key) {
-    if (data[key] === undefined || key === 'geoguide_id') {
+    if (data[key] === undefined || key === 'geoguide_id' || data[key] === '') {
       return
     }
     var value = data[key];
@@ -401,7 +407,7 @@ function addPoint(data, index, color) {
     }
     contentString += '<b>' + key + '</b>: <code>' + value + '</code><br />';
   })
-  contentString += '<br/><button type="button" class="btn btn-default" onclick="showPotentialPoints(this)">Explore</button>';
+  contentString += '</div><button type="button" class="btn btn-default" onclick="showPotentialPoints(this)">Explore</button>';
   contentString += '</div>';
 
   var infowindow = new google.maps.InfoWindow({
@@ -417,7 +423,7 @@ function addPoint(data, index, color) {
   })
 
   marker.addListener('click', function() {
-    if (infowindowsOpened != null) {
+    if (infowindowsOpened) {
       infowindowsOpened.close();
     }
     infowindow.open(map, marker);
@@ -453,8 +459,12 @@ function showPotentialPoints(e) {
     iugaPoints = null;
     loader.onreadystatechange = function() {
       if (this.readyState === XMLHttpRequest.DONE) {
+        if (infowindowsOpened) {
+          infowindowsOpened.close()
+        }
         if (this.status === 200) {
           var jsonResponse = JSON.parse(this.responseText)
+
           iugaPoints = []
 
           jsonResponse.points.forEach(function (id) {
@@ -469,9 +479,6 @@ function showPotentialPoints(e) {
             Object.keys(markers).forEach(function(x) {
               markers[x].setIcon(getIcon(datasetData[x]))
             })
-            if (infowindowsOpened != null) {
-              infowindowsOpened.close()
-            }
           } else {
             resetFilters()
             clearMap()

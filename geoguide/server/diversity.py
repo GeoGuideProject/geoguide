@@ -18,6 +18,35 @@ def diversity_calculator_geo(elements):
     return average
 
 
+def diversity_calculator_geo_based_on_distances(elements):
+    """
+    Diversity definition for spatiotemporal data.
+
+    The most diversity set is when the greatest and the lowest
+    are distant from average.
+    """
+    max_el = max(elements)
+    min_el = min(elements)
+    count = len(elements)
+    average = sum(elements) / count
+    return (average - min_el) + (max_el - average)
+
+
+def diversity_calculator_geo_based_on_differences(elements):
+    """
+    Diversity definition for spatiotemporal data.
+
+    The most diversity set is when the sum of differences between the distances
+    are bigger.
+    """
+    sorted_elements = sorted(elements)
+    count = len(elements)
+    diffs = []
+    for x in range(count - 1):
+        diffs.append(abs(sorted_elements[x + 1] - sorted_elements[x]))
+    return sum(diffs)
+
+
 def diversity_calculator_jaccard(users_list):
     """
     Diversity definition for user data as jaccard (as in CIKM'15 paper).
@@ -42,4 +71,4 @@ def diversity_calculator_expo(users_list):
 
 
 def diversity(elements):
-    return diversity_calculator_geo(elements)
+    return diversity_calculator_geo_based_on_differences(elements)
