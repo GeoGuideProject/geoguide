@@ -36,6 +36,9 @@ class Dataset(db.Model):
 
 class AttributeType(enum.Enum):
     datetime = 1
+    number = 2
+    text = 3
+    categorical = 4
 
 
 class Attribute(db.Model):

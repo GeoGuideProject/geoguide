@@ -7,8 +7,8 @@ import os
 import shutil
 from itertools import chain
 from geoguide.server import app, db, datasets
-from geoguide.server.models import AttributeType
-from geoguide.server.similarity import cosine_similarity, jaccard_similarity
+from geoguide.server.models import Dataset, Attribute, AttributeType
+from geoguide.server.similarity import cosine_similarity_with_nan as cosine_similarity, jaccard_similarity
 from threading import Thread
 
 CHUNKSIZE = app.config['CHUNKSIZE']
@@ -18,7 +18,35 @@ def path_to_hdf(dataset):
     return '{}.h5'.format(datasets.path(dataset.filename).rsplit('.', 1)[0])
 
 
+def guess_attributes_types(dataset):
+    df = pd.read_hdf(path_to_hdf(dataset), 'data')
+    numberic_attributes = list(df.select_dtypes(include=[np.number]).columns)
+    string_attributes = list(df.select_dtypes(include=[object]).columns)
+
+    number_attributes = [c for c in numberic_attributes if 'latitude' not in c and 'longitude' not in c and 'id' not in c and df[c].unique().shape[0] > 3]
+
+    categorical_attributes = [c for c in numberic_attributes if 'latitude' not in c and 'longitude' not in c and 'id' not in c and df[c].unique().shape[0] <= 3]
+    categorical_attributes += [c for c in string_attributes if df[c].unique().shape[0] <= 10]
+
+    text_attributes = [c for c in string_attributes if c not in categorical_attributes]
+
+    for attr in number_attributes:
+        attribute = Attribute(attr, AttributeType.number, dataset.id)
+        db.session.add(attribute)
+
+    for attr in categorical_attributes:
+        attribute = Attribute(attr, AttributeType.categorical, dataset.id)
+        db.session.add(attribute)
+
+    for attr in text_attributes:
+        attribute = Attribute(attr, AttributeType.text, dataset.id)
+        db.session.add(attribute)
+
+    db.session.commit()
+
+
 def save_as_hdf(dataset):
+    dataset_id = dataset.id
     datetime_columns = [attr.description for attr in dataset.attributes if attr.type == AttributeType.datetime]
     original_csv_path = datasets.path(dataset.filename)
     csv_path = '{}.normalized.csv'.format(original_csv_path.rsplit('.', 1)[0])
@@ -43,26 +71,51 @@ def save_as_hdf(dataset):
     os.remove(original_csv_path)
     shutil.move(csv_path, original_csv_path)
 
-    Thread(target=lambda: index_dataset(dataset)).start()
+    guess_attributes_types(dataset)
+
+    Thread(target=lambda: index_dataset(dataset_id)).start()
 
 
-def index_dataset(dataset):
+def index_dataset(dataset_id):
     with app.app_context():
+        dataset = Dataset.query.get(dataset_id)
         hdf_path = path_to_hdf(dataset)
         tmp_hdf_path = '{}.tmp'.format(hdf_path)
 
         ds_datetimes = {}
-        ds_numerics = {}
+        ds_numbers = {}
+        ds_categoricals = {}
+
+        def handle_ds_datetimes(ds, row, left_limit, right_limit):
+            key = row[0]
+            if key not in ds:
+                ds[key] = list(chain.from_iterable([[d.hour, d.minute, d.weekday()] for d in row[left_limit:right_limit]])) if right_limit > left_limit else []
+            return ds
+
+        def handle_ds_numbers(ds, row, left_limit, right_limit):
+            key = row[0]
+            if key not in ds:
+                ds[key] = row[left_limit:right_limit]
+            return ds
+
+        def handle_ds_categoricals(ds, row, left_limit, right_limit):
+            key = row[0]
+            if key not in ds:
+                ds[key] = row[left_limit:right_limit]
+            return ds
 
         store = pd.HDFStore(hdf_path)
         df = store.select('data')
 
-
         datetime_columns = [attr.description for attr in dataset.attributes if attr.type == AttributeType.datetime]
-        len_datetime_columns = len(datetime_columns)
-        numeric_columns = list(df.select_dtypes(include=[np.number]).columns)
-        numeric_columns = [c for c in numeric_columns if 'latitude' not in c and 'longitude' not in c and 'id' not in c and not df[c].isnull().any() and df[c].unique().shape[0] > 3]
-        df = df.loc[:, [dataset.latitude_attr, dataset.longitude_attr, *numeric_columns, *datetime_columns]]
+        number_columns = [attr.description for attr in dataset.attributes if attr.type == AttributeType.number]
+        categorical_columns = [attr.description for attr in dataset.attributes if attr.type == AttributeType.categorical]
+
+        datetime_columns_limits = 3, 3 + len(datetime_columns)
+        number_columns_limits = datetime_columns_limits[1], datetime_columns_limits[1] + len(number_columns)
+        categorical_columns_limits = number_columns_limits[1], number_columns_limits[1] + len(categorical_columns)
+
+        df = df.loc[:, [dataset.latitude_attr, dataset.longitude_attr, *datetime_columns, *number_columns, *categorical_columns]]
         greatest_distance = 0
         greatest_similarity = 0
 
@@ -71,25 +124,21 @@ def index_dataset(dataset):
         ds = []
         tmp_store = pd.HDFStore(tmp_hdf_path)
         for row_a in df.itertuples():
-            if row_a[1] == 0 or row_a[2] == 0:
-                x += 1
-                continue
-            if row_a[0] not in ds_datetimes:
-                ds_datetimes[row_a[0]] = list(chain.from_iterable([[d.hour, d.minute, d.weekday()] for d in row_a[-len_datetime_columns:]])) if len_datetime_columns else []
-            if row_a[0] not in ds_numerics:
-                ds_numerics[row_a[0]] = row_a[3:-len_datetime_columns] if len_datetime_columns else row_a[3:]
+            ds_datetimes = handle_ds_datetimes(ds_datetimes, row_a, *datetime_columns_limits)
+            ds_numbers = handle_ds_numbers(ds_numbers, row_a, *number_columns_limits)
+            ds_categoricals = handle_ds_categoricals(ds_categoricals, row_a, *categorical_columns_limits)
+
             for row_b in df.iloc[x:].itertuples():
-                if row_b[1] == 0 or row_b[2] == 0:
-                    continue
-                if row_b[0] not in ds_datetimes:
-                    ds_datetimes[row_b[0]] = list(chain.from_iterable([[d.hour, d.minute, d.weekday()] for d in row_b[-len_datetime_columns:]])) if len_datetime_columns else []
-                if row_b[0] not in ds_numerics:
-                    ds_numerics[row_b[0]] = row_b[3:-len_datetime_columns] if len_datetime_columns else row_b[3:]
+                ds_datetimes = handle_ds_datetimes(ds_datetimes, row_b, *datetime_columns_limits)
+                ds_numbers = handle_ds_numbers(ds_numbers, row_b, *number_columns_limits)
+                ds_categoricals = handle_ds_categoricals(ds_categoricals, row_b, *categorical_columns_limits)
+
                 distance = harvestine_distance(row_a[1], row_a[2],
                                                row_b[1], row_b[2])
                 similarity_i = jaccard_similarity(ds_datetimes[row_a[0]], ds_datetimes[row_b[0]])
-                similarity_ii = cosine_similarity(ds_numerics[row_a[0]], ds_numerics[row_b[0]])
-                similarity = similarity_i + similarity_ii
+                similarity_ii = cosine_similarity(ds_numbers[row_a[0]], ds_numbers[row_b[0]])
+                similarity_iii = jaccard_similarity(ds_categoricals[row_a[0]], ds_categoricals[row_b[0]])
+                similarity = similarity_i + similarity_ii + similarity_iii
                 print('Current:', row_a[0], row_b[0], similarity, distance)
                 ds.append((row_a[0], row_b[0], similarity, distance))
                 if distance > greatest_distance:
@@ -115,7 +164,7 @@ def index_dataset(dataset):
                 similarity=lambda x: x.similarity / greatest_similarity,
                 distance=lambda x: x.distance / greatest_distance
             )
-            store.append('relation', dfr)
+            store.append('relation', dfr, data_columns=True)
 
         tmp_store.close()
         store.close()

@@ -49,17 +49,17 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset
 
     # read input data frame
     store = pd.HDFStore(path_to_hdf(dataset))
-    for df in store.select('relation', chunksize=CHUNKSIZE):
+    for df in store.select('relation', chunksize=CHUNKSIZE, where='id_a=input_g or id_b=input_g'):
         if filtered_points:
-            df = df[(df['id_a'].isin(filtered_points)) & (df['id_b'].isin(filtered_points))]
+            df = df[((df['id_a'].isin(filtered_points)) & (df['id_b'].isin(filtered_points)))]
         for row in df.itertuples():
-            if int(row[1]) > input_g:
-                break
-            to_id = int(row[2])
-            if to_id == input_g:
+            id_a = int(row[1])
+            id_b = int(row[2])
+            if id_a == id_b:
                 continue
-            similarities[to_id] = float(row[3])
-            distances[to_id] = float(row[4])
+            key = id_a if id_b == input_g else id_b
+            similarities[key] = float(row[3])
+            distances[key] = float(row[4])
     store.close()
 
     # sorting similarities and distances in descending order

@@ -79,7 +79,7 @@ def environment(selected_dataset):
         'latitude_attr': dataset.latitude_attr,
         'longitude_attr': dataset.longitude_attr,
         'indexed': (dataset.indexed_at is not None),
-        'attributes': [dict(description=attr.description, type=attr.type.value) for attr in dataset.attributes],
+        'attributes': [dict(description=attr.description, type=dict(value=attr.type.value, description=attr.type.name)) for attr in dataset.attributes],
         'headers': vm['dataset_headers'],
     })
     vm['dataset_url'] = datasets.url(dataset.filename)
@@ -94,7 +94,7 @@ def dataset_datails(selected_dataset):
         'latitude_attr': dataset.latitude_attr,
         'longitude_attr': dataset.longitude_attr,
         'indexed': (dataset.indexed_at is not None),
-        'attributes': [dict(description=attr.description, type=attr.type.value) for attr in dataset.attributes]
+        'attributes': [dict(description=attr.description, type=dict(value=attr.type.value, description=attr.type.name)) for attr in dataset.attributes],
     })
 
 @geoguide_blueprint.route('/environment/<selected_dataset>/<int:index>')
