@@ -1,30 +1,32 @@
 from math import sqrt, isnan
+from statistics import mean
+from fuzzywuzzy import fuzz
 
 
 def square_rooted(x):
-    return round(sqrt(sum([a * a for a in x])), 3)
+    return sqrt(sum([a * a for a in x]))
 
 
 def cosine_similarity(x, y):
     numerator = sum(a * b for a, b in zip(x, y))
     denominator = square_rooted(x) * square_rooted(y)
     try:
-        return round(numerator / float(denominator), 3)
+        return numerator / float(denominator)
     except ZeroDivisionError:
         return 0.0
 
 
 def cosine_similarity_with_nan(x, y):
-    m = len(x)
     x_dot_y = 0
     x_norm = 0
     y_norm = 0
-    for i in range(m):
-        if (isnan(x[i])) or (isnan(y[i])):
+
+    for a, b in zip(x, y):
+        if isnan(a) or isnan(b):
             continue
-        x_dot_y += x[i] * y[i]
-        x_norm += x[i] * x[i]
-        y_norm += y[i] * y[i]
+        x_dot_y += a * b
+        x_norm += a * a
+        y_norm += b * b
 
     x_norm = sqrt(x_norm)
     y_norm = sqrt(y_norm)
@@ -43,3 +45,15 @@ def jaccard_similarity(x, y):
         return intersection_cardinality / float(union_cardinality)
     except ZeroDivisionError:
         return 0.0
+
+
+def fuzz_similarity(x, y):
+    ratios = []
+    for a, b in zip(x, y):
+        if not a or not b:
+            continue
+        r = fuzz.token_set_ratio(a, b) * 0.01
+        ratios.append(r)
+    if ratios:
+        return mean(ratios)
+    return 0.0

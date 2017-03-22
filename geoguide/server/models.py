@@ -38,7 +38,8 @@ class AttributeType(enum.Enum):
     datetime = 1
     number = 2
     text = 3
-    categorical = 4
+    categorical_number = 4
+    categorical_text = 5
 
 
 class Attribute(db.Model):

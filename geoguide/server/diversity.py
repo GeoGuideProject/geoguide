@@ -8,6 +8,8 @@ Input for user groups: redundant list of all members of all groups.
 Input for spatiotemporal data: list of distance values.
 """
 
+from statistics import pstdev
+
 
 def diversity_calculator_geo(elements):
     """
@@ -47,6 +49,13 @@ def diversity_calculator_geo_based_on_differences(elements):
     return sum(diffs)
 
 
+def diversity_calculator_geo_by_stdev(elements):
+    """
+    Diversity definition for spatiotemporal data (standard deviation).
+    """
+    return pstdev(elements)
+
+
 def diversity_calculator_jaccard(users_list):
     """
     Diversity definition for user data as jaccard (as in CIKM'15 paper).
@@ -71,4 +80,4 @@ def diversity_calculator_expo(users_list):
 
 
 def diversity(elements):
-    return diversity_calculator_geo_based_on_differences(elements)
+    return diversity_calculator_geo_by_stdev(elements)
