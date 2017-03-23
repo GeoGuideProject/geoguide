@@ -1,12 +1,12 @@
 'use strict'
 
-function identityLatLng (headers) {
-  var potentialLatitudes = []
-  var potentialLongitudes = []
-  var latitudeAttrSelectElement = document.getElementById('latitudeAttrSelect')
-  var longitudeAttSelectElement = document.getElementById('longitudeAttrSelect')
-  headers.forEach(function (header) {
-    var option
+const identityLatLng = headers => {
+  let potentialLatitudes = []
+  let potentialLongitudes = []
+  let latitudeAttrSelectElement = document.getElementById('latitudeAttrSelect')
+  let longitudeAttSelectElement = document.getElementById('longitudeAttrSelect')
+  headers.forEach(header => {
+    let option
     if (/([Ll]atitude)/.test(header)) {
       potentialLatitudes.push(header)
       option = document.createElement('option')
@@ -42,10 +42,10 @@ function identityLatLng (headers) {
   }
 }
 
-function identifyDatetime (headers) {
-  var potentialDatetimes = []
-  var datetimeAttrInputElement = document.getElementById('datetimeAttrInputText')
-  headers.forEach(function (header) {
+const identifyDatetime = headers => {
+  let potentialDatetimes = []
+  let datetimeAttrInputElement = document.getElementById('datetimeAttrInputText')
+  headers.forEach(header => {
     if (/time$/.test(header)) {
       potentialDatetimes.push(header)
     }
@@ -54,26 +54,24 @@ function identifyDatetime (headers) {
   datetimeAttrInputElement.parentElement.removeAttribute('hidden')
 }
 
-function identifyNumberOfRows (contents) {
-  var n = (contents.match(/\n/g) || []).length
-  var numberRowsInputElement = document.getElementById('numberRowsInputNumber')
+const identifyNumberOfRows = contents => {
+  let n = (contents.match(/\n/g) || []).length
+  let numberRowsInputElement = document.getElementById('numberRowsInputNumber')
   numberRowsInputElement.value = n.toString()
   numberRowsInputElement.parentElement.removeAttribute('hidden')
 }
 
-function normalizeHeaders (headers) {
-  return headers.map(function (header) {
-    return header.replace(/^"|"$/g, '')
-  })
+const normalizeHeaders = headers => {
+  return headers.map(header => header.replace(/^"|"$/g, ''))
 }
 
-function readSingleFile (evt) {
-  var f = evt.target.files[0]
+const readSingleFile = evt => {
+  let f = evt.target.files[0]
   if (f) {
-    var r = new window.FileReader()
-    r.onload = function (e) {
-      var contents = e.target.result.trim()
-      var headers = contents.substr(0, contents.indexOf('\n')).split(',')
+    let r = new window.FileReader()
+    r.onload = e => {
+      let contents = e.target.result.trim()
+      let headers = contents.substr(0, contents.indexOf('\n')).split(',')
       headers = normalizeHeaders(headers)
       identifyDatetime(headers)
       identityLatLng(headers)
