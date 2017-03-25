@@ -1,5 +1,8 @@
 'use strict'
 
+import './index.css'
+import { initFilters, createChartFilter } from './chart.d3.crossfilter.js'
+
 let pointChoice = -1
 let iugaLastId = -1
 let map = null
@@ -73,8 +76,8 @@ function HeatMapControl(controlDiv, map) {
   });
 }
 
-function initMap() {
-  var mapType = new google.maps.StyledMapType([{
+const initMap = () => {
+  let mapType = new google.maps.StyledMapType([{
     featureType: "all",
     elementType: "all",
     stylers: [{
@@ -106,11 +109,11 @@ function initMap() {
   });
 
   map.mapTypes.set('grayscale', mapType);
-  map.setMapTypeId('grayscale');
+  // map.setMapTypeId('grayscale');
 
   markerClusterer = new MarkerClusterer(map, [], {
       imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m',
-      maxZoom: 11,
+      maxZoom: 10,
   });
 
   heatmap = new google.maps.visualization.HeatmapLayer({
@@ -119,8 +122,8 @@ function initMap() {
     map: map,
   });
 
-  var heatMapDiv = document.createElement('div');
-  var heatMap = new HeatMapControl(heatMapDiv, map);
+  let heatMapDiv = document.createElement('div');
+  let heatMap = new HeatMapControl(heatMapDiv, map);
 
   heatMapDiv.index = 1;
   heatMapDiv.style['padding-top'] = '10px';
@@ -128,22 +131,22 @@ function initMap() {
 
   map.controls[google.maps.ControlPosition.TOP_RIGHT].push(heatMapDiv)
 
-  var customControlsLeftTopElement = document.getElementById('customControlsLeftTop')
+  let customControlsLeftTopElement = document.getElementById('customControlsLeftTop')
   map.controls[google.maps.ControlPosition.LEFT_TOP].push(customControlsLeftTopElement)
 
-  var dataset_url = document.querySelector('body').dataset['dataset']
+  let dataset_url = document.querySelector('body').dataset['dataset']
 
-  d3.csv(dataset_url, function(err, data) {
+  d3.csv(dataset_url, (err, data) => {
     processData(err, data)
     processFilter()
   })
 
-  var charts = document.querySelectorAll('.chart')
-  Array.prototype.slice.call(charts, 0, chartsPerPage).forEach(function (chart) {
+  let charts = document.querySelectorAll('.chart')
+  Array.prototype.slice.call(charts, 0, chartsPerPage).forEach(chart => {
     chart.hidden = false
   })
 
-  var selectElement = document.querySelector('#filtersPerPage')
+  let selectElement = document.querySelector('#filtersPerPage')
   if (selectElement) {
       selectElement.selectedIndex = chartsPerPage - 1
   }
@@ -151,51 +154,44 @@ function initMap() {
   isDatasetReady()
 }
 
-function processData(err, data) {
-  var latmed = d3.median(data, function(d) {
-    return d[datasetOptions.latitude_attr];
-  })
-  var longmed = d3.median(data, function(d) {
-    return d[datasetOptions.longitude_attr];
-  })
+const processData = (err, data) => {
+  const latmed = d3.median(data, d => d[datasetOptions.latitude_attr])
+  const lngmed = d3.median(data, d => d[datasetOptions.longitude_attr])
+
   calculateMaxModifiers(data)
   map.setCenter({
     lat: latmed,
-    lng: longmed
+    lng: lngmed
   });
 
-  data.forEach(function(data, index) {
-    addPoint(data, index)
-  });
+  data.forEach((data, index) => addPoint(data, index));
 
   markerClusterer.addMarkers(Object.values(markers))
 }
 
-function processFilter(dataset, filters) {
+const processFilter = (dataset, filters) => {
   dataset = dataset || datasetData
   filters = filters || datasetFilters
 
   d3.selectAll('.chart > svg').remove()
 
-  initFilters(Object.values(dataset));
-  createChartFilter(filters, onDataFiltered)
-
-  function onDataFiltered(newData) {
+  initFilters(Object.values(dataset))
+  createChartFilter(filters, newData => {
     markerClusterer.clearMarkers()
 
-    Object.keys(markers).forEach(function(x) {
+    Object.keys(markers).forEach(x => {
       markers[x].hasMarker = false
     })
 
-    newData.forEach(function(data, index) {
+    newData.forEach((data, index) => {
       if (markers[data.geoguide_id] === undefined) {
-        addPoint(data, data.geoguide_id, data.geoguide_id === iugaLastId ? '#F44336' : undefined)
+        addPoint(data, data.geoguide_id)
       } else {
         markers[data.geoguide_id].hasMarker = true
       }
     })
 
-    Object.keys(markers).forEach(function(x) {
+    Object.keys(markers).forEach(x => {
       if (markers[x].hasMarker === false && markers[x].id !== iugaLastId) {
         delete markers[x]
       }
@@ -211,18 +207,18 @@ function processFilter(dataset, filters) {
       isHeatMap = !isHeatMap;
       document.getElementById('heatMapUI').click();
     }
-  };
+  })
 }
 
-function changeCurrentChart (button) {
-  var charts = document.querySelectorAll('.chart')
-  var first, last
+const changeCurrentChart = button => {
+  let charts = document.querySelectorAll('.chart')
+  let first, last
 
   if (chartsPerPage === charts.length) {
     return
   }
 
-  charts.forEach(function (e) {
+  charts.forEach(e => {
     e.hidden = true
   })
 
@@ -245,19 +241,19 @@ function changeCurrentChart (button) {
   }
 }
 
-function updateFiltersPage() {
+const updateFiltersPage = () => {
   var e = document.querySelector('#filtersPerPage')
   var value = e.options[e.selectedIndex].value
   var charts = document.querySelectorAll('.chart')
 
   if (value == '*') {
     chartsPerPage = charts.length
-    charts.forEach(function(e) {
+    charts.forEach(e => {
       e.hidden = false
     })
   }
   else {
-    charts.forEach(function(e) {
+    charts.forEach(e => {
       e.hidden = true
     })
     chartsPerPage = Number(value);
@@ -267,17 +263,17 @@ function updateFiltersPage() {
   }
 
   var buttonsContainer = document.querySelector('#collapseFilters .buttons')
-  buttonsContainer.hidden = chartsPerPage === charts.length
+  buttonsContainer.hidden = (chartsPerPage === charts.length)
 }
 
-function resetFilters() {
-  var charts = document.querySelectorAll('.chart')
-  charts.forEach(function (_, i) {
-    reset(i)
+const resetFilters = () => {
+  const charts = document.querySelectorAll('.chart')
+  charts.forEach((_, i) => {
+    window.GeoGuide.reset(i)
   })
 }
 
-function refreshMap() {
+const refreshMap = () => {
   clearMap()
   resetFilters()
   processData(undefined, Object.values(datasetData))
@@ -286,37 +282,35 @@ function refreshMap() {
   iugaPoints = []
 }
 
-function clearMap() {
+const clearMap = () => {
   markerClusterer.clearMarkers()
   markers = {}
   infowindows = {}
 }
 
-function calculateMaxModifiers(dataset) {
+const calculateMaxModifiers = dataset => {
   if (colorModifier !== '' && dataset[0][colorModifier]) {
     if (colorModifierMax[colorModifier] === undefined) {
-      colorModifierMax[colorModifier] = d3.max(dataset, function(d) {
-        var n = Number(d[colorModifier])
+      colorModifierMax[colorModifier] = d3.max(dataset, d => {
+        let n = Number(d[colorModifier])
         return n + (2 * Math.abs(n))
       })
     }
   }
   if (sizeModifier !== '' && dataset[0][sizeModifier]) {
     if (sizeModifierMax[sizeModifier] === undefined) {
-      sizeModifierMax[sizeModifier] = d3.max(dataset, function(d) {
-        var n = Number(d[sizeModifier])
+      sizeModifierMax[sizeModifier] = d3.max(dataset, d => {
+        let n = Number(d[sizeModifier])
         return n + (2 * Math.abs(n))
       })
     }
   }
 }
 
-function refreshModifiers() {
-  calculateMaxModifiers(Object.keys(markers).map(function(x) {
-    return datasetData[x]
-  }))
-  Object.keys(markers).forEach(function(x) {
-    var data = datasetData[markers[x].id]
+const refreshModifiers = () => {
+  calculateMaxModifiers(Object.keys(markers).map(x => datasetData[x]))
+  Object.keys(markers).forEach(x => {
+    let data = datasetData[markers[x].id]
     markers[x].setIcon(getIcon(data))
   })
 }
@@ -408,7 +402,7 @@ const addPoint = (data, index) => {
     }
     contentString += '<b>' + key + '</b>: <code>' + value + '</code><br />';
   })
-  contentString += '</div><button type="button" class="btn btn-default" onclick="showPotentialPoints(this)">Explore</button>';
+  contentString += '</div><button type="button" class="btn btn-default" onclick="GeoGuide.showPotentialPoints(this)">Explore</button>';
   contentString += '</div>';
 
   var infowindow = new google.maps.InfoWindow({
@@ -536,4 +530,17 @@ const isDatasetReady = () => {
     req.open('GET', url, true)
     req.send()
   }
+}
+
+initMap()
+
+window.GeoGuide = window.GeoGuide || {}
+
+window.GeoGuide = {
+  ...window.GeoGuide,
+  refreshMap,
+  refreshModifiers,
+  showPotentialPoints,
+  changeCurrentChart,
+  updateFiltersPage
 }

@@ -1,11 +1,13 @@
 'use strict'
 
-var chartD3CrossfilterDataset = null;
-var chartD3CrossfilterFilter = null;
-var chartD3CrossfilterAll = null;
-var chartD3CrossfilterData = null;
+window.GeoGuide = window.GeoGuide || {}
 
-var initFilters = function(dataset) {
+let chartD3CrossfilterDataset = null;
+let chartD3CrossfilterFilter = null;
+let chartD3CrossfilterAll = null;
+let chartD3CrossfilterData = null;
+
+export const initFilters = (dataset)  => {
 
   if (chartD3CrossfilterFilter != null) {
     chartD3CrossfilterFilter.remove()
@@ -20,7 +22,7 @@ var initFilters = function(dataset) {
   chartD3CrossfilterAll = chartD3CrossfilterFilter.groupAll();
 }
 
-var createChartFilter = function(fields, onDataFiltered, timeDelay = 300) {
+export const createChartFilter = (fields, onDataFiltered, timeDelay = 300) => {
 
   var charts = [];
 
@@ -86,14 +88,14 @@ var createChartFilter = function(fields, onDataFiltered, timeDelay = 300) {
     timerMaps = setTimeout(reloadMaps, timeDelay);
   }
 
-  window.filter = function(filters) {
+  window.GeoGuide.filter = function(filters) {
     filters.forEach(function(d, i) {
       charts[i].filter(d);
     });
     renderAll();
   };
 
-  window.reset = function(i) {
+  window.GeoGuide.reset = function(i) {
     charts[i].filter(null);
     renderAll();
   };
@@ -131,7 +133,7 @@ function barChart() {
       // Create the skeletal chart.
       if (g.empty()) {
         div.select(".title").append("a")
-          .attr("href", "javascript:reset(" + id + ")")
+          .attr("href", "javascript:GeoGuide.reset(" + id + ")")
           .attr("class", "reset")
           .text("reset")
           .style("display", "none");
