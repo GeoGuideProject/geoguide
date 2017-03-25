@@ -2,6 +2,12 @@
 
 ## Quick Start
 
+### Requirements
+
+- [__Python >= 3__](https://www.python.org/downloads/) and `pip`
+- [__Node.js >= 6__](https://nodejs.org/en/) and `npm` 
+  - it's highly recommended install with [`nvm`](https://github.com/creationix/nvm)
+  
 ### Basics
 
 Create and activate a virtualenv
@@ -12,10 +18,11 @@ $ virtualenv env -p python3
 $ source env/bin/activate
 ```
 
-Install the requirements
+Install the required packages
 
 ```sh
 $ pip install -r requirements-sqlite.txt
+$ npm install
 ```
 
 ### Set Environment Variables
@@ -45,6 +52,12 @@ $ python manage.py db migrate
 You can [download a .zip](https://github.com/gustavoguerino/GeoHIghlight/archive/datasets.zip) with all current supported datasets.
 
 Feel free to try another dataset.
+
+### Compile JavaScript and CSS
+
+```sh
+$ npm run build
+```
 
 ### Run the Application
 
