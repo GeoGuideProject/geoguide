@@ -1,7 +1,9 @@
 'use strict'
 
 import './index.css'
-import { initFilters, createChartFilter } from './chart.d3.crossfilter.js'
+import 'js-marker-clusterer'
+import d3 from 'd3'
+import { initFilters, createChartFilter } from './filters.js'
 
 let pointChoice = -1
 let iugaLastId = -1
@@ -532,8 +534,6 @@ const isDatasetReady = () => {
   }
 }
 
-initMap()
-
 window.GeoGuide = window.GeoGuide || {}
 
 window.GeoGuide = {
@@ -542,5 +542,6 @@ window.GeoGuide = {
   refreshModifiers,
   showPotentialPoints,
   changeCurrentChart,
-  updateFiltersPage
+  updateFiltersPage,
+  initMap
 }

@@ -1,5 +1,8 @@
 'use strict'
 
+import crossfilter from 'crossfilter'
+import d3 from 'd3'
+
 window.GeoGuide = window.GeoGuide || {}
 
 let chartD3CrossfilterDataset = null;
@@ -26,20 +29,12 @@ export const createChartFilter = (fields, onDataFiltered, timeDelay = 300) => {
 
   var charts = [];
 
-  fields.forEach(function(field) {
+  fields.forEach(field => {
 
-    var filterData = chartD3CrossfilterFilter.dimension(function(d) {
-      return Number(d[field])
-    });
-    var filterGroup = filterData.group(function(d) {
-      return d
-    });
-    var filterDataMin = d3.min(chartD3CrossfilterDataset, function(d) {
-      return Number(d[field])
-    });
-    var filterDataMax = d3.max(chartD3CrossfilterDataset, function(d) {
-      return Number(d[field])
-    });
+    var filterData = chartD3CrossfilterFilter.dimension(d => Number(d[field]))
+    var filterGroup = filterData.group(d => d)
+    var filterDataMin = d3.min(chartD3CrossfilterDataset, d => Number(d[field]))
+    var filterDataMax = d3.max(chartD3CrossfilterDataset, d => Number(d[field]))
 
     charts.push(
       barChart()
@@ -89,7 +84,7 @@ export const createChartFilter = (fields, onDataFiltered, timeDelay = 300) => {
   }
 
   window.GeoGuide.filter = function(filters) {
-    filters.forEach(function(d, i) {
+    filters.forEach((d, i) => {
       charts[i].filter(d);
     });
     renderAll();
