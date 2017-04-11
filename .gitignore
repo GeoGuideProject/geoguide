@@ -15,3 +15,8 @@ tmp/
 **/dataanalysis/*.csv
 
 **/server/uploads
+
+*.log
+npm-debug.log*
+node_modules
+**/client/static/dist

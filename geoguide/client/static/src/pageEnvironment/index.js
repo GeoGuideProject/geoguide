@@ -1,36 +1,41 @@
 'use strict'
 
-var pointChoice = -1
-var iugaLastId = -1
-var map = null
-var markerClusterer = null
-var markers = {}
-var iugaPoints = []
-var infowindows = {}
-var infowindowsOpened = null
-var runningRequest = false
-var heatmap = null
-var heatMap = null
-var heatMapPoints = []
-var isHeatMap = false
-var datasetData = {}
-var datasetOptions = JSON.parse(document.querySelector('#dataset_json').innerHTML)
-var datasetFilters = datasetOptions.headers;
-var colorModifierElement = document.querySelector('#colorModifier')
-var colorModifier = colorModifierElement.value
-var colorModifierMax = {}
-var chartsPerPage = 2
-var currentChartIndex = 0
+import './index.css'
+import 'js-marker-clusterer'
+import d3 from 'd3'
+import { initFilters, createChartFilter } from './filters.js'
 
-var sizeModifierElement = document.querySelector('#sizeModifier')
-var sizeModifier = sizeModifierElement.value
-var sizeModifierMax = {}
+let pointChoice = -1
+let iugaLastId = -1
+let map = null
+let markerClusterer = null
+let markers = {}
+let iugaPoints = []
+let infowindows = {}
+let infowindowsOpened = []
+let runningRequest = false
+let heatmap = null
+let heatMap = null
+let heatMapPoints = []
+let isHeatMap = false
+let datasetData = {}
+let datasetOptions = JSON.parse(document.querySelector('#dataset_json').innerHTML)
+let datasetFilters = datasetOptions.headers;
+let colorModifierElement = document.querySelector('#colorModifier')
+let colorModifier = colorModifierElement.value
+let colorModifierMax = {}
+let chartsPerPage = 2
+let currentChartIndex = 0
 
-colorModifierElement.addEventListener('change', function(e) {
+let sizeModifierElement = document.querySelector('#sizeModifier')
+let sizeModifier = sizeModifierElement.value
+let sizeModifierMax = {}
+
+colorModifierElement.addEventListener('change', e => {
   colorModifier = e.target.value
 })
 
-sizeModifierElement.addEventListener('change', function(e) {
+sizeModifierElement.addEventListener('change', e => {
   sizeModifier = e.target.value
 })
 
@@ -67,13 +72,14 @@ function HeatMapControl(controlDiv, map) {
       heatMapText.innerHTML = 'Heatmap';
     }
     if (infowindowsOpened) {
-      infowindowsOpened.close();
+      infowindowsOpened.forEach(i => i.close())
+      infowindowsOpened = []
     }
   });
 }
 
-function initMap() {
-  var mapType = new google.maps.StyledMapType([{
+const initMap = () => {
+  let mapType = new google.maps.StyledMapType([{
     featureType: "all",
     elementType: "all",
     stylers: [{
@@ -105,11 +111,11 @@ function initMap() {
   });
 
   map.mapTypes.set('grayscale', mapType);
-  map.setMapTypeId('grayscale');
+  // map.setMapTypeId('grayscale');
 
   markerClusterer = new MarkerClusterer(map, [], {
       imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m',
-      maxZoom: 11,
+      maxZoom: 10,
   });
 
   heatmap = new google.maps.visualization.HeatmapLayer({
@@ -118,8 +124,8 @@ function initMap() {
     map: map,
   });
 
-  var heatMapDiv = document.createElement('div');
-  var heatMap = new HeatMapControl(heatMapDiv, map);
+  let heatMapDiv = document.createElement('div');
+  let heatMap = new HeatMapControl(heatMapDiv, map);
 
   heatMapDiv.index = 1;
   heatMapDiv.style['padding-top'] = '10px';
@@ -127,22 +133,22 @@ function initMap() {
 
   map.controls[google.maps.ControlPosition.TOP_RIGHT].push(heatMapDiv)
 
-  var customControlsLeftTopElement = document.getElementById('customControlsLeftTop')
+  let customControlsLeftTopElement = document.getElementById('customControlsLeftTop')
   map.controls[google.maps.ControlPosition.LEFT_TOP].push(customControlsLeftTopElement)
 
-  var dataset_url = document.querySelector('body').dataset['dataset']
+  let dataset_url = document.querySelector('body').dataset['dataset']
 
-  d3.csv(dataset_url, function(err, data) {
+  d3.csv(dataset_url, (err, data) => {
     processData(err, data)
     processFilter()
   })
 
-  var charts = document.querySelectorAll('.chart')
-  Array.prototype.slice.call(charts, 0, chartsPerPage).forEach(function (chart) {
+  let charts = document.querySelectorAll('.chart')
+  Array.prototype.slice.call(charts, 0, chartsPerPage).forEach(chart => {
     chart.hidden = false
   })
 
-  var selectElement = document.querySelector('#filtersPerPage')
+  let selectElement = document.querySelector('#filtersPerPage')
   if (selectElement) {
       selectElement.selectedIndex = chartsPerPage - 1
   }
@@ -150,51 +156,44 @@ function initMap() {
   isDatasetReady()
 }
 
-function processData(err, data) {
-  var latmed = d3.median(data, function(d) {
-    return d[datasetOptions.latitude_attr];
-  })
-  var longmed = d3.median(data, function(d) {
-    return d[datasetOptions.longitude_attr];
-  })
+const processData = (err, data) => {
+  const latmed = d3.median(data, d => d[datasetOptions.latitude_attr])
+  const lngmed = d3.median(data, d => d[datasetOptions.longitude_attr])
+
   calculateMaxModifiers(data)
   map.setCenter({
     lat: latmed,
-    lng: longmed
+    lng: lngmed
   });
 
-  data.forEach(function(data, index) {
-    addPoint(data, index)
-  });
+  data.forEach((data, index) => addPoint(data, index));
 
   markerClusterer.addMarkers(Object.values(markers))
 }
 
-function processFilter(dataset, filters) {
+const processFilter = (dataset, filters) => {
   dataset = dataset || datasetData
   filters = filters || datasetFilters
 
   d3.selectAll('.chart > svg').remove()
 
-  initFilters(Object.values(dataset));
-  createChartFilter(filters, onDataFiltered)
-
-  function onDataFiltered(newData) {
+  initFilters(Object.values(dataset))
+  createChartFilter(filters, newData => {
     markerClusterer.clearMarkers()
 
-    Object.keys(markers).forEach(function(x) {
+    Object.keys(markers).forEach(x => {
       markers[x].hasMarker = false
     })
 
-    newData.forEach(function(data, index) {
+    newData.forEach((data, index) => {
       if (markers[data.geoguide_id] === undefined) {
-        addPoint(data, data.geoguide_id, data.geoguide_id === iugaLastId ? '#F44336' : undefined)
+        addPoint(data, data.geoguide_id)
       } else {
         markers[data.geoguide_id].hasMarker = true
       }
     })
 
-    Object.keys(markers).forEach(function(x) {
+    Object.keys(markers).forEach(x => {
       if (markers[x].hasMarker === false && markers[x].id !== iugaLastId) {
         delete markers[x]
       }
@@ -210,18 +209,18 @@ function processFilter(dataset, filters) {
       isHeatMap = !isHeatMap;
       document.getElementById('heatMapUI').click();
     }
-  };
+  })
 }
 
-function changeCurrentChart (button) {
-  var charts = document.querySelectorAll('.chart')
-  var first, last
+const changeCurrentChart = button => {
+  let charts = document.querySelectorAll('.chart')
+  let first, last
 
   if (chartsPerPage === charts.length) {
     return
   }
 
-  charts.forEach(function (e) {
+  charts.forEach(e => {
     e.hidden = true
   })
 
@@ -244,19 +243,19 @@ function changeCurrentChart (button) {
   }
 }
 
-function updateFiltersPage() {
+const updateFiltersPage = () => {
   var e = document.querySelector('#filtersPerPage')
   var value = e.options[e.selectedIndex].value
   var charts = document.querySelectorAll('.chart')
 
   if (value == '*') {
     chartsPerPage = charts.length
-    charts.forEach(function(e) {
+    charts.forEach(e => {
       e.hidden = false
     })
   }
   else {
-    charts.forEach(function(e) {
+    charts.forEach(e => {
       e.hidden = true
     })
     chartsPerPage = Number(value);
@@ -266,17 +265,17 @@ function updateFiltersPage() {
   }
 
   var buttonsContainer = document.querySelector('#collapseFilters .buttons')
-  buttonsContainer.hidden = chartsPerPage === charts.length
+  buttonsContainer.hidden = (chartsPerPage === charts.length)
 }
 
-function resetFilters() {
-  var charts = document.querySelectorAll('.chart')
-  charts.forEach(function (_, i) {
-    reset(i)
+const resetFilters = () => {
+  const charts = document.querySelectorAll('.chart')
+  charts.forEach((_, i) => {
+    window.GeoGuide.reset(i)
   })
 }
 
-function refreshMap() {
+const refreshMap = () => {
   clearMap()
   resetFilters()
   processData(undefined, Object.values(datasetData))
@@ -285,47 +284,45 @@ function refreshMap() {
   iugaPoints = []
 }
 
-function clearMap() {
+const clearMap = () => {
   markerClusterer.clearMarkers()
   markers = {}
   infowindows = {}
 }
 
-function calculateMaxModifiers(dataset) {
+const calculateMaxModifiers = dataset => {
   if (colorModifier !== '' && dataset[0][colorModifier]) {
     if (colorModifierMax[colorModifier] === undefined) {
-      colorModifierMax[colorModifier] = d3.max(dataset, function(d) {
-        var n = Number(d[colorModifier])
+      colorModifierMax[colorModifier] = d3.max(dataset, d => {
+        let n = Number(d[colorModifier])
         return n + (2 * Math.abs(n))
       })
     }
   }
   if (sizeModifier !== '' && dataset[0][sizeModifier]) {
     if (sizeModifierMax[sizeModifier] === undefined) {
-      sizeModifierMax[sizeModifier] = d3.max(dataset, function(d) {
-        var n = Number(d[sizeModifier])
+      sizeModifierMax[sizeModifier] = d3.max(dataset, d => {
+        let n = Number(d[sizeModifier])
         return n + (2 * Math.abs(n))
       })
     }
   }
 }
 
-function refreshModifiers() {
-  calculateMaxModifiers(Object.keys(markers).map(function(x) {
-    return datasetData[x]
-  }))
-  Object.keys(markers).forEach(function(x) {
-    var data = datasetData[markers[x].id]
+const refreshModifiers = () => {
+  calculateMaxModifiers(Object.keys(markers).map(x => datasetData[x]))
+  Object.keys(markers).forEach(x => {
+    let data = datasetData[markers[x].id]
     markers[x].setIcon(getIcon(data))
   })
 }
 
-function getIcon (data) {
+const getIcon  = data => {
   /* constants */
-  var normalfillColor = '#2196F3'
-  var selectedFillColor = '#F44336'
-  var iugaFillColor = '#FFC107'
-  var normalFillColors = [
+  const normalfillColor = '#2196F3'
+  const selectedFillColor = '#F44336'
+  const iugaFillColor = '#FFC107'
+  const normalFillColors = [
     '#e3f2fd',
     '#bbdefb',
     '#90caf9',
@@ -337,7 +334,7 @@ function getIcon (data) {
     '#1565c0',
     '#0d47a1'
   ]
-  var iugaFillColors = [
+  const iugaFillColors = [
     '#fff8e1',
     '#ffecb3',
     '#ffe082',
@@ -351,10 +348,10 @@ function getIcon (data) {
   ]
 
   /* default */
-  var fillColor = normalfillColor
-  var size = 7
-  var sizeBonus = 0
-  var isIugaPoint = iugaPoints.indexOf(Number(data.geoguide_id)) > -1
+  let fillColor = normalfillColor
+  let size = 7
+  let sizeBonus = 0
+  let isIugaPoint = iugaPoints.indexOf(Number(data.geoguide_id)) > -1
 
   if (colorModifier !== '' && data[colorModifier]) {
     var n = Number(data[colorModifier])
@@ -391,12 +388,12 @@ function getIcon (data) {
   }
 }
 
-function addPoint(data, index, color) {
+const addPoint = (data, index) => {
   datasetData[data.geoguide_id] = data;
 
-  var contentString = '<div id="infowindow' + data.geoguide_id + '"><h4>Profile</h4><div style="max-height: 30em; overflow-y: auto; margin-bottom: 1em">';
+  var contentString = '<div id="infowindow' + data.geoguide_id + '"><h4>Profile</h4><div style="max-height: 30em; overflow-y: auto; padding-bottom: 1em">';
 
-  Object.keys(data).forEach(function(key) {
+  Object.keys(data).forEach(key => {
     if (data[key] === undefined || key === 'geoguide_id' || data[key] === '') {
       return
     }
@@ -407,7 +404,7 @@ function addPoint(data, index, color) {
     }
     contentString += '<b>' + key + '</b>: <code>' + value + '</code><br />';
   })
-  contentString += '</div><button type="button" class="btn btn-default" onclick="showPotentialPoints(this)">Explore</button>';
+  contentString += '</div><button type="button" class="btn btn-default" onclick="GeoGuide.showPotentialPoints(this)">Explore</button>';
   contentString += '</div>';
 
   var infowindow = new google.maps.InfoWindow({
@@ -416,32 +413,25 @@ function addPoint(data, index, color) {
 
   var marker = new google.maps.Marker({
     position: new google.maps.LatLng(data[datasetOptions.latitude_attr], data[datasetOptions.longitude_attr]),
-    // map: map,
     icon: getIcon(data),
     id: data.geoguide_id,
     hasMarker: true
   })
 
-  marker.addListener('click', function() {
+  marker.addListener('click', () => {
     if (infowindowsOpened) {
-      infowindowsOpened.close();
+      infowindowsOpened.forEach(i => i.close())
+      infowindowsOpened = []
     }
     infowindow.open(map, marker);
-    infowindowsOpened = infowindow
-    pointChoice = this.id
+    infowindowsOpened.push(infowindow)
+    pointChoice = marker.id
     if (datasetOptions.indexed === false) {
-      var btnElement = document.querySelector('#infowindow' + this.id + ' button')
-
+      var btnElement = document.querySelector('#infowindow' + marker.id + ' button')
       btnElement.setAttribute('disabled', 'disabled')
       btnElement.setAttribute('title', 'This dataset isn\'t ready yet.')
     }
   })
-
-  // if (markers[marker.id] !== undefined) {
-  //   marker.setMap(null)
-  // }
-
-  // markerClusterer.addMarker(marker)
 
   infowindows[marker.id] = infowindow
   markers[marker.id] = marker
@@ -449,25 +439,26 @@ function addPoint(data, index, color) {
   return markers[marker.id]
 }
 
-function showPotentialPoints(e) {
+const showPotentialPoints = e => {
   if (runningRequest === false) {
     runningRequest = true;
-    var loader = new XMLHttpRequest();
-    var params = null;
-    var icon = null;
-    var oldText = e.innerHTML;
+    let loader = new XMLHttpRequest();
+    let params = null;
+    let icon = null;
+    let oldText = e.innerHTML;
     iugaPoints = null;
-    loader.onreadystatechange = function() {
-      if (this.readyState === XMLHttpRequest.DONE) {
+    loader.onreadystatechange = () => {
+      if (loader.readyState === XMLHttpRequest.DONE) {
         if (infowindowsOpened) {
-          infowindowsOpened.close()
+          infowindowsOpened.forEach(i => i.close())
+          infowindowsOpened = []
         }
-        if (this.status === 200) {
-          var jsonResponse = JSON.parse(this.responseText)
+        if (loader.status === 200) {
+          let jsonResponse = JSON.parse(loader.responseText)
 
           iugaPoints = []
 
-          jsonResponse.points.forEach(function (id) {
+          jsonResponse.points.forEach(id => {
             if (id === pointChoice) {
               return
             }
@@ -476,38 +467,35 @@ function showPotentialPoints(e) {
 
           if (document.querySelector('#onlyfilteredpoints').checked) {
             markerClusterer.clearMarkers()
-            Object.keys(markers).forEach(function(x) {
+            Object.keys(markers).forEach(x => {
               markers[x].setIcon(getIcon(datasetData[x]))
             })
           } else {
             resetFilters()
             clearMap()
-            Object.values(datasetData).forEach(function (data, index) {
+            Object.values(datasetData).forEach((data, index) => {
               addPoint(data, index)
             })
           }
 
           markerClusterer.addMarkers(Object.values(markers))
-        } else if (this.status === 202) {
+        } else if (loader.status === 202) {
           window.alert('Not ready yet.')
         }
         runningRequest = false
         e.innerHTML = oldText;
       }
     }
-    var url = '/environment/' + datasetOptions.filename + '/' + pointChoice + '/iuga'
+    let url = '/environment/' + datasetOptions.filename + '/' + pointChoice + '/iuga'
 
     url += '?limit=' + document.getElementById("timelimit").value
     url += '&sigma=' + document.getElementById("sigma").value
     url += '&k=' + document.getElementById("kvalue").value
 
     if (document.querySelector('#onlyfilteredpoints').checked) {
-      if (Object.keys(datasetData).length != Object.keys(markers).length) {
-        var filtered_points = Object.keys(markers).map(function(x) {
-          return markers[x].id
-        });
+      if (Object.keys(datasetData).length !== Object.keys(markers).length) {
+        const filtered_points = Object.keys(markers).map(x => markers[x].id)
         params = 'filtered_points=' + filtered_points.join(',')
-
         if (document.getElementById("kvalue").value > filtered_points.length - 2) {
           alert("You don't have enough filtered points")
           runningRequest = false
@@ -523,16 +511,16 @@ function showPotentialPoints(e) {
   }
 }
 
-function isDatasetReady () {
+const isDatasetReady = () => {
   if (datasetOptions.indexed === false) {
-    var req = new window.XMLHttpRequest()
-    req.onreadystatechange = function () {
-      if (this.status === 200 && this.readyState === window.XMLHttpRequest.DONE) {
-        datasetOptions = JSON.parse(this.responseText)
+    let req = new window.XMLHttpRequest()
+    req.onreadystatechange = () => {
+      if (req.status === 200 && req.readyState === window.XMLHttpRequest.DONE) {
+        datasetOptions = JSON.parse(req.responseText)
         if (datasetOptions.indexed === false) {
           setTimeout(isDatasetReady, 1000)
         } else if (pointChoice >= 0) {
-          var btnElement = document.querySelector('#infowindow' + pointChoice + ' button')
+          let btnElement = document.querySelector('#infowindow' + pointChoice + ' button')
           if (btnElement !== null) {
             btnElement.removeAttribute('disabled')
             btnElement.removeAttribute('title')
@@ -540,8 +528,20 @@ function isDatasetReady () {
         }
       }
     }
-    var url = '/environment/' + datasetOptions.filename + '/details'
+    let url = '/environment/' + datasetOptions.filename + '/details'
     req.open('GET', url, true)
     req.send()
   }
+}
+
+window.GeoGuide = window.GeoGuide || {}
+
+window.GeoGuide = {
+  ...window.GeoGuide,
+  refreshMap,
+  refreshModifiers,
+  showPotentialPoints,
+  changeCurrentChart,
+  updateFiltersPage,
+  initMap
 }
