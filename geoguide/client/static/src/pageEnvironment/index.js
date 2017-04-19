@@ -6,6 +6,7 @@ import d3 from 'd3'
 import { initFilters, createChartFilter } from './filters.js'
 import throttle from 'lodash/throttle'
 import clusterMaker from 'clusters'
+import randomColor from 'randomcolor'
 
 let pointChoice = -1
 let iugaLastId = -1
@@ -540,13 +541,78 @@ const isDatasetReady = () => {
   }
 }
 
-var mouseTrackingCoordinates = [];
+let mouseTrackingCoordinates = [];
+let mouseTrackingMarkers = [];
 
 const trackCoordinates = latLng => {
-  console.log(latLng.lat(), latLng.lng())
   mouseTrackingCoordinates.push(latLng);
   if (isHeatMap) {
     heatmap.setData(mouseTrackingCoordinates);
+  }
+}
+
+const showClustersFromMouseTracking = () => {
+
+
+  if (mouseTrackingMarkers.length > 0) {
+    mouseTrackingMarkers.forEach(marker => {
+      marker.setMap(null)
+    })
+    mouseTrackingMarkers = []
+    if (isHeatMap) {
+      heatmap.setData(mouseTrackingCoordinates);
+      heatmap.setMap(map);
+    } else {
+      markerClusterer.addMarkers(Object.values(markers))
+    }
+    return
+  }
+
+  heatmap.setMap(null)
+  markerClusterer.clearMarkers()
+
+  const rawPoints = mouseTrackingCoordinates.map(latLng => [latLng.lat(), latLng.lng()])
+  clusterMaker.iterations(10000)
+  clusterMaker.data(rawPoints)
+  let clusters = clusterMaker.clusters()
+  clusters.forEach((cluster, i) => {
+    const color = randomColor()
+    const markers = cluster.points.map((point, j) => {
+      return new google.maps.Marker({
+        position: new google.maps.LatLng(...point),
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 7,
+          fillColor: color,
+          fillOpacity: 0.75,
+          strokeWeight: 0
+        },
+        id: `{i}.{j}`,
+        map: map
+      })
+    })
+    mouseTrackingMarkers = [
+        ...mouseTrackingMarkers,
+        ...markers
+    ]
+  });
+}
+
+const showClustersFromMouseTrackingAsHeatmap = () => {
+  isHeatMap = !isHeatMap
+
+  if (isHeatMap) {
+    heatmap.setData(mouseTrackingCoordinates);
+    heatmap.setMap(map);
+    markerClusterer.clearMarkers();
+  } else {
+    heatmap.setMap(null);
+    markerClusterer.addMarkers(Object.values(markers));
+  }
+
+  if (infowindowsOpened) {
+    infowindowsOpened.forEach(i => i.close())
+    infowindowsOpened = []
   }
 }
 
@@ -560,20 +626,6 @@ window.GeoGuide = {
   changeCurrentChart,
   updateFiltersPage,
   initMap,
-  showMouseTrackingHeatmap: () => {
-    isHeatMap = true;
-    heatmap.setData(mouseTrackingCoordinates);
-    heatmap.setMap(map);
-    markerClusterer.clearMarkers();
-    heatMapText.innerHTML = 'Normal';
-    if (infowindowsOpened) {
-      infowindowsOpened.forEach(i => i.close())
-      infowindowsOpened = []
-    }
-  },
-  logClusters: () => {
-    clusterMaker.data(mouseTrackingCoordinates.map(latLng => [latLng.lat(), latLng.lng()]));
-    let clusters = clusterMaker.clusters()
-    console.log(clusters)
-  }
+  showClustersFromMouseTrackingAsHeatmap,
+  showClustersFromMouseTracking
 }
