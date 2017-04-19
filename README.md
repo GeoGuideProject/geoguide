@@ -49,7 +49,7 @@ $ python manage.py db migrate
 
 ### Get a dataset
 
-You can [download a .zip](https://github.com/gustavoguerino/GeoHIghlight/archive/datasets.zip) with all current supported datasets.
+You can [download a .zip](https://github.com/GeoGuideProject/datasets/archive/master.zip) with all current supported datasets.
 
 Feel free to try another dataset.
 
