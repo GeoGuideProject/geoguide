@@ -5,6 +5,7 @@ import 'js-marker-clusterer'
 import d3 from 'd3'
 import { initFilters, createChartFilter } from './filters.js'
 import throttle from 'lodash/throttle'
+import clusterMaker from 'clusters'
 
 let pointChoice = -1
 let iugaLastId = -1
@@ -544,6 +545,9 @@ var mouseTrackingCoordinates = [];
 const trackCoordinates = latLng => {
   console.log(latLng.lat(), latLng.lng())
   mouseTrackingCoordinates.push(latLng);
+  if (isHeatMap) {
+    heatmap.setData(mouseTrackingCoordinates);
+  }
 }
 
 window.GeoGuide = window.GeoGuide || {}
@@ -566,5 +570,10 @@ window.GeoGuide = {
       infowindowsOpened.forEach(i => i.close())
       infowindowsOpened = []
     }
+  },
+  logClusters: () => {
+    clusterMaker.data(mouseTrackingCoordinates.map(latLng => [latLng.lat(), latLng.lng()]));
+    let clusters = clusterMaker.clusters()
+    console.log(clusters)
   }
 }
