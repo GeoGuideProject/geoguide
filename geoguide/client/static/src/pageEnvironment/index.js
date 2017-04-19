@@ -4,6 +4,7 @@ import './index.css'
 import 'js-marker-clusterer'
 import d3 from 'd3'
 import { initFilters, createChartFilter } from './filters.js'
+import throttle from 'lodash/throttle'
 
 let pointChoice = -1
 let iugaLastId = -1
@@ -130,6 +131,10 @@ const initMap = () => {
   heatMapDiv.index = 1;
   heatMapDiv.style['padding-top'] = '10px';
   heatMapDiv.style['pointer-events'] = 'none';
+
+  map.addListener('mousemove', throttle(e => {
+      trackCoordinates(e.latLng)
+  }, 200))
 
   map.controls[google.maps.ControlPosition.TOP_RIGHT].push(heatMapDiv)
 
@@ -534,6 +539,13 @@ const isDatasetReady = () => {
   }
 }
 
+var mouseTrackingCoordinates = [];
+
+const trackCoordinates = latLng => {
+  console.log(latLng.lat(), latLng.lng())
+  mouseTrackingCoordinates.push(latLng);
+}
+
 window.GeoGuide = window.GeoGuide || {}
 
 window.GeoGuide = {
@@ -543,5 +555,16 @@ window.GeoGuide = {
   showPotentialPoints,
   changeCurrentChart,
   updateFiltersPage,
-  initMap
+  initMap,
+  showMouseTrackingHeatmap: () => {
+    isHeatMap = true;
+    heatmap.setData(mouseTrackingCoordinates);
+    heatmap.setMap(map);
+    markerClusterer.clearMarkers();
+    heatMapText.innerHTML = 'Normal';
+    if (infowindowsOpened) {
+      infowindowsOpened.forEach(i => i.close())
+      infowindowsOpened = []
+    }
+  }
 }
