@@ -2,9 +2,14 @@ import pandas as pd
 import datetime
 from random import randint
 from geoguide.server import app, diversity
-from geoguide.server.geoguide.helpers import path_to_hdf
+from geoguide.server.geoguide.helpers import path_to_hdf, harvestine_distance
+from statistics import mean
 
 CHUNKSIZE = app.config['CHUNKSIZE']
+
+
+def get_proximities_of(elements, k, proximity_by_id):
+    return [proximity_by_id[elements[i]] for i in range(k)]
 
 
 def get_distances_of(elements, k, distance_by_id):
@@ -25,10 +30,8 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset
     # parameters
     k = k_value
 
-    filtered_points = kwargs.get('filtered_points', default=[])
-    clusters = kwargs.get('clusters', default=[])
-
-    print(filtered_points, clusters)
+    filtered_points = kwargs.get('filtered_points', [])
+    clusters = kwargs.get('clusters', [])
 
     # indexing file
     # should the algorithm stop if it reaches the end of the index (i.e.,
@@ -51,9 +54,19 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset
     # dimensions
     similarities = {}
     distances = {}
+    proximities = {}
 
     # read input data frame
     store = pd.HDFStore(path_to_hdf(dataset))
+    for df in store.select('data', chunksize=CHUNKSIZE):
+        if filtered_points:
+            df = df[df.index.isin(filtered_points)]
+        df = df.loc[:, [dataset.latitude_attr, dataset.longitude_attr]]
+        for row in df.itertuples():
+            key = row[0]
+            for cluster in clusters:
+                proximity = harvestine_distance(*cluster, *row[1:])
+                proximities[key] = min([proximity, proximities.get(key, proximity)])
     for df in store.select('relation', chunksize=CHUNKSIZE, where='id_a=input_g or id_b=input_g'):
         if filtered_points:
             df = df[((df['id_a'].isin(filtered_points)) & (df['id_b'].isin(filtered_points)))]
@@ -72,11 +85,14 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset
         similarities.items(), key=lambda x: x[1], reverse=True)
     distances_sorted = sorted(
         distances.items(), key=lambda x: x[1], reverse=True)
+    proximities_sorted = sorted(
+        proximities.items(), key=lambda x: x[1])
 
     # begin - prepare lists for easy retrieval
     records = {}
     similarity_by_id = {}
     distance_by_id = {}
+    proximity_by_id = {}
 
     cnt = 0
     for value in similarities_sorted:
@@ -86,6 +102,9 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset
 
     for value in distances_sorted:
         distance_by_id[value[0]] = value[1]
+
+    for value in proximities_sorted:
+        proximity_by_id[value[0]] = value[1]
     # begin - prepare lists for easy retrieval
 
     # print(len(records), "records retrieved and indexed.")
@@ -115,13 +134,23 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset
         if redundancy_flag:
             continue
         begin_time = datetime.datetime.now()
+
         current_distances = get_distances_of(current_records, k, distance_by_id)
         current_diversity = diversity.diversity(current_distances)
+        current_proximities = get_proximities_of(current_records, k, proximity_by_id)
+        current_clustering_mean = mean(current_proximities)
+
         new_records = make_new_records(current_records, pointer, k, records)
+
         new_distances = get_distances_of(new_records, k, distance_by_id)
         new_diversity = diversity.diversity(new_distances)
-        if new_diversity > current_diversity:
+        new_proximities = get_proximities_of(new_records, k, proximity_by_id)
+        new_clustering_mean = mean(new_proximities)
+
+        if new_diversity > current_diversity and new_clustering_mean < current_clustering_mean:
+            print(current_clustering_mean, new_clustering_mean)
             current_records = new_records
+
         end_time = datetime.datetime.now()
         duration = (end_time - begin_time).microseconds / 1000.0
         total_time += duration
