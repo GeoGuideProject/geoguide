@@ -449,10 +449,11 @@ const addPoint = (data, index) => {
 const showPotentialPoints = e => {
   if (runningRequest === false) {
     runningRequest = true;
-    let loader = new XMLHttpRequest();
-    let params = null;
-    let icon = null;
     let oldText = e.innerHTML;
+    e.innerHTML = 'Loading...'
+    let loader = new XMLHttpRequest();
+    let data = new FormData();
+    let icon = null;
     iugaPoints = null;
     loader.onreadystatechange = () => {
       if (loader.readyState === XMLHttpRequest.DONE) {
@@ -502,7 +503,7 @@ const showPotentialPoints = e => {
     if (document.querySelector('#onlyfilteredpoints').checked) {
       if (Object.keys(datasetData).length !== Object.keys(markers).length) {
         const filtered_points = Object.keys(markers).map(x => markers[x].id)
-        params = 'filtered_points=' + filtered_points.join(',')
+        data.append('filtered_points', filtered_points.join(','))
         if (document.getElementById("kvalue").value > filtered_points.length - 2) {
           alert("You don't have enough filtered points")
           runningRequest = false
@@ -510,10 +511,14 @@ const showPotentialPoints = e => {
         }
       }
     }
-    e.innerHTML = 'Loading...'
+
+    data.append('clusters', getClustersFromMouseTracking().map(cluster => cluster.centroid.join(':')).join(','))
+    console.log(data)
     loader.open('POST', url, true)
-    loader.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
-    loader.send(params)
+    // loader.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
+    loader.send(data)
+    mouseTrackingCoordinates = []
+    mouseTrackingMarkers = []
     iugaLastId = pointChoice
   }
 }
@@ -541,8 +546,8 @@ const isDatasetReady = () => {
   }
 }
 
-let mouseTrackingCoordinates = [];
-let mouseTrackingMarkers = [];
+let mouseTrackingCoordinates = []
+let mouseTrackingMarkers = []
 
 const trackCoordinates = latLng => {
   mouseTrackingCoordinates.push(latLng);
@@ -551,9 +556,13 @@ const trackCoordinates = latLng => {
   }
 }
 
+const getClustersFromMouseTracking = () => {
+  const rawPoints = mouseTrackingCoordinates.map(latLng => [latLng.lat(), latLng.lng()])
+  clusterMaker.data(rawPoints)
+  return clusterMaker.clusters()
+}
+
 const showClustersFromMouseTracking = () => {
-
-
   if (mouseTrackingMarkers.length > 0) {
     mouseTrackingMarkers.forEach(marker => {
       marker.setMap(null)
@@ -572,7 +581,6 @@ const showClustersFromMouseTracking = () => {
   markerClusterer.clearMarkers()
 
   const rawPoints = mouseTrackingCoordinates.map(latLng => [latLng.lat(), latLng.lng()])
-  clusterMaker.iterations(10000)
   clusterMaker.data(rawPoints)
   let clusters = clusterMaker.clusters()
   clusters.forEach((cluster, i) => {

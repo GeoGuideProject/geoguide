@@ -112,6 +112,9 @@ def point_suggestions(selected_dataset, index):
     filtered_points = request.form.get('filtered_points', default='')
     filtered_points = [int(x) for x in filtered_points.split(',') if x]
 
+    clusters = request.form.get('clusters', default='')
+    clusters = [[float(x) for x in c.split(':') if x] for c in clusters.split(',') if c]
+
     if k <= 0 or sigma < 0 or sigma > 1 or limit <= 0:
         abort(401)
 
@@ -120,5 +123,11 @@ def point_suggestions(selected_dataset, index):
         return jsonify(dict(message='Not ready yet.')), 202
 
     vm = {}
-    vm['similarity'], vm['diversity'], vm['points'] = run_iuga(index, k, limit, sigma, dataset, filtered_points)
+    vm['similarity'], vm['diversity'], vm['points'] = run_iuga(index,
+                                                               k,
+                                                               limit,
+                                                               sigma,
+                                                               dataset,
+                                                               filtered_points=filtered_points,
+                                                               clusters=clusters)
     return jsonify(vm)

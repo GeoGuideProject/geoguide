@@ -21,9 +21,14 @@ def make_new_records(elements, new_element, k, records):
     return output
 
 
-def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset, filtered_points=[]):
+def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset, *args, **kwargs):
     # parameters
     k = k_value
+
+    filtered_points = kwargs.get('filtered_points', default=[])
+    clusters = kwargs.get('clusters', default=[])
+
+    print(filtered_points, clusters)
 
     # indexing file
     # should the algorithm stop if it reaches the end of the index (i.e.,
