@@ -31,5 +31,9 @@
     "js-marker-clusterer": "git+https://github.com/googlemaps/js-marker-clusterer.git#gh-pages",
     "lodash": "^4.17.4",
     "randomcolor": "^0.5.0"
+  },
+  "engines": {
+    "node": "7.x",
+    "npm": "4.x"
   }
 }
