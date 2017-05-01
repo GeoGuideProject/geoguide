@@ -6,13 +6,13 @@ import pandas as pd
 import numpy as np
 from uuid import uuid4
 from flask import request, session, render_template, Blueprint, flash, redirect, url_for, jsonify, abort
-from geoguide.server import db, datasets
+from geoguide.server import app, db, datasets
 from flask_uploads import UploadNotAllowed
 from geoguide.server.models import Dataset, Attribute, AttributeType
 from geoguide.server.geoguide.helpers import save_as_hdf, path_to_hdf
 from geoguide.server.iuga import run_iuga
 
-
+DEBUG = app.config['DEBUG']
 geoguide_blueprint = Blueprint('geoguide', __name__,)
 
 
@@ -114,6 +114,8 @@ def point_suggestions(selected_dataset, index):
 
     clusters = request.form.get('clusters', default='')
     clusters = [[float(x) for x in c.split(':') if x] for c in clusters.split(',') if c]
+    if DEBUG:
+        print(clusters)
 
     if k <= 0 or sigma < 0 or sigma > 1 or limit <= 0:
         abort(401)

@@ -511,11 +511,12 @@ const showPotentialPoints = e => {
         }
       }
     }
-
-    data.append('clusters', getClustersFromMouseTracking().map(cluster => cluster.centroid.join(':')).join(','))
+    let clusters = getClustersFromMouseTracking()
+    let greatestCluster = clusters.reduce((value, cluster) => Math.max(cluster.points.length, value), 0)
+    console.log(clusters, greatestCluster)
+    data.append('clusters', clusters.map(cluster => [...cluster.centroid, (cluster.points.length/greatestCluster)].join(':')).join(','))
     console.log(data)
     loader.open('POST', url, true)
-    // loader.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
     loader.send(data)
     mouseTrackingCoordinates = []
     mouseTrackingMarkers = []

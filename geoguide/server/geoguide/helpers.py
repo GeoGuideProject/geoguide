@@ -131,6 +131,9 @@ def index_dataset(dataset_id):
             a_cat_numbers = row_a[cat_number_columns_limits[0]:cat_number_columns_limits[1]]
             a_cat_texts = row_a[cat_text_columns_limits[0]:cat_text_columns_limits[1]]
 
+            if DEBUG:
+                print('%f/%f'.format(row_a[0], n_rows))
+
             for row_b in df.iloc[x:].itertuples():
                 ds_datetimes = handle_ds_datetimes(ds_datetimes, row_b, *datetime_columns_limits)
 
@@ -149,9 +152,6 @@ def index_dataset(dataset_id):
                 iv = cosine_similarity(a_cat_numbers, b_cat_numbers) * 2
                 v = jaccard_similarity(a_cat_texts, b_cat_texts) * 1
                 similarity = i + ii + iii + iv + v
-
-                if DEBUG:
-                    print('Current:', row_a[0], row_b[0], i, ii, iii, iv, v, similarity, distance)
 
                 ds.append((row_a[0], row_b[0], similarity, distance))
 

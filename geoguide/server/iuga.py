@@ -6,6 +6,7 @@ from geoguide.server.geoguide.helpers import path_to_hdf, harvestine_distance
 from statistics import mean
 
 CHUNKSIZE = app.config['CHUNKSIZE']
+DEBUG = app.config['DEBUG']
 
 
 def get_proximities_of(elements, k, proximity_by_id):
@@ -65,7 +66,12 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset
         for row in df.itertuples():
             key = row[0]
             for cluster in clusters:
-                proximity = harvestine_distance(*cluster, *row[1:])
+                if cluster[2] == 0:
+                    continue
+                proximity = harvestine_distance(*cluster[:2], *row[1:])
+                if DEBUG:
+                     print(proximity, cluster[2], proximity/cluster[2])
+                proximity = proximity / cluster[2]
                 proximities[key] = min([proximity, proximities.get(key, proximity)])
     for df in store.select('relation', chunksize=CHUNKSIZE, where='id_a=input_g or id_b=input_g'):
         if filtered_points:
@@ -148,7 +154,8 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset
         new_clustering_mean = mean(new_proximities)
 
         if new_diversity > current_diversity and new_clustering_mean < current_clustering_mean:
-            print(current_clustering_mean, new_clustering_mean)
+            if DEBUG:
+                print((current_diversity, new_diversity), (current_clustering_mean, new_clustering_mean))
             current_records = new_records
 
         end_time = datetime.datetime.now()
