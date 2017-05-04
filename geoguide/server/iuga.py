@@ -66,7 +66,7 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset
         for row in df.itertuples():
             key = row[0]
             for cluster in clusters:
-                if cluster[2] == 0:
+                if cluster and cluster[2] == 0:
                     continue
                 proximity = harvestine_distance(*cluster[:2], *row[1:])
                 if DEBUG:

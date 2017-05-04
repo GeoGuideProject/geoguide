@@ -10,6 +10,7 @@ from geoguide.server import app, db, datasets
 from geoguide.server.models import Dataset, Attribute, AttributeType
 from geoguide.server.similarity import cosine_similarity_with_nan as cosine_similarity, jaccard_similarity, fuzz_similarity
 from threading import Thread
+from time import time
 
 CHUNKSIZE = app.config['CHUNKSIZE']
 DEBUG = app.config['DEBUG']
@@ -87,17 +88,11 @@ def save_as_hdf(dataset):
 
 
 def index_dataset(dataset_id):
+    start = time()
     with app.app_context():
         dataset = Dataset.query.get(dataset_id)
         hdf_path = path_to_hdf(dataset)
         tmp_hdf_path = '{}.tmp'.format(hdf_path)
-        ds_datetimes = {}
-
-        def handle_ds_datetimes(ds, row, left_limit, right_limit):
-            key = row[0]
-            if key not in ds:
-                ds[key] = list(chain.from_iterable([[d.hour, d.minute, d.weekday()] for d in row[left_limit:right_limit]])) if right_limit > left_limit else []
-            return ds
 
         store = pd.HDFStore(hdf_path)
         df = store.select('data')
@@ -123,21 +118,18 @@ def index_dataset(dataset_id):
         ds = []
         tmp_store = pd.HDFStore(tmp_hdf_path)
         for row_a in df.itertuples():
-            ds_datetimes = handle_ds_datetimes(ds_datetimes, row_a, *datetime_columns_limits)
+            if DEBUG:
+                print('{}/{}'.format(row_a[0], n_rows))
 
-            a_datetimes = ds_datetimes[row_a[0]]
+            a_datetimes = list(chain.from_iterable([[d.hour, d.minute, d.weekday()] for d in row_a[datetime_columns_limits[0]:datetime_columns_limits[1]]])) if datetime_columns_limits[1] > datetime_columns_limits[0] else []
             a_numbers = row_a[number_columns_limits[0]:number_columns_limits[1]]
             a_texts = row_a[text_columns_limits[0]:text_columns_limits[1]]
             a_cat_numbers = row_a[cat_number_columns_limits[0]:cat_number_columns_limits[1]]
             a_cat_texts = row_a[cat_text_columns_limits[0]:cat_text_columns_limits[1]]
 
-            if DEBUG:
-                print('%f/%f'.format(row_a[0], n_rows))
 
             for row_b in df.iloc[x:].itertuples():
-                ds_datetimes = handle_ds_datetimes(ds_datetimes, row_b, *datetime_columns_limits)
-
-                b_datetimes = ds_datetimes[row_b[0]]
+                b_datetimes = list(chain.from_iterable([[d.hour, d.minute, d.weekday()] for d in row_b[datetime_columns_limits[0]:datetime_columns_limits[1]]])) if datetime_columns_limits[1] > datetime_columns_limits[0] else []
                 b_numbers = row_b[number_columns_limits[0]:number_columns_limits[1]]
                 b_texts = row_b[text_columns_limits[0]:text_columns_limits[1]]
                 b_cat_numbers = row_b[cat_number_columns_limits[0]:cat_number_columns_limits[1]]
@@ -189,6 +181,8 @@ def index_dataset(dataset_id):
         dataset.indexed_at = datetime.datetime.now()
         db.session.add(dataset)
         db.session.commit()
+        if DEBUG:
+            print('{} seconds'.format(time() - start))
 
 
 def harvestine_distance(lat1, lng1, lat2, lng2):
