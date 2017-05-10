@@ -4,6 +4,7 @@ import './index.css'
 import 'js-marker-clusterer'
 import d3 from 'd3'
 import { initFilters, createChartFilter } from './filters.js'
+import { initTracking } from './gazeTrack.js'
 import throttle from 'lodash/throttle'
 import clusterMaker from 'clusters'
 import randomColor from 'randomcolor'
@@ -148,6 +149,9 @@ const initMap = () => {
   d3.csv(dataset_url, (err, data) => {
     processData(err, data)
     processFilter()
+    initTracking((x, y) => {
+      console.log('pontos: ', x, y);
+    })
   })
 
   let charts = document.querySelectorAll('.chart')
