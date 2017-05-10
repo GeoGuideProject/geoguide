@@ -18,5 +18,3 @@ RUN /root/.pyenv/versions/3.5.2/bin/pip install -r requirements.txt
 ADD . /project/
 
 RUN npm install
-
-RUN /root/.pyenv/versions/3.5.2/bin/python manage.py create_db

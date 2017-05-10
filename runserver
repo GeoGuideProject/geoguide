@@ -1,0 +1,4 @@
+#!/bin/bash
+
+/root/.pyenv/versions/3.5.2/bin/python manage.py create_db
+/root/.pyenv/versions/3.5.2/bin/python manage.py runserver $@
