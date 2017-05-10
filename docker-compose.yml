@@ -1,0 +1,14 @@
+version: '2'
+
+services:
+  db:
+    image: mdillon/postgis
+  web:
+    build: .
+    command: /root/.pyenv/versions/3.5.2/bin/python manage.py runserver -h 0.0.0.0 -p 8000
+    volumes:
+      - .:/project
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
