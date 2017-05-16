@@ -3,6 +3,10 @@ version: '2'
 services:
   db:
     image: mdillon/postgis
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
   web:
     build: .
     command: ./runserver -h 0.0.0.0 -p 8000

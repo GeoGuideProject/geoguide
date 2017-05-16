@@ -11,9 +11,13 @@ from geoguide.server.models import Dataset, Attribute, AttributeType
 from geoguide.server.similarity import cosine_similarity_with_nan as cosine_similarity, jaccard_similarity, fuzz_similarity
 from threading import Thread
 from time import time
+from sqlalchemy import create_engine
+from slugify import slugify
+
 
 CHUNKSIZE = app.config['CHUNKSIZE']
 DEBUG = app.config['DEBUG']
+SQLALCHEMY_DATABASE_URI = app.config['SQLALCHEMY_DATABASE_URI']
 
 
 def path_to_hdf(dataset):
@@ -56,6 +60,13 @@ def guess_attributes_types(dataset):
     db.session.commit()
 
 
+def save_as_sql(dataset):
+    df = pd.read_hdf(path_to_hdf(dataset), 'data')
+    df.rename(columns=lambda c: slugify(c), inplace=True)
+    engine = create_engine(SQLALCHEMY_DATABASE_URI)
+    df.to_sql(dataset.filename.rsplit('.', 1)[0], engine, index_label='geoguide_id', chunksize=CHUNKSIZE)
+
+
 def save_as_hdf(dataset):
     dataset_id = dataset.id
     datetime_columns = [attr.description for attr in dataset.attributes if attr.type == AttributeType.datetime]
@@ -83,6 +94,10 @@ def save_as_hdf(dataset):
     shutil.move(csv_path, original_csv_path)
 
     guess_attributes_types(dataset)
+
+    start = time()
+    save_as_sql(dataset)
+    print('{} seconds'.format(time() - start))
 
     Thread(target=lambda: index_dataset(dataset_id)).start()
 
