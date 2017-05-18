@@ -39,7 +39,16 @@ $ python generate_key.py
 
 Copy and paste at APP_KEY in `.env` file
 
-### Create DB (skip if Docker)
+### Create DB
+
+#### Docker
+
+```sh
+$ docker-compose run web python manage.py create_db
+```
+
+#### Or
+
 
 ```sh
 $ python manage.py create_db
