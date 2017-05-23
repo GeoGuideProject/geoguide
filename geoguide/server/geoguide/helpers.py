@@ -6,7 +6,7 @@ import numpy as np
 import os
 import shutil
 from itertools import chain
-from geoguide.server import app, db, datasets
+from geoguide.server import app, db, datasets, logging
 from geoguide.server.models import Dataset, Attribute, AttributeType
 from geoguide.server.similarity import cosine_similarity_with_nan as cosine_similarity, jaccard_similarity, fuzz_similarity
 from threading import Thread
@@ -115,8 +115,7 @@ def index_dataset_from_sql(dataset_id):
         n_rows = df.shape[0]
         ds = []
         for row_a in df.itertuples():
-            if DEBUG:
-                print('{}/{}'.format(x, n_rows))
+            if DEBUG: logging.info('{}/{}'.format(x, n_rows))
 
             a_datetimes = list(chain.from_iterable([[d.hour, d.minute, d.weekday()] for d in row_a[datetime_columns_limits[0]:datetime_columns_limits[1]]])) if datetime_columns_limits[1] > datetime_columns_limits[0] else []
             a_numbers = row_a[number_columns_limits[0]:number_columns_limits[1]]
@@ -172,8 +171,7 @@ def index_dataset_from_sql(dataset_id):
         db.session.add(dataset)
         db.session.commit()
 
-        if DEBUG:
-            print('{} seconds'.format(time() - start))
+        if DEBUG: logging.info('[PROCESSING SQL] {} seconds'.format(time() - start))
 
 
 
@@ -203,9 +201,9 @@ def save_as_hdf(dataset):
     os.remove(original_csv_path)
     shutil.move(csv_path, original_csv_path)
 
-    # guess_attributes_types(dataset)
+    guess_attributes_types(dataset)
 
-    # Thread(target=lambda: index_dataset_from_hdf(dataset_id)).start()
+    Thread(target=lambda: index_dataset_from_hdf(dataset_id)).start()
 
 
 def index_dataset_from_hdf(dataset_id):
@@ -239,8 +237,7 @@ def index_dataset_from_hdf(dataset_id):
         ds = []
         tmp_store = pd.HDFStore(tmp_hdf_path)
         for row_a in df.itertuples():
-            if DEBUG:
-                print('{}/{}'.format(row_a[0], n_rows))
+            if DEBUG: logging.info('{}/{}'.format(row_a[0], n_rows))
 
             a_datetimes = list(chain.from_iterable([[d.hour, d.minute, d.weekday()] for d in row_a[datetime_columns_limits[0]:datetime_columns_limits[1]]])) if datetime_columns_limits[1] > datetime_columns_limits[0] else []
             a_numbers = row_a[number_columns_limits[0]:number_columns_limits[1]]
@@ -302,8 +299,7 @@ def index_dataset_from_hdf(dataset_id):
         dataset.indexed_at = datetime.datetime.now()
         db.session.add(dataset)
         db.session.commit()
-        if DEBUG:
-            print('{} seconds'.format(time() - start))
+        if DEBUG: logging.info('[PROCESSING HDF] {} seconds'.format(time() - start))
 
 
 def harvestine_distance(lat1, lng1, lat2, lng2):

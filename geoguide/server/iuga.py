@@ -1,7 +1,8 @@
+import time
 import pandas as pd
 import datetime
 from random import randint
-from geoguide.server import app, diversity
+from geoguide.server import app, diversity, logging
 from geoguide.server.geoguide.helpers import path_to_hdf, harvestine_distance
 from statistics import mean
 from sqlalchemy import create_engine
@@ -133,10 +134,13 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset
     total_time = 0.0
 
     # read input data frame
+    start = time.time()
     if USE_SQL:
         similarities, distances, proximities = read_input_from_sql(dataset, input_g, filtered_points, clusters)
     else:
         similarities, distances, proximities = read_input_from_hdf(dataset, input_g, filtered_points, clusters)
+    if DEBUG:
+        logging.info('[IUGA] {} seconds'.format(time.time() - start))
 
     # sorting similarities and distances in descending order
     similarities_sorted = sorted(

@@ -6,6 +6,7 @@
 #################
 
 import os
+import logging
 from decouple import config
 
 from flask import Flask, render_template
@@ -27,7 +28,7 @@ app = Flask(
 
 app_settings = config('APP_SETTINGS', 'geoguide.server.config.ProductionConfig')
 app.config.from_object(app_settings)
-
+logging.basicConfig(filename='geoguide.log', level=logging.DEBUG)
 
 ####################
 #### extensions ####
