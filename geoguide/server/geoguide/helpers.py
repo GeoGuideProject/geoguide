@@ -93,7 +93,7 @@ def index_dataset_from_sql(dataset_id):
         table_name = dataset.filename.rsplit('.', 1)[0]
         table_rel_name = '{}-rel'.format(table_name)
 
-        df = pd.read_sql_table(table_name, engine)
+        df = pd.read_sql_table(table_name, engine, index_col='geoguide_id')
 
         datetime_columns = [attr.description for attr in dataset.attributes if attr.type == AttributeType.datetime]
         number_columns = [attr.description for attr in dataset.attributes if attr.type == AttributeType.number]
@@ -163,19 +163,15 @@ def index_dataset_from_sql(dataset_id):
             ).to_sql(table_rel_name, engine, if_exists='append')
 
 
-        engine.execute('update "{}" set (similarity, distance) = (similarity/{}, distance/{})'.format(table_rel_name, greatest_similarity, greatest_distance))
-
-
-        # for dfr in pd.read_sql_table(table_rel_name, engine, chunksize=CHUNKSIZE):
-        #     dfr = dfr.assign(
-        #         similarity=lambda x: x.similarity / greatest_similarity,
-        #         distance=lambda x: x.distance / greatest_distance
-        #     )
-        #     store.append('relation', dfr, data_columns=True)
+        engine.execute('''
+        update "{}"
+        set (similarity, distance) = (similarity/{}, distance/{})
+        '''.format(table_rel_name, greatest_similarity, greatest_distance))
 
         dataset.indexed_at = datetime.datetime.now()
         db.session.add(dataset)
         db.session.commit()
+
         if DEBUG:
             print('{} seconds'.format(time() - start))
 

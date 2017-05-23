@@ -13,7 +13,9 @@ from geoguide.server.geoguide.helpers import save_as_hdf, path_to_hdf, save_as_s
 from geoguide.server.iuga import run_iuga
 
 DEBUG = app.config['DEBUG']
+USE_SQL = app.config['USE_SQL']
 geoguide_blueprint = Blueprint('geoguide', __name__,)
+
 
 
 @geoguide_blueprint.route('/upload', methods=['GET', 'POST'])
@@ -43,8 +45,7 @@ def upload():
                 db.session.add(attribute)
                 db.session.commit()
             session['SELECTED_DATASET'] = filename
-            # save_as_hdf(dataset)
-            save_as_sql(dataset)
+            save_as_sql(dataset) if USE_SQL else save_as_hdf(dataset)
             return redirect(url_for('geoguide.environment'))
         except UploadNotAllowed:
             flash('This file is not allowed.', 'error')
@@ -88,7 +89,7 @@ def environment(selected_dataset):
 
 
 @geoguide_blueprint.route('/environment/<selected_dataset>/details')
-def dataset_datails(selected_dataset):
+def dataset_details(selected_dataset):
     dataset = Dataset.query.filter_by(filename=selected_dataset).first_or_404()
     return jsonify({
         'filename': dataset.filename,
@@ -100,7 +101,8 @@ def dataset_datails(selected_dataset):
 
 @geoguide_blueprint.route('/environment/<selected_dataset>/<int:index>')
 def point_details(selected_dataset, index):
-    df = pd.read_hdf(path_to_hdf(selected_dataset), 'data')
+    dataset = Dataset.query.filter_by(filename=selected_dataset).first_or_404()
+    df = pd.read_csv(datasets.path(dataset.filename))
     return df.loc[index].to_json(), 200, {'Content-Type': 'application/json'}
 
 

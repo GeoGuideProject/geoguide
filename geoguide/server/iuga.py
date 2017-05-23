@@ -4,9 +4,12 @@ from random import randint
 from geoguide.server import app, diversity
 from geoguide.server.geoguide.helpers import path_to_hdf, harvestine_distance
 from statistics import mean
+from sqlalchemy import create_engine
 
 CHUNKSIZE = app.config['CHUNKSIZE']
 DEBUG = app.config['DEBUG']
+USE_SQL = app.config['USE_SQL']
+SQLALCHEMY_DATABASE_URI = app.config['SQLALCHEMY_DATABASE_URI']
 
 
 def get_proximities_of(elements, k, proximity_by_id):
@@ -27,37 +30,11 @@ def make_new_records(elements, new_element, k, records):
     return output
 
 
-def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset, *args, **kwargs):
-    # parameters
-    k = k_value
-
-    filtered_points = kwargs.get('filtered_points', [])
-    clusters = kwargs.get('clusters', [])
-
-    # indexing file
-    # should the algorithm stop if it reaches the end of the index (i.e.,
-    # scanning all records once)
-    stop_visiting_once = False
-
-    # Note that in case of user group analysis, each group is a record. In
-    # case of spatiotemporal data, each geo point is a record.
-
-    # variables
-    # the ID of current k records will be recorded in this object.
-    current_records = {}
-
-    # ths ID of next potential k records will be recorded in this object.
-    new_records = {}
-
-    # total execution time
-    total_time = 0.0
-
-    # dimensions
+def read_input_from_hdf(dataset, input_g, filtered_points=[], clusters=[]):
     similarities = {}
     distances = {}
     proximities = {}
 
-    # read input data frame
     store = pd.HDFStore(path_to_hdf(dataset))
     for df in store.select('data', chunksize=CHUNKSIZE):
         if filtered_points:
@@ -85,6 +62,81 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset
             similarities[key] = float(row[3])
             distances[key] = float(row[4])
     store.close()
+
+    return similarities, distances, proximities
+
+
+def read_input_from_sql(dataset, input_g, filtered_points=[], clusters=[]):
+    similarities = {}
+    distances = {}
+    proximities = {}
+
+    engine = create_engine(SQLALCHEMY_DATABASE_URI)
+    table_name = dataset.filename.rsplit('.', 1)[0]
+    table_rel_name = '{}-rel'.format(table_name)
+
+    for df in pd.read_sql_table(table_name, engine, index_col='geoguide_id', chunksize=CHUNKSIZE):
+        if filtered_points:
+            df = df[df.index.isin(filtered_points)]
+        df = df.loc[:, [dataset.latitude_attr, dataset.longitude_attr]]
+        for row in df.itertuples():
+            key = row[0]
+            for cluster in clusters:
+                if cluster and cluster[2] == 0:
+                    continue
+                proximity = harvestine_distance(*cluster[:2], *row[1:])
+                if DEBUG:
+                     print(proximity, cluster[2], proximity/cluster[2])
+                proximity = proximity / cluster[2]
+                proximities[key] = min([proximity, proximities.get(key, proximity)])
+
+    for df in pd.read_sql_table(table_rel_name, engine, index_col='index', chunksize=CHUNKSIZE):
+        df = df[((df['id_a'] == input_g) | (df['id_b'] == input_g))]
+        if filtered_points:
+            df = df[((df['id_a'].isin(filtered_points)) & (df['id_b'].isin(filtered_points)))]
+        for row in df.itertuples():
+            id_a = int(row[1])
+            id_b = int(row[2])
+            if id_a == id_b:
+                continue
+            key = id_a if id_b == input_g else id_b
+            similarities[key] = float(row[3])
+            distances[key] = float(row[4])
+
+    return similarities, distances, proximities
+
+
+
+def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset, *args, **kwargs):
+    # parameters
+    k = k_value
+
+    filtered_points = kwargs.get('filtered_points', [])
+    clusters = kwargs.get('clusters', [])
+
+    # indexing file
+    # should the algorithm stop if it reaches the end of the index (i.e.,
+    # scanning all records once)
+    stop_visiting_once = False
+
+    # Note that in case of user group analysis, each group is a record. In
+    # case of spatiotemporal data, each geo point is a record.
+
+    # variables
+    # the ID of current k records will be recorded in this object.
+    current_records = {}
+
+    # ths ID of next potential k records will be recorded in this object.
+    new_records = {}
+
+    # total execution time
+    total_time = 0.0
+
+    # read input data frame
+    if USE_SQL:
+        similarities, distances, proximities = read_input_from_sql(dataset, input_g, filtered_points, clusters)
+    else:
+        similarities, distances, proximities = read_input_from_hdf(dataset, input_g, filtered_points, clusters)
 
     # sorting similarities and distances in descending order
     similarities_sorted = sorted(
