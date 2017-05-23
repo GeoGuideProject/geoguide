@@ -29,7 +29,7 @@ def is_latlng_attribute(header):
 
 
 def guess_attributes_types(dataset):
-    df = pd.read_hdf(path_to_hdf(dataset), 'data')
+    df =  pd.read_csv(datasets.path(dataset.filename))
     numberic_attributes = list(df.select_dtypes(include=[np.number]).columns)
     string_attributes = list(df.select_dtypes(include=[object]).columns)
 
@@ -85,7 +85,7 @@ def save_as_sql(dataset):
     Thread(target=lambda: index_dataset_from_sql(dataset_id)).start()
 
 
-def index_dataset_from_hdf(dataset_id):
+def index_dataset_from_sql(dataset_id):
     start = time()
     with app.app_context():
         engine = create_engine(SQLALCHEMY_DATABASE_URI)
@@ -93,7 +93,7 @@ def index_dataset_from_hdf(dataset_id):
         table_name = dataset.filename.rsplit('.', 1)[0]
         table_rel_name = '{}-rel'.format(table_name)
 
-        df = pd.read_sql_table(table_name, engine, index_col='geoguide_id')
+        df = pd.read_sql_table(table_name, engine)
 
         datetime_columns = [attr.description for attr in dataset.attributes if attr.type == AttributeType.datetime]
         number_columns = [attr.description for attr in dataset.attributes if attr.type == AttributeType.number]
@@ -123,7 +123,6 @@ def index_dataset_from_hdf(dataset_id):
             a_texts = row_a[text_columns_limits[0]:text_columns_limits[1]]
             a_cat_numbers = row_a[cat_number_columns_limits[0]:cat_number_columns_limits[1]]
             a_cat_texts = row_a[cat_text_columns_limits[0]:cat_text_columns_limits[1]]
-
 
             for row_b in df.iloc[x:].itertuples():
                 b_datetimes = list(chain.from_iterable([[d.hour, d.minute, d.weekday()] for d in row_b[datetime_columns_limits[0]:datetime_columns_limits[1]]])) if datetime_columns_limits[1] > datetime_columns_limits[0] else []
@@ -163,17 +162,16 @@ def index_dataset_from_hdf(dataset_id):
                 ds, columns=['id_a', 'id_b', 'similarity', 'distance']
             ).to_sql(table_rel_name, engine, if_exists='append')
 
-        for dfr in pd.read_sql_table(table_rel_name, engine, chunksize=CHUNKSIZE):
-            dfr = dfr.assign(
-                similarity=lambda x: x.similarity / greatest_similarity,
-                distance=lambda x: x.distance / greatest_distance
-            )
-            store.append('relation', dfr, data_columns=True)
 
-        tmp_store.close()
-        store.close()
+        engine.execute('update "{}" set (similarity, distance) = (similarity/{}, distance/{})'.format(table_rel_name, greatest_similarity, greatest_distance))
 
-        os.remove(tmp_hdf_path)
+
+        # for dfr in pd.read_sql_table(table_rel_name, engine, chunksize=CHUNKSIZE):
+        #     dfr = dfr.assign(
+        #         similarity=lambda x: x.similarity / greatest_similarity,
+        #         distance=lambda x: x.distance / greatest_distance
+        #     )
+        #     store.append('relation', dfr, data_columns=True)
 
         dataset.indexed_at = datetime.datetime.now()
         db.session.add(dataset)
@@ -209,9 +207,9 @@ def save_as_hdf(dataset):
     os.remove(original_csv_path)
     shutil.move(csv_path, original_csv_path)
 
-    guess_attributes_types(dataset)
+    # guess_attributes_types(dataset)
 
-    Thread(target=lambda: index_dataset_from_hdf(dataset_id)).start()
+    # Thread(target=lambda: index_dataset_from_hdf(dataset_id)).start()
 
 
 def index_dataset_from_hdf(dataset_id):

@@ -9,7 +9,7 @@ from flask import request, session, render_template, Blueprint, flash, redirect,
 from geoguide.server import app, db, datasets
 from flask_uploads import UploadNotAllowed
 from geoguide.server.models import Dataset, Attribute, AttributeType
-from geoguide.server.geoguide.helpers import save_as_hdf, path_to_hdf
+from geoguide.server.geoguide.helpers import save_as_hdf, path_to_hdf, save_as_sql
 from geoguide.server.iuga import run_iuga
 
 DEBUG = app.config['DEBUG']
@@ -43,7 +43,8 @@ def upload():
                 db.session.add(attribute)
                 db.session.commit()
             session['SELECTED_DATASET'] = filename
-            save_as_hdf(dataset)
+            # save_as_hdf(dataset)
+            save_as_sql(dataset)
             return redirect(url_for('geoguide.environment'))
         except UploadNotAllowed:
             flash('This file is not allowed.', 'error')
@@ -70,7 +71,7 @@ def environment(selected_dataset):
     if selected_dataset is None:
         return redirect(url_for('geoguide.upload'))
     dataset = Dataset.query.filter_by(filename=selected_dataset).first_or_404()
-    df = pd.read_hdf(path_to_hdf(dataset), 'data')
+    df = pd.read_csv(datasets.path(dataset.filename))
     vm = {}
     vm['dataset_headers'] = list(df.select_dtypes(include=[np.number]).columns)
     vm['dataset_headers'] = [c for c in vm['dataset_headers'] if 'latitude' not in c and 'longitude' not in c and 'id' not in c and not df[c].isnull().any() and df[c].unique().shape[0] > 3]
