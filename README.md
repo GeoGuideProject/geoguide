@@ -2,13 +2,15 @@
 
 ## Quick Start
 
-### Requirements (skip if Docker)
+> If you are using **Docker**, [start here](#get-a-dataset)
+
+### Requirements
 
 - [__Python >= 3__](https://www.python.org/downloads/) and `pip`
 - [__Node.js >= 6__](https://nodejs.org/en/) and `npm`
   - it's highly recommended install with [`nvm`](https://github.com/creationix/nvm)
 
-### Basics (skip if Docker)
+### Basics
 
 Create and activate a virtualenv
 
@@ -41,19 +43,14 @@ Copy and paste at APP_KEY in `.env` file
 
 ### Create DB
 
-#### Docker
-
-```sh
-$ docker-compose run web python manage.py create_db
-```
-
-#### Or
-
-
 ```sh
 $ python manage.py create_db
-$ python manage.py db init
-$ python manage.py db migrate
+```
+
+### Compile JavaScript and CSS
+
+```sh
+$ npm run build
 ```
 
 ### Get a dataset
@@ -62,17 +59,12 @@ You can [download a .zip](https://github.com/GeoGuideProject/datasets/archive/ma
 
 Feel free to try another dataset.
 
-### Compile JavaScript and CSS (skip if Docker)
-
-```sh
-$ npm run build
-```
-
 ### Run the Application
 
 #### Docker
 
 ```sh
+$ ./deploy
 $ docker-compose up
 ```
 
