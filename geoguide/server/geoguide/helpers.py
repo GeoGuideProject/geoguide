@@ -15,7 +15,6 @@ from sqlalchemy import create_engine
 from geoalchemy2 import Geometry, WKTElement
 from slugify import slugify
 
-
 CHUNKSIZE = app.config['CHUNKSIZE']
 DEBUG = app.config['DEBUG']
 SQLALCHEMY_DATABASE_URI = app.config['SQLALCHEMY_DATABASE_URI']
@@ -30,7 +29,7 @@ def is_latlng_attribute(header):
 
 
 def guess_attributes_types(dataset):
-    df =  pd.read_csv(datasets.path(dataset.filename))
+    df = pd.read_csv(datasets.path(dataset.filename))
     numberic_attributes = list(df.select_dtypes(include=[np.number]).columns)
     string_attributes = list(df.select_dtypes(include=[object]).columns)
 
@@ -72,15 +71,22 @@ def save_as_sql(dataset):
     table_name = dataset.filename.rsplit('.', 1)[0]
     is_first = True
 
+    dataset.latitude_attr = slugify(dataset.latitude_attr, separator='_')
+    dataset.longitude_attr = slugify(dataset.longitude_attr, separator='_')
+    db.session.add(dataset)
+    db.session.commit()
+
     for df in pd.read_csv(original_csv_path, parse_dates=datetime_columns, infer_datetime_format=True, chunksize=CHUNKSIZE):
         df.rename(columns=lambda c: slugify(c, separator='_'), inplace=True)
+        df = df[(df[dataset.latitude_attr] != 0) & (df[dataset.longitude_attr] != 0)]
         df.to_csv(csv_path, index_label='geoguide_id', header=is_first, mode='a')
         df['geom'] = df.apply(lambda r: WKTElement('POINT({} {})'.format(r[dataset.longitude_attr], r[dataset.latitude_attr])), axis=1)
-        df.to_sql(table_name, engine, if_exists='append', index_label='geoguide_id', chunksize=CHUNKSIZE, dtype={geom: Geometry('POINT')})
+        df.to_sql(table_name, engine, if_exists='append', index_label='geoguide_id', chunksize=CHUNKSIZE, dtype={'geom': Geometry('POINT')})
         is_first = False
 
     os.remove(original_csv_path)
     shutil.move(csv_path, original_csv_path)
+
 
     guess_attributes_types(dataset)
 
@@ -163,7 +169,6 @@ def index_dataset_from_sql(dataset_id):
                 ds, columns=['id_a', 'id_b', 'similarity', 'distance']
             ).to_sql(table_rel_name, engine, if_exists='append')
 
-
         engine.execute('''
         update "{}"
         set (similarity, distance) = (similarity/{}, distance/{})
@@ -183,14 +188,16 @@ def save_as_hdf(dataset):
     csv_path = '{}.normalized.csv'.format(original_csv_path.rsplit('.', 1)[0])
     hdf_path = '{}.h5'.format(original_csv_path.rsplit('.', 1)[0])
     is_first = True
+
+    dataset.latitude_attr = slugify(dataset.latitude_attr, separator='_')
+    dataset.longitude_attr = slugify(dataset.longitude_attr, separator='_')
+    db.session.add(dataset)
+    db.session.commit()
+
     store = pd.HDFStore(hdf_path)
     for df in pd.read_csv(original_csv_path, parse_dates=datetime_columns, infer_datetime_format=True, chunksize=CHUNKSIZE):
-        if len(app.config['GEOGUIDE_BOUNDARIES']) == 4:
-            lat_min, lat_max, lng_min, lng_max = app.config['GEOGUIDE_BOUNDARIES']
-            df = df[((lat_min < df[dataset.latitude_attr]) & (df[dataset.latitude_attr] < lat_max)) &
-                    ((lng_min < df[dataset.longitude_attr]) & (df[dataset.longitude_attr] < lng_max))]
-        else:
-            df = df[(df[dataset.latitude_attr] != 0) & (df[dataset.longitude_attr] != 0)]
+        df.rename(columns=lambda c: slugify(c, separator='_'), inplace=True)
+        df = df[(df[dataset.latitude_attr] != 0) & (df[dataset.longitude_attr] != 0)]
         df.to_csv(csv_path, index_label='geoguide_id', header=is_first, mode='a')
         if is_first:
             store.put('data', df, format='table')
@@ -201,6 +208,7 @@ def save_as_hdf(dataset):
     store.close()
     os.remove(original_csv_path)
     shutil.move(csv_path, original_csv_path)
+
 
     guess_attributes_types(dataset)
 
