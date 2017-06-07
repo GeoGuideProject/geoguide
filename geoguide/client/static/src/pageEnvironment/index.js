@@ -585,6 +585,7 @@ const showClustersFromMouseTracking = () => {
   const rawPoints = mouseTrackingCoordinates.map(latLng => [latLng.lat(), latLng.lng()])
   clusterMaker.data(rawPoints)
   let clusters = clusterMaker.clusters()
+  console.log('clusters', clusters);
   clusters.forEach((cluster, i) => {
     const color = randomColor()
     const markers = cluster.points.map((point, j) => {
@@ -605,7 +606,89 @@ const showClustersFromMouseTracking = () => {
         ...mouseTrackingMarkers,
         ...markers
     ]
+    var coords = cluster.points.map((point) => ({
+      lat: point[0],
+      lng: point[1]
+    }));
+
+    console.log('coords', coords);
+    var oldcoords = coords;
+    var newcoords = [];
+    var maxi = 0;
+    var maxd = 0;
+    var maxpoint = null;
+
+    for (var i = 0; i < coords.length; i++) {
+      var d = google.maps.geometry.spherical.computeDistanceBetween(
+        new google.maps.LatLng(coords[i].lat, coords[i].lng),
+        new google.maps.LatLng(cluster.centroid[0], cluster.centroid[1]));
+      if (d > maxd) {
+        maxd = d;
+        maxpoint = coords[i];
+        maxi = i;
+      }
+    }
+    newcoords.push(maxpoint);
+    var t = coords.length;
+    coords.splice(maxi, 1);
+
+    var last = maxpoint;
+    var mind = google.maps.geometry.spherical.computeDistanceBetween(
+      new google.maps.LatLng(coords[0].lat, coords[0].lng),
+      new google.maps.LatLng(last.lat, last.lng));
+    var minpoint = null;
+    var mini = 0;
+
+    while (newcoords.length < t) {
+      for (var i = 0; i < coords.length; i++) {
+        var d = google.maps.geometry.spherical.computeDistanceBetween(
+          new google.maps.LatLng(coords[i].lat, coords[i].lng),
+          new google.maps.LatLng(last.lat, last.lng));
+        if (d < mind) {
+          mind = d;
+          minpoint = coords[i];
+          mini = i;
+        }
+      }
+      newcoords.push(minpoint);
+      coords.splice(mini, 1);
+      last = minpoint;
+      mind = google.maps.geometry.spherical.computeDistanceBetween(
+        new google.maps.LatLng(coords[0].lat, coords[0].lng),
+        new google.maps.LatLng(last.lat, last.lng));
+    }
+    console.log('coords resto', coords);
+    console.log('coords sort', newcoords);
+
+    var pol = new google.maps.Polygon({
+      paths: newcoords,
+      strokeColor: color,
+      strokeOpacity: 0.8,
+      strokeWeight: 2,
+      fillColor: color,
+      fillOpacity: 0.35
+    });
+    pol.setMap(map);
   });
+
+
+
+  // var triangleCoords = [
+  //         {lat: 25.774, lng: -80.190},
+  //         {lat: 18.466, lng: -66.118},
+  //         {lat: 32.321, lng: -64.757},
+  //         {lat: 25.774, lng: -80.190}
+  //       ];
+  //
+  // var bermudaTriangle = new google.maps.Polygon({
+  //         paths: triangleCoords,
+  //         strokeColor: '#FF0000',
+  //         strokeOpacity: 0.8,
+  //         strokeWeight: 2,
+  //         fillColor: '#FF0000',
+  //         fillOpacity: 0.35
+  //       });
+  //       bermudaTriangle.setMap(map);
 }
 
 const showClustersFromMouseTrackingAsHeatmap = () => {
