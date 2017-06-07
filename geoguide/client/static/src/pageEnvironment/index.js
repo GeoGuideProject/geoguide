@@ -21,6 +21,7 @@ let heatmap = null
 let heatMap = null
 let heatMapPoints = []
 let isHeatMap = false
+let isHeatMapCluster = false
 let datasetData = {}
 let datasetOptions = JSON.parse(document.querySelector('#dataset_json').innerHTML)
 let datasetFilters = datasetOptions.headers;
@@ -552,7 +553,7 @@ let mouseTrackingMarkers = []
 
 const trackCoordinates = latLng => {
   mouseTrackingCoordinates.push(latLng);
-  if (isHeatMap) {
+  if (isHeatMapCluster) {
     heatmap.setData(mouseTrackingCoordinates);
   }
 }
@@ -569,7 +570,7 @@ const showClustersFromMouseTracking = () => {
       marker.setMap(null)
     })
     mouseTrackingMarkers = []
-    if (isHeatMap) {
+    if (isHeatMapCluster) {
       heatmap.setData(mouseTrackingCoordinates);
       heatmap.setMap(map);
     } else {
@@ -608,9 +609,9 @@ const showClustersFromMouseTracking = () => {
 }
 
 const showClustersFromMouseTrackingAsHeatmap = () => {
-  isHeatMap = !isHeatMap
+  isHeatMapCluster = !isHeatMapCluster
 
-  if (isHeatMap) {
+  if (isHeatMapCluster) {
     heatmap.setData(mouseTrackingCoordinates);
     heatmap.setMap(map);
     markerClusterer.clearMarkers();
