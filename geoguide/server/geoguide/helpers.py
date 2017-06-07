@@ -12,6 +12,7 @@ from geoguide.server.similarity import cosine_similarity_with_nan as cosine_simi
 from threading import Thread
 from time import time
 from sqlalchemy import create_engine
+from geoalchemy2 import Geometry, WKTElement
 from slugify import slugify
 
 
@@ -74,7 +75,8 @@ def save_as_sql(dataset):
     for df in pd.read_csv(original_csv_path, parse_dates=datetime_columns, infer_datetime_format=True, chunksize=CHUNKSIZE):
         df.rename(columns=lambda c: slugify(c, separator='_'), inplace=True)
         df.to_csv(csv_path, index_label='geoguide_id', header=is_first, mode='a')
-        df.to_sql(table_name, engine, if_exists='append', index_label='geoguide_id', chunksize=CHUNKSIZE)
+        df['geom'] = df.apply(lambda r: WKTElement('POINT({} {})'.format(r[dataset.longitude_attr], r[dataset.latitude_attr])), axis=1)
+        df.to_sql(table_name, engine, if_exists='append', index_label='geoguide_id', chunksize=CHUNKSIZE, dtype={geom: Geometry('POINT')})
         is_first = False
 
     os.remove(original_csv_path)
@@ -130,7 +132,7 @@ def index_dataset_from_sql(dataset_id):
                 b_cat_numbers = row_b[cat_number_columns_limits[0]:cat_number_columns_limits[1]]
                 b_cat_texts = row_b[cat_text_columns_limits[0]:cat_text_columns_limits[1]]
 
-                distance = harvestine_distance(row_a[1], row_a[2],
+                distance = haversine_distance(row_a[1], row_a[2],
                                                row_b[1], row_b[2])
 
                 i = cosine_similarity(a_datetimes, b_datetimes) * 1
@@ -172,7 +174,6 @@ def index_dataset_from_sql(dataset_id):
         db.session.commit()
 
         if DEBUG: logging.info('[PROCESSING SQL] {} seconds'.format(time() - start))
-
 
 
 def save_as_hdf(dataset):
@@ -253,7 +254,7 @@ def index_dataset_from_hdf(dataset_id):
                 b_cat_numbers = row_b[cat_number_columns_limits[0]:cat_number_columns_limits[1]]
                 b_cat_texts = row_b[cat_text_columns_limits[0]:cat_text_columns_limits[1]]
 
-                distance = harvestine_distance(row_a[1], row_a[2],
+                distance = haversine_distance(row_a[1], row_a[2],
                                                row_b[1], row_b[2])
 
                 i = cosine_similarity(a_datetimes, b_datetimes) * 1
@@ -302,13 +303,13 @@ def index_dataset_from_hdf(dataset_id):
         if DEBUG: logging.info('[PROCESSING HDF] {} seconds'.format(time() - start))
 
 
-def harvestine_distance(lat1, lng1, lat2, lng2):
+def haversine_distance(lat1, lng1, lat2, lng2):
     try:
         dept_lat_rad = math.radians(lat1)
         dept_lng_rad = math.radians(lng1)
         arr_lat_rad = math.radians(lat2)
         arr_lng_rad = math.radians(lng2)
-        earth_radius = 3963.1
+        earth_radius = 6371000 # in meters, 3963.1 in miles
         d = math.acos(math.cos(dept_lat_rad) * math.cos(dept_lng_rad) * math.cos(arr_lat_rad) * math.cos(arr_lng_rad) + math.cos(dept_lat_rad) *
                       math.sin(dept_lng_rad) * math.cos(arr_lat_rad) * math.sin(arr_lng_rad) + math.sin(dept_lat_rad) * math.sin(arr_lat_rad)) * earth_radius
         return round(d, 2)

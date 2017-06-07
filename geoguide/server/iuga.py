@@ -3,7 +3,7 @@ import pandas as pd
 import datetime
 from random import randint
 from geoguide.server import app, diversity, logging
-from geoguide.server.geoguide.helpers import path_to_hdf, harvestine_distance
+from geoguide.server.geoguide.helpers import path_to_hdf, haversine_distance
 from statistics import mean
 from sqlalchemy import create_engine
 
@@ -46,7 +46,7 @@ def read_input_from_hdf(dataset, input_g, filtered_points=[], clusters=[]):
             for cluster in clusters:
                 if cluster and cluster[2] == 0:
                     continue
-                proximity = harvestine_distance(*cluster[:2], *row[1:])
+                proximity = haversine_distance(*cluster[:2], *row[1:])
                 if DEBUG:
                      print(proximity, cluster[2], proximity/cluster[2])
                 proximity = proximity / cluster[2]
@@ -85,7 +85,7 @@ def read_input_from_sql(dataset, input_g, filtered_points=[], clusters=[]):
             for cluster in clusters:
                 if cluster and cluster[2] == 0:
                     continue
-                proximity = harvestine_distance(*cluster[:2], *row[1:])
+                proximity = haversine_distance(*cluster[:2], *row[1:])
                 if DEBUG:
                      print(proximity, cluster[2], proximity/cluster[2])
                 proximity = proximity / cluster[2]
