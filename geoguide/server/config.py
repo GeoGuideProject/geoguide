@@ -17,6 +17,7 @@ class BaseConfig(object):
     UPLOADS_DEFAULT_DEST = config('UPLOADS_DEFAULT_DEST', os.path.join(basedir, 'uploads'))
     GEOGUIDE_BOUNDARIES = config('GEOGUIDE_BOUNDARIES', '', cast=Csv(float))
     CHUNKSIZE = config('CHUNKSIZE', 50000, cast=int)
+    USE_SQL = config('USE_SQL', False, cast=bool)
 
 
 class DevelopmentConfig(BaseConfig):

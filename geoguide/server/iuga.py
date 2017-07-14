@@ -1,11 +1,16 @@
+import time
 import pandas as pd
 import datetime
 from random import randint
-from geoguide.server import app, diversity
-from geoguide.server.geoguide.helpers import path_to_hdf, harvestine_distance
+from geoguide.server import app, diversity, logging
+from geoguide.server.geoguide.helpers import path_to_hdf, haversine_distance
 from statistics import mean
+from sqlalchemy import create_engine
 
 CHUNKSIZE = app.config['CHUNKSIZE']
+DEBUG = app.config['DEBUG']
+USE_SQL = app.config['USE_SQL']
+SQLALCHEMY_DATABASE_URI = app.config['SQLALCHEMY_DATABASE_URI']
 
 
 def get_proximities_of(elements, k, proximity_by_id):
@@ -24,6 +29,83 @@ def make_new_records(elements, new_element, k, records):
     replacement = randint(0, k - 1)
     output[replacement] = records[new_element]
     return output
+
+
+def read_input_from_hdf(dataset, input_g, filtered_points=[], clusters=[]):
+    similarities = {}
+    distances = {}
+    proximities = {}
+
+    store = pd.HDFStore(path_to_hdf(dataset))
+    for df in store.select('data', chunksize=CHUNKSIZE):
+        if filtered_points:
+            df = df[df.index.isin(filtered_points)]
+        df = df.loc[:, [dataset.latitude_attr, dataset.longitude_attr]]
+        for row in df.itertuples():
+            key = row[0]
+            for cluster in clusters:
+                if cluster and cluster[2] == 0:
+                    continue
+                proximity = haversine_distance(*cluster[:2], *row[1:])
+                if DEBUG:
+                     print(proximity, cluster[2], proximity/cluster[2])
+                proximity = proximity / cluster[2]
+                proximities[key] = min([proximity, proximities.get(key, proximity)])
+    for df in store.select('relation', chunksize=CHUNKSIZE, where='id_a=input_g or id_b=input_g'):
+        if filtered_points:
+            df = df[((df['id_a'].isin(filtered_points)) & (df['id_b'].isin(filtered_points)))]
+        for row in df.itertuples():
+            id_a = int(row[1])
+            id_b = int(row[2])
+            if id_a == id_b:
+                continue
+            key = id_a if id_b == input_g else id_b
+            similarities[key] = float(row[3])
+            distances[key] = float(row[4])
+    store.close()
+
+    return similarities, distances, proximities
+
+
+def read_input_from_sql(dataset, input_g, filtered_points=[], clusters=[]):
+    similarities = {}
+    distances = {}
+    proximities = {}
+
+    engine = create_engine(SQLALCHEMY_DATABASE_URI)
+    table_name = dataset.filename.rsplit('.', 1)[0]
+    table_rel_name = '{}-rel'.format(table_name)
+
+    for df in pd.read_sql_table(table_name, engine, index_col='geoguide_id', chunksize=CHUNKSIZE):
+        if filtered_points:
+            df = df[df.index.isin(filtered_points)]
+        df = df.loc[:, [dataset.latitude_attr, dataset.longitude_attr]]
+        for row in df.itertuples():
+            key = row[0]
+            for cluster in clusters:
+                if cluster and cluster[2] == 0:
+                    continue
+                proximity = haversine_distance(*cluster[:2], *row[1:])
+                if DEBUG:
+                     print(proximity, cluster[2], proximity/cluster[2])
+                proximity = proximity / cluster[2]
+                proximities[key] = min([proximity, proximities.get(key, proximity)])
+
+    for df in pd.read_sql_table(table_rel_name, engine, index_col='index', chunksize=CHUNKSIZE):
+        df = df[((df['id_a'] == input_g) | (df['id_b'] == input_g))]
+        if filtered_points:
+            df = df[((df['id_a'].isin(filtered_points)) & (df['id_b'].isin(filtered_points)))]
+        for row in df.itertuples():
+            id_a = int(row[1])
+            id_b = int(row[2])
+            if id_a == id_b:
+                continue
+            key = id_a if id_b == input_g else id_b
+            similarities[key] = float(row[3])
+            distances[key] = float(row[4])
+
+    return similarities, distances, proximities
+
 
 
 def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset, *args, **kwargs):
@@ -51,34 +133,14 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset
     # total execution time
     total_time = 0.0
 
-    # dimensions
-    similarities = {}
-    distances = {}
-    proximities = {}
-
     # read input data frame
-    store = pd.HDFStore(path_to_hdf(dataset))
-    for df in store.select('data', chunksize=CHUNKSIZE):
-        if filtered_points:
-            df = df[df.index.isin(filtered_points)]
-        df = df.loc[:, [dataset.latitude_attr, dataset.longitude_attr]]
-        for row in df.itertuples():
-            key = row[0]
-            for cluster in clusters:
-                proximity = harvestine_distance(*cluster, *row[1:])
-                proximities[key] = min([proximity, proximities.get(key, proximity)])
-    for df in store.select('relation', chunksize=CHUNKSIZE, where='id_a=input_g or id_b=input_g'):
-        if filtered_points:
-            df = df[((df['id_a'].isin(filtered_points)) & (df['id_b'].isin(filtered_points)))]
-        for row in df.itertuples():
-            id_a = int(row[1])
-            id_b = int(row[2])
-            if id_a == id_b:
-                continue
-            key = id_a if id_b == input_g else id_b
-            similarities[key] = float(row[3])
-            distances[key] = float(row[4])
-    store.close()
+    start = time.time()
+    if USE_SQL:
+        similarities, distances, proximities = read_input_from_sql(dataset, input_g, filtered_points, clusters)
+    else:
+        similarities, distances, proximities = read_input_from_hdf(dataset, input_g, filtered_points, clusters)
+    if DEBUG:
+        logging.info('[IUGA] {} seconds'.format(time.time() - start))
 
     # sorting similarities and distances in descending order
     similarities_sorted = sorted(
@@ -148,7 +210,8 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset
         new_clustering_mean = mean(new_proximities)
 
         if new_diversity > current_diversity and new_clustering_mean < current_clustering_mean:
-            print(current_clustering_mean, new_clustering_mean)
+            if DEBUG:
+                print((current_diversity, new_diversity), (current_clustering_mean, new_clustering_mean))
             current_records = new_records
 
         end_time = datetime.datetime.now()

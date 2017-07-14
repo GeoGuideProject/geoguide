@@ -5,7 +5,8 @@
   "scripts": {
     "postinstall": "npm run build",
     "build": "webpack --config webpack.config.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "npm run build -- --watch"
   },
   "repository": {
     "type": "git",
@@ -30,6 +31,7 @@
     "d3": "^3.5.17",
     "js-marker-clusterer": "git+https://github.com/googlemaps/js-marker-clusterer.git#gh-pages",
     "lodash": "^4.17.4",
+    "quick-hull-2d": "^0.1.0",
     "randomcolor": "^0.5.0"
   },
   "engines": {

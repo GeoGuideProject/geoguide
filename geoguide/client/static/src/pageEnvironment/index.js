@@ -7,6 +7,7 @@ import { initFilters, createChartFilter } from './filters.js'
 import throttle from 'lodash/throttle'
 import clusterMaker from 'clusters'
 import randomColor from 'randomcolor'
+import quickHull from 'quick-hull-2d'
 
 let pointChoice = -1
 let iugaLastId = -1
@@ -21,6 +22,7 @@ let heatmap = null
 let heatMap = null
 let heatMapPoints = []
 let isHeatMap = false
+let isHeatMapCluster = false
 let datasetData = {}
 let datasetOptions = JSON.parse(document.querySelector('#dataset_json').innerHTML)
 let datasetFilters = datasetOptions.headers;
@@ -29,6 +31,8 @@ let colorModifier = colorModifierElement.value
 let colorModifierMax = {}
 let chartsPerPage = 2
 let currentChartIndex = 0
+let mouseClusters = {}
+let mousePolygons = []
 
 let sizeModifierElement = document.querySelector('#sizeModifier')
 let sizeModifier = sizeModifierElement.value
@@ -487,6 +491,7 @@ const showPotentialPoints = e => {
           }
 
           markerClusterer.addMarkers(Object.values(markers))
+          showClustersFromMouseTrackingAfterIuga()
         } else if (loader.status === 202) {
           window.alert('Not ready yet.')
         }
@@ -511,11 +516,11 @@ const showPotentialPoints = e => {
         }
       }
     }
-
-    data.append('clusters', getClustersFromMouseTracking().map(cluster => cluster.centroid.join(':')).join(','))
-    console.log(data)
+    let clusters = getClustersFromMouseTracking()
+    mouseClusters = clusters
+    let greatestCluster = clusters.reduce((value, cluster) => Math.max(cluster.points.length, value), 0)
+    data.append('clusters', clusters.map(cluster => [...cluster.centroid, (cluster.points.length/greatestCluster)].join(':')).join(','))
     loader.open('POST', url, true)
-    // loader.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
     loader.send(data)
     mouseTrackingCoordinates = []
     mouseTrackingMarkers = []
@@ -551,7 +556,7 @@ let mouseTrackingMarkers = []
 
 const trackCoordinates = latLng => {
   mouseTrackingCoordinates.push(latLng);
-  if (isHeatMap) {
+  if (isHeatMapCluster) {
     heatmap.setData(mouseTrackingCoordinates);
   }
 }
@@ -563,12 +568,13 @@ const getClustersFromMouseTracking = () => {
 }
 
 const showClustersFromMouseTracking = () => {
+  clearClustersFromMouseTracking()
   if (mouseTrackingMarkers.length > 0) {
     mouseTrackingMarkers.forEach(marker => {
       marker.setMap(null)
     })
     mouseTrackingMarkers = []
-    if (isHeatMap) {
+    if (isHeatMapCluster) {
       heatmap.setData(mouseTrackingCoordinates);
       heatmap.setMap(map);
     } else {
@@ -603,13 +609,30 @@ const showClustersFromMouseTracking = () => {
         ...mouseTrackingMarkers,
         ...markers
     ]
+
+    var hull = quickHull(cluster.points);
+    var path = hull.map((point) => ({
+      lat: point[0],
+      lng: point[1]
+    }));
+
+    var pol = new google.maps.Polygon({
+      paths: path,
+      strokeColor: color,
+      strokeOpacity: 0.8,
+      strokeWeight: 2,
+      fillColor: color,
+      fillOpacity: 0.35
+    });
+    pol.setMap(map);
+    mousePolygons.push(pol);
   });
 }
 
 const showClustersFromMouseTrackingAsHeatmap = () => {
-  isHeatMap = !isHeatMap
+  isHeatMapCluster = !isHeatMapCluster
 
-  if (isHeatMap) {
+  if (isHeatMapCluster) {
     heatmap.setData(mouseTrackingCoordinates);
     heatmap.setMap(map);
     markerClusterer.clearMarkers();
@@ -622,6 +645,37 @@ const showClustersFromMouseTrackingAsHeatmap = () => {
     infowindowsOpened.forEach(i => i.close())
     infowindowsOpened = []
   }
+}
+
+const showClustersFromMouseTrackingAfterIuga = () => {
+  clearClustersFromMouseTracking()
+  mouseClusters.forEach((cluster, i) => {
+    const color = randomColor()
+
+    var hull = quickHull(cluster.points)
+    var path = hull.map((point) => ({
+      lat: point[0],
+      lng: point[1]
+    }))
+
+    var pol = new google.maps.Polygon({
+      paths: path,
+      strokeColor: color,
+      strokeOpacity: 0.8,
+      strokeWeight: 2,
+      fillColor: color,
+      fillOpacity: 0.35
+    })
+    pol.setMap(map)
+    mousePolygons.push(pol)
+  });
+}
+
+const clearClustersFromMouseTracking = () => {
+  mousePolygons.map((polygon) => {
+    polygon.setMap(null)
+  })
+  mousePolygons = []
 }
 
 window.GeoGuide = window.GeoGuide || {}
