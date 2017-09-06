@@ -9,6 +9,7 @@ import clusterMaker from 'clusters'
 import randomColor from 'randomcolor'
 import quickHull from 'quick-hull-2d'
 import * as modifiers from './modifiers'
+import axios from 'axios'
 
 let pointChoice = -1
 let iugaLastId = -1
@@ -570,16 +571,29 @@ const showClustersFromMouseTrackingAfterIuga = () => {
       lng: point[1]
     }))
 
-    var pol = new google.maps.Polygon({
-      paths: path,
-      strokeColor: color,
-      strokeOpacity: 0.8,
-      strokeWeight: 2,
-      fillColor: color,
-      fillOpacity: 0.35
+    axios.post(`/environment/${datasetOptions.filename}/points`, {
+      polygon: hull.map(point => point.join(':')).join(',')
+    }).then(({ data }) => {
+      if (data.count > 2) {
+        let hull = quickHull(data.points)
+        let path = hull.map((point) => ({
+          lat: point[0],
+          lng: point[1]
+        }))
+
+        var pol = new google.maps.Polygon({
+          paths: path,
+          strokeColor: color,
+          strokeOpacity: 0.8,
+          strokeWeight: 2,
+          fillColor: color,
+          fillOpacity: 0.35
+        })
+        pol.setMap(map)
+        mousePolygons.push(pol)
+      }
     })
-    pol.setMap(map)
-    mousePolygons.push(pol)
+
   });
 }
 
