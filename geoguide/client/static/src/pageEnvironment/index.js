@@ -8,6 +8,7 @@ import throttle from 'lodash/throttle'
 import clusterMaker from 'clusters'
 import randomColor from 'randomcolor'
 import quickHull from 'quick-hull-2d'
+import * as modifiers from './modifiers'
 
 let pointChoice = -1
 let iugaLastId = -1
@@ -26,25 +27,11 @@ let isHeatMapCluster = false
 let datasetData = {}
 let datasetOptions = JSON.parse(document.querySelector('#dataset_json').innerHTML)
 let datasetFilters = datasetOptions.headers;
-let colorModifierElement = document.querySelector('#colorModifier')
-let colorModifier = colorModifierElement.value
-let colorModifierMax = {}
+
 let chartsPerPage = 2
 let currentChartIndex = 0
 let mouseClusters = {}
 let mousePolygons = []
-
-let sizeModifierElement = document.querySelector('#sizeModifier')
-let sizeModifier = sizeModifierElement.value
-let sizeModifierMax = {}
-
-colorModifierElement.addEventListener('change', e => {
-  colorModifier = e.target.value
-})
-
-sizeModifierElement.addEventListener('change', e => {
-  sizeModifier = e.target.value
-})
 
 function HeatMapControl(controlDiv, map) {
   var control = this;
@@ -122,7 +109,7 @@ const initMap = () => {
 
   markerClusterer = new MarkerClusterer(map, [], {
       imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m',
-      maxZoom: 10,
+      maxZoom: 13,
   });
 
   heatmap = new google.maps.visualization.HeatmapLayer({
@@ -171,7 +158,7 @@ const processData = (err, data) => {
   const latmed = d3.median(data, d => d[datasetOptions.latitude_attr])
   const lngmed = d3.median(data, d => d[datasetOptions.longitude_attr])
 
-  calculateMaxModifiers(data)
+  modifiers.calculateMax(data)
   map.setCenter({
     lat: latmed,
     lng: lngmed
@@ -210,8 +197,7 @@ const processFilter = (dataset, filters) => {
       }
     })
 
-    colorModifierMax = {}
-    sizeModifierMax = {}
+    modifiers.clearMax()
     refreshModifiers()
 
     markerClusterer.addMarkers(Object.values(markers))
@@ -301,27 +287,8 @@ const clearMap = () => {
   infowindows = {}
 }
 
-const calculateMaxModifiers = dataset => {
-  if (colorModifier !== '' && dataset[0][colorModifier]) {
-    if (colorModifierMax[colorModifier] === undefined) {
-      colorModifierMax[colorModifier] = d3.max(dataset, d => {
-        let n = Number(d[colorModifier])
-        return n + (2 * Math.abs(n))
-      })
-    }
-  }
-  if (sizeModifier !== '' && dataset[0][sizeModifier]) {
-    if (sizeModifierMax[sizeModifier] === undefined) {
-      sizeModifierMax[sizeModifier] = d3.max(dataset, d => {
-        let n = Number(d[sizeModifier])
-        return n + (2 * Math.abs(n))
-      })
-    }
-  }
-}
-
 const refreshModifiers = () => {
-  calculateMaxModifiers(Object.keys(markers).map(x => datasetData[x]))
+  modifiers.calculateMax(Object.keys(markers).map(x => datasetData[x]))
   Object.keys(markers).forEach(x => {
     let data = datasetData[markers[x].id]
     markers[x].setIcon(getIcon(data))
@@ -329,66 +296,11 @@ const refreshModifiers = () => {
 }
 
 const getIcon  = data => {
-  /* constants */
-  const normalfillColor = '#2196F3'
-  const selectedFillColor = '#F44336'
-  const iugaFillColor = '#FFC107'
-  const normalFillColors = [
-    '#e3f2fd',
-    '#bbdefb',
-    '#90caf9',
-    '#64b5f6',
-    '#42a5f5',
-    '#2196f3',
-    '#1e88e5',
-    '#1976d2',
-    '#1565c0',
-    '#0d47a1'
-  ]
-  const iugaFillColors = [
-    '#fff8e1',
-    '#ffecb3',
-    '#ffe082',
-    '#ffd54f',
-    '#ffca28',
-    '#ffc107',
-    '#ffb300',
-    '#ffa000',
-    '#ff8f00',
-    '#ff6f00'
-  ]
+  const isIugaPoint = iugaPoints.indexOf(Number(data.geoguide_id)) > -1
+  const isSelected = data.geoguide_id === iugaLastId;
 
-  /* default */
-  let fillColor = normalfillColor
-  let size = 7
-  let sizeBonus = 0
-  let isIugaPoint = iugaPoints.indexOf(Number(data.geoguide_id)) > -1
-
-  if (colorModifier !== '' && data[colorModifier]) {
-    var n = Number(data[colorModifier])
-    n += (2 * Math.abs(n))
-    var value = Math.floor((n / colorModifierMax[colorModifier]) * (normalFillColors.length - 1))
-    fillColor = isIugaPoint ? iugaFillColors[value] : normalFillColors[value]
-  } else if (isIugaPoint) {
-    fillColor = iugaFillColor
-  }
-
-  if (sizeModifier !== '' && data[sizeModifier]) {
-    var n = Number(data[sizeModifier])
-    n += (2 * Math.abs(n))
-    size = 5 + ((n / sizeModifierMax[sizeModifier]) * 6)
-  }
-
-  if (isIugaPoint) {
-    size = 7
-    sizeBonus = 2
-  }
-
-  if (data.geoguide_id === iugaLastId) {
-    fillColor = selectedFillColor
-    size = 7
-    sizeBonus = 2
-  }
+  const fillColor = modifiers.getColor(data, isSelected, isIugaPoint)
+  const { size, sizeBonus } = modifiers.getSize(data, isSelected, isIugaPoint)
 
   return {
     path: google.maps.SymbolPath.CIRCLE,
