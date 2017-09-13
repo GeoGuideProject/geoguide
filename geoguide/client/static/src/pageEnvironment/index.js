@@ -35,9 +35,7 @@ let currentChartIndex = 0
 let mouseClusters = {}
 let mousePolygons = []
 
-function HeatMapControl(controlDiv, map) {
-  var control = this;
-
+const makeHeatmapControl = (controlDiv, map)  => {
   controlDiv.style.clear = 'both';
 
   var heatMapUI = document.createElement('div');
@@ -121,7 +119,7 @@ const initMap = () => {
   });
 
   let heatMapDiv = document.createElement('div');
-  let heatMap = new HeatMapControl(heatMapDiv, map);
+  makeHeatmapControl(heatMapDiv, map);
 
   heatMapDiv.index = 1;
   heatMapDiv.style['padding-top'] = '10px';
@@ -316,21 +314,27 @@ const getIcon  = data => {
 const addPoint = (data, index) => {
   datasetData[data.geoguide_id] = data;
 
-  var contentString = '<div id="infowindow' + data.geoguide_id + '"><h4>Profile</h4><div style="max-height: 30em; overflow-y: auto; padding-bottom: 1em">';
+  let contentString = `
+  <div id="infowindow${data.geoguide_id}">
+    <h4>Profile</h4>
+    <div style="max-height: 30em; overflow-y: auto; padding-bottom: 1em">
+    ${Object.keys(data).map(key => {
+      if (data[key] === undefined || key === 'geoguide_id' || data[key] === '') {
+        return
+      }
 
-  Object.keys(data).forEach(key => {
-    if (data[key] === undefined || key === 'geoguide_id' || data[key] === '') {
-      return
-    }
-    var value = data[key];
-    if (Number(data[key])) {
-      var number = Number(data[key]);
-      value = Number.isInteger(number) ? number.toString() : parseFloat(Number(data[key]).toFixed(5)).toString();
-    }
-    contentString += '<b>' + key + '</b>: <code>' + value + '</code><br />';
-  })
-  contentString += '</div><button type="button" class="btn btn-default" onclick="GeoGuide.showPotentialPoints(this)">Explore</button>';
-  contentString += '</div>';
+      let value = data[key]
+      if (Number(data[key])) {
+        let number = Number(data[key]);
+        value = Number.isInteger(number) ? number.toString() : parseFloat(Number(data[key]).toFixed(5)).toString();
+      }
+
+      return `<span><strong>${key}</strong>: <code>${value}</code></span>`
+    }).join('<br>')}
+    </div>
+    <button type="button" class="btn btn-default" onclick="GeoGuide.showPotentialPoints(this)">Explore</button>
+  </div>
+  `
 
   var infowindow = new google.maps.InfoWindow({
     content: contentString
