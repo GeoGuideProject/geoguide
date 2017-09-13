@@ -8,6 +8,8 @@ import throttle from 'lodash/throttle'
 import clusterMaker from 'clusters'
 import randomColor from 'randomcolor'
 import quickHull from 'quick-hull-2d'
+import * as modifiers from './modifiers'
+import axios from 'axios'
 
 let pointChoice = -1
 let iugaLastId = -1
@@ -26,29 +28,14 @@ let isHeatMapCluster = false
 let datasetData = {}
 let datasetOptions = JSON.parse(document.querySelector('#dataset_json').innerHTML)
 let datasetFilters = datasetOptions.headers;
-let colorModifierElement = document.querySelector('#colorModifier')
-let colorModifier = colorModifierElement.value
-let colorModifierMax = {}
+let mouseTrackingCoordinates = []
+let mouseTrackingMarkers = []
 let chartsPerPage = 2
 let currentChartIndex = 0
 let mouseClusters = {}
 let mousePolygons = []
 
-let sizeModifierElement = document.querySelector('#sizeModifier')
-let sizeModifier = sizeModifierElement.value
-let sizeModifierMax = {}
-
-colorModifierElement.addEventListener('change', e => {
-  colorModifier = e.target.value
-})
-
-sizeModifierElement.addEventListener('change', e => {
-  sizeModifier = e.target.value
-})
-
-function HeatMapControl(controlDiv, map) {
-  var control = this;
-
+const makeHeatmapControl = (controlDiv, map)  => {
   controlDiv.style.clear = 'both';
 
   var heatMapUI = document.createElement('div');
@@ -122,7 +109,7 @@ const initMap = () => {
 
   markerClusterer = new MarkerClusterer(map, [], {
       imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m',
-      maxZoom: 10,
+      maxZoom: 13,
   });
 
   heatmap = new google.maps.visualization.HeatmapLayer({
@@ -132,7 +119,7 @@ const initMap = () => {
   });
 
   let heatMapDiv = document.createElement('div');
-  let heatMap = new HeatMapControl(heatMapDiv, map);
+  makeHeatmapControl(heatMapDiv, map);
 
   heatMapDiv.index = 1;
   heatMapDiv.style['padding-top'] = '10px';
@@ -171,7 +158,7 @@ const processData = (err, data) => {
   const latmed = d3.median(data, d => d[datasetOptions.latitude_attr])
   const lngmed = d3.median(data, d => d[datasetOptions.longitude_attr])
 
-  calculateMaxModifiers(data)
+  modifiers.calculateMax(data)
   map.setCenter({
     lat: latmed,
     lng: lngmed
@@ -210,8 +197,7 @@ const processFilter = (dataset, filters) => {
       }
     })
 
-    colorModifierMax = {}
-    sizeModifierMax = {}
+    modifiers.clearMax()
     refreshModifiers()
 
     markerClusterer.addMarkers(Object.values(markers))
@@ -301,27 +287,8 @@ const clearMap = () => {
   infowindows = {}
 }
 
-const calculateMaxModifiers = dataset => {
-  if (colorModifier !== '' && dataset[0][colorModifier]) {
-    if (colorModifierMax[colorModifier] === undefined) {
-      colorModifierMax[colorModifier] = d3.max(dataset, d => {
-        let n = Number(d[colorModifier])
-        return n + (2 * Math.abs(n))
-      })
-    }
-  }
-  if (sizeModifier !== '' && dataset[0][sizeModifier]) {
-    if (sizeModifierMax[sizeModifier] === undefined) {
-      sizeModifierMax[sizeModifier] = d3.max(dataset, d => {
-        let n = Number(d[sizeModifier])
-        return n + (2 * Math.abs(n))
-      })
-    }
-  }
-}
-
 const refreshModifiers = () => {
-  calculateMaxModifiers(Object.keys(markers).map(x => datasetData[x]))
+  modifiers.calculateMax(Object.keys(markers).map(x => datasetData[x]))
   Object.keys(markers).forEach(x => {
     let data = datasetData[markers[x].id]
     markers[x].setIcon(getIcon(data))
@@ -329,66 +296,11 @@ const refreshModifiers = () => {
 }
 
 const getIcon  = data => {
-  /* constants */
-  const normalfillColor = '#2196F3'
-  const selectedFillColor = '#F44336'
-  const iugaFillColor = '#FFC107'
-  const normalFillColors = [
-    '#e3f2fd',
-    '#bbdefb',
-    '#90caf9',
-    '#64b5f6',
-    '#42a5f5',
-    '#2196f3',
-    '#1e88e5',
-    '#1976d2',
-    '#1565c0',
-    '#0d47a1'
-  ]
-  const iugaFillColors = [
-    '#fff8e1',
-    '#ffecb3',
-    '#ffe082',
-    '#ffd54f',
-    '#ffca28',
-    '#ffc107',
-    '#ffb300',
-    '#ffa000',
-    '#ff8f00',
-    '#ff6f00'
-  ]
+  const isIugaPoint = iugaPoints.indexOf(Number(data.geoguide_id)) > -1
+  const isSelected = data.geoguide_id === iugaLastId;
 
-  /* default */
-  let fillColor = normalfillColor
-  let size = 7
-  let sizeBonus = 0
-  let isIugaPoint = iugaPoints.indexOf(Number(data.geoguide_id)) > -1
-
-  if (colorModifier !== '' && data[colorModifier]) {
-    var n = Number(data[colorModifier])
-    n += (2 * Math.abs(n))
-    var value = Math.floor((n / colorModifierMax[colorModifier]) * (normalFillColors.length - 1))
-    fillColor = isIugaPoint ? iugaFillColors[value] : normalFillColors[value]
-  } else if (isIugaPoint) {
-    fillColor = iugaFillColor
-  }
-
-  if (sizeModifier !== '' && data[sizeModifier]) {
-    var n = Number(data[sizeModifier])
-    n += (2 * Math.abs(n))
-    size = 5 + ((n / sizeModifierMax[sizeModifier]) * 6)
-  }
-
-  if (isIugaPoint) {
-    size = 7
-    sizeBonus = 2
-  }
-
-  if (data.geoguide_id === iugaLastId) {
-    fillColor = selectedFillColor
-    size = 7
-    sizeBonus = 2
-  }
+  const fillColor = modifiers.getColor(data, isSelected, isIugaPoint)
+  const { size, sizeBonus } = modifiers.getSize(data, isSelected, isIugaPoint)
 
   return {
     path: google.maps.SymbolPath.CIRCLE,
@@ -402,21 +314,27 @@ const getIcon  = data => {
 const addPoint = (data, index) => {
   datasetData[data.geoguide_id] = data;
 
-  var contentString = '<div id="infowindow' + data.geoguide_id + '"><h4>Profile</h4><div style="max-height: 30em; overflow-y: auto; padding-bottom: 1em">';
+  let contentString = `
+  <div id="infowindow${data.geoguide_id}">
+    <h4>Profile</h4>
+    <div style="max-height: 30em; overflow-y: auto; padding-bottom: 1em">
+    ${Object.keys(data).map(key => {
+      if (data[key] === undefined || key === 'geoguide_id' || data[key] === '') {
+        return
+      }
 
-  Object.keys(data).forEach(key => {
-    if (data[key] === undefined || key === 'geoguide_id' || data[key] === '') {
-      return
-    }
-    var value = data[key];
-    if (Number(data[key])) {
-      var number = Number(data[key]);
-      value = Number.isInteger(number) ? number.toString() : parseFloat(Number(data[key]).toFixed(5)).toString();
-    }
-    contentString += '<b>' + key + '</b>: <code>' + value + '</code><br />';
-  })
-  contentString += '</div><button type="button" class="btn btn-default" onclick="GeoGuide.showPotentialPoints(this)">Explore</button>';
-  contentString += '</div>';
+      let value = data[key]
+      if (Number(data[key])) {
+        let number = Number(data[key]);
+        value = Number.isInteger(number) ? number.toString() : parseFloat(Number(data[key]).toFixed(5)).toString();
+      }
+
+      return `<span><strong>${key}</strong>: <code>${value}</code></span>`
+    }).join('<br>')}
+    </div>
+    <button type="button" class="btn btn-default" onclick="GeoGuide.showPotentialPoints(this)">Explore</button>
+  </div>
+  `
 
   var infowindow = new google.maps.InfoWindow({
     content: contentString
@@ -451,108 +369,104 @@ const addPoint = (data, index) => {
 }
 
 const showPotentialPoints = e => {
-  if (runningRequest === false) {
-    runningRequest = true;
-    let oldText = e.innerHTML;
-    e.innerHTML = 'Loading...'
-    let loader = new XMLHttpRequest();
-    let data = new FormData();
-    let icon = null;
-    iugaPoints = null;
-    loader.onreadystatechange = () => {
-      if (loader.readyState === XMLHttpRequest.DONE) {
-        if (infowindowsOpened) {
-          infowindowsOpened.forEach(i => i.close())
-          infowindowsOpened = []
-        }
-        if (loader.status === 200) {
-          let jsonResponse = JSON.parse(loader.responseText)
+  if (runningRequest) return;
 
-          iugaPoints = []
+  runningRequest = true;
 
-          jsonResponse.points.forEach(id => {
-            if (id === pointChoice) {
-              return
-            }
-            iugaPoints.push(Number(id))
-          })
+  let oldText = e.innerHTML;
+  e.innerHTML = 'Loading...'
 
-          if (document.querySelector('#onlyfilteredpoints').checked) {
-            markerClusterer.clearMarkers()
-            Object.keys(markers).forEach(x => {
-              markers[x].setIcon(getIcon(datasetData[x]))
-            })
-          } else {
-            resetFilters()
-            clearMap()
-            Object.values(datasetData).forEach((data, index) => {
-              addPoint(data, index)
-            })
-          }
+  let icon = null;
+  iugaPoints = null;
 
-          markerClusterer.addMarkers(Object.values(markers))
-          showClustersFromMouseTrackingAfterIuga()
-        } else if (loader.status === 202) {
-          window.alert('Not ready yet.')
-        }
+  let url = `/environment/${datasetOptions.filename}/${pointChoice}/iuga`
+
+  url += `?limit=${document.getElementById('timelimit').value}`
+  url += `&sigma=${document.getElementById('sigma').value}`
+  url += `&k=${document.getElementById('kvalue').value}`
+
+  let data = {}
+
+  if (document.querySelector('#onlyfilteredpoints').checked) {
+    if (Object.keys(datasetData).length !== Object.keys(markers).length) {
+      const filtered_points = Object.keys(markers).map(x => markers[x].id)
+      data.filtered_points = filtered_points.join(',')
+
+      if (document.getElementById("kvalue").value > filtered_points.length - 2) {
+        alert("You don't have enough filtered points!")
         runningRequest = false
-        e.innerHTML = oldText;
+        return
       }
     }
-    let url = '/environment/' + datasetOptions.filename + '/' + pointChoice + '/iuga'
+  }
 
-    url += '?limit=' + document.getElementById("timelimit").value
-    url += '&sigma=' + document.getElementById("sigma").value
-    url += '&k=' + document.getElementById("kvalue").value
+  let clusters = getClustersFromMouseTracking()
+  mouseClusters = clusters
+  let greatestCluster = clusters.reduce((value, cluster) => Math.max(cluster.points.length, value), 0)
+  data.clusters = clusters.map(cluster => [...cluster.centroid, (cluster.points.length/greatestCluster)].join(':')).join(',')
 
-    if (document.querySelector('#onlyfilteredpoints').checked) {
-      if (Object.keys(datasetData).length !== Object.keys(markers).length) {
-        const filtered_points = Object.keys(markers).map(x => markers[x].id)
-        data.append('filtered_points', filtered_points.join(','))
-        if (document.getElementById("kvalue").value > filtered_points.length - 2) {
-          alert("You don't have enough filtered points")
-          runningRequest = false
+  axios.post(url, data).then((response) => {
+    if (infowindowsOpened) {
+      infowindowsOpened.forEach(i => i.close())
+      infowindowsOpened = []
+    }
+
+    if (response.status === 202) {
+      alert('Not ready yet.')
+    } else {
+      const jsonResponse = response.data
+
+      iugaPoints = []
+
+      jsonResponse.points.forEach(id => {
+        if (id === pointChoice) {
           return
         }
+        iugaPoints.push(Number(id))
+      })
+
+      if (document.querySelector('#onlyfilteredpoints').checked) {
+        markerClusterer.clearMarkers()
+        Object.keys(markers).forEach(x => {
+          markers[x].setIcon(getIcon(datasetData[x]))
+        })
+      } else {
+        resetFilters()
+        clearMap()
+        Object.values(datasetData).forEach((data, index) => {
+          addPoint(data, index)
+        })
       }
+
+      markerClusterer.addMarkers(Object.values(markers))
+      showClustersFromMouseTrackingAfterIuga()
     }
-    let clusters = getClustersFromMouseTracking()
-    mouseClusters = clusters
-    let greatestCluster = clusters.reduce((value, cluster) => Math.max(cluster.points.length, value), 0)
-    data.append('clusters', clusters.map(cluster => [...cluster.centroid, (cluster.points.length/greatestCluster)].join(':')).join(','))
-    loader.open('POST', url, true)
-    loader.send(data)
-    mouseTrackingCoordinates = []
-    mouseTrackingMarkers = []
-    iugaLastId = pointChoice
-  }
+
+    runningRequest = false
+    e.innerHTML = oldText
+  })
+
+  mouseTrackingCoordinates = []
+  mouseTrackingMarkers = []
+  iugaLastId = pointChoice
 }
 
 const isDatasetReady = () => {
   if (datasetOptions.indexed === false) {
-    let req = new window.XMLHttpRequest()
-    req.onreadystatechange = () => {
-      if (req.status === 200 && req.readyState === window.XMLHttpRequest.DONE) {
-        datasetOptions = JSON.parse(req.responseText)
-        if (datasetOptions.indexed === false) {
-          setTimeout(isDatasetReady, 1000)
-        } else if (pointChoice >= 0) {
-          let btnElement = document.querySelector('#infowindow' + pointChoice + ' button')
-          if (btnElement !== null) {
-            btnElement.removeAttribute('disabled')
-            btnElement.removeAttribute('title')
-          }
+    axios.get(`/environment/${datasetOptions.filename}/details`).then(({data}) => {
+      datasetOptions = data
+      if (datasetOptions.indexed === false) {
+        setTimeout(isDatasetReady, 1000)
+      } else if (pointChoice >= 0) {
+        let btnElement = document.querySelector('#infowindow' + pointChoice + ' button')
+        if (btnElement !== null) {
+          btnElement.removeAttribute('disabled')
+          btnElement.removeAttribute('title')
         }
       }
-    }
-    let url = '/environment/' + datasetOptions.filename + '/details'
-    req.open('GET', url, true)
-    req.send()
+    })
   }
 }
-
-let mouseTrackingCoordinates = []
-let mouseTrackingMarkers = []
 
 const trackCoordinates = latLng => {
   mouseTrackingCoordinates.push(latLng);
@@ -658,16 +572,33 @@ const showClustersFromMouseTrackingAfterIuga = () => {
       lng: point[1]
     }))
 
-    var pol = new google.maps.Polygon({
-      paths: path,
-      strokeColor: color,
-      strokeOpacity: 0.8,
-      strokeWeight: 2,
-      fillColor: color,
-      fillOpacity: 0.35
+    let filtered_points = Object.keys(markers).map(x => markers[x].id)
+    filtered_points = filtered_points.join(',')
+
+    axios.post(`/environment/${datasetOptions.filename}/points`, {
+      polygon: hull.map(point => point.join(':')).join(','),
+      filtered_points
+    }).then(({ data }) => {
+      if (data.count > 2) {
+        let hull = quickHull(data.points)
+        let path = hull.map((point) => ({
+          lat: point[0],
+          lng: point[1]
+        }))
+
+        var pol = new google.maps.Polygon({
+          paths: path,
+          strokeColor: color,
+          strokeOpacity: 0.8,
+          strokeWeight: 2,
+          fillColor: color,
+          fillOpacity: 0.35
+        })
+        pol.setMap(map)
+        mousePolygons.push(pol)
+      }
     })
-    pol.setMap(map)
-    mousePolygons.push(pol)
+
   });
 }
 

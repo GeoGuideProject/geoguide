@@ -6,12 +6,14 @@ import pandas as pd
 import numpy as np
 from uuid import uuid4
 from flask import request, session, render_template, Blueprint, flash, redirect, url_for, jsonify, abort
-from geoguide.server import app, db, datasets
+from geoguide.server import app, db, datasets, logging
 from flask_uploads import UploadNotAllowed
 from geoguide.server.models import Dataset, Attribute, AttributeType
 from geoguide.server.geoguide.helpers import save_as_hdf, path_to_hdf, save_as_sql
 from geoguide.server.iuga import run_iuga
+from sqlalchemy import create_engine
 
+SQLALCHEMY_DATABASE_URI = app.config['SQLALCHEMY_DATABASE_URI']
 DEBUG = app.config['DEBUG']
 USE_SQL = app.config['USE_SQL']
 geoguide_blueprint = Blueprint('geoguide', __name__,)
@@ -105,17 +107,18 @@ def point_details(selected_dataset, index):
     df = pd.read_csv(datasets.path(dataset.filename))
     return df.loc[index].to_json(), 200, {'Content-Type': 'application/json'}
 
-
 @geoguide_blueprint.route('/environment/<selected_dataset>/<int:index>/iuga', methods=['POST'])
 def point_suggestions(selected_dataset, index):
     k = int(request.args['k'])
     sigma = float(request.args['sigma'])
     limit = float(request.args['limit'])
 
-    filtered_points = request.form.get('filtered_points', default='')
+    json_data = request.get_json(True, True)
+
+    filtered_points = json_data.get('filtered_points', '')
     filtered_points = [int(x) for x in filtered_points.split(',') if x]
 
-    clusters = request.form.get('clusters', default='')
+    clusters = json_data.get('clusters', '')
     clusters = [[float(x) for x in c.split(':') if x] for c in clusters.split(',') if c]
     if DEBUG:
         print(clusters)
@@ -136,3 +139,37 @@ def point_suggestions(selected_dataset, index):
                                                                filtered_points=filtered_points,
                                                                clusters=clusters)
     return jsonify(vm)
+
+@geoguide_blueprint.route('/environment/<selected_dataset>/points', methods=['GET', 'POST'])
+def point(selected_dataset):
+    dataset = Dataset.query.filter_by(filename=selected_dataset).first_or_404()
+
+    engine = create_engine(SQLALCHEMY_DATABASE_URI)
+    table_name = dataset.filename.rsplit('.', 1)[0]
+
+    json_data = request.get_json(True, True)
+    polygon_path = json_data.get('polygon', '')
+    polygon_path = polygon_path.split(',') if polygon_path is not '' else []
+    polygon = ''
+
+    filtered_points = json_data.get('filtered_points', '')
+    filtered_points = [int(x) for x in filtered_points.split(',') if x]
+
+    if len(polygon_path) > 2:
+        polygon_path.append(polygon_path[0])
+        polygon = 'POLYGON(({}))'.format(','.join(['{} {}'.format(*p.split(':')[::-1]) for p in polygon_path]))
+    elif len(polygon_path) != 0:
+        return jsonify(dict(points=[], count=0)), 400
+
+    cursor = engine.execute('''
+    select geoguide_id, {}, {}
+    from "{}"
+    {}
+    '''.format(
+        dataset.latitude_attr,
+        dataset.longitude_attr,
+        table_name,
+        ("where ST_Contains('{}', geom)".format(polygon) if len(polygon) > 0 else '')))
+
+    points = [list(x[1:]) for x in cursor if len(filtered_points) > 0 and (x[0] in filtered_points)]
+    return jsonify(dict(points=points, count=len(points)))
