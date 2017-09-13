@@ -28,7 +28,8 @@ let isHeatMapCluster = false
 let datasetData = {}
 let datasetOptions = JSON.parse(document.querySelector('#dataset_json').innerHTML)
 let datasetFilters = datasetOptions.headers;
-
+let mouseTrackingCoordinates = []
+let mouseTrackingMarkers = []
 let chartsPerPage = 2
 let currentChartIndex = 0
 let mouseClusters = {}
@@ -364,108 +365,104 @@ const addPoint = (data, index) => {
 }
 
 const showPotentialPoints = e => {
-  if (runningRequest === false) {
-    runningRequest = true;
-    let oldText = e.innerHTML;
-    e.innerHTML = 'Loading...'
-    let loader = new XMLHttpRequest();
-    let data = new FormData();
-    let icon = null;
-    iugaPoints = null;
-    loader.onreadystatechange = () => {
-      if (loader.readyState === XMLHttpRequest.DONE) {
-        if (infowindowsOpened) {
-          infowindowsOpened.forEach(i => i.close())
-          infowindowsOpened = []
-        }
-        if (loader.status === 200) {
-          let jsonResponse = JSON.parse(loader.responseText)
+  if (runningRequest) return;
 
-          iugaPoints = []
+  runningRequest = true;
 
-          jsonResponse.points.forEach(id => {
-            if (id === pointChoice) {
-              return
-            }
-            iugaPoints.push(Number(id))
-          })
+  let oldText = e.innerHTML;
+  e.innerHTML = 'Loading...'
 
-          if (document.querySelector('#onlyfilteredpoints').checked) {
-            markerClusterer.clearMarkers()
-            Object.keys(markers).forEach(x => {
-              markers[x].setIcon(getIcon(datasetData[x]))
-            })
-          } else {
-            resetFilters()
-            clearMap()
-            Object.values(datasetData).forEach((data, index) => {
-              addPoint(data, index)
-            })
-          }
+  let icon = null;
+  iugaPoints = null;
 
-          markerClusterer.addMarkers(Object.values(markers))
-          showClustersFromMouseTrackingAfterIuga()
-        } else if (loader.status === 202) {
-          window.alert('Not ready yet.')
-        }
+  let url = `/environment/${datasetOptions.filename}/${pointChoice}/iuga`
+
+  url += `?limit=${document.getElementById('timelimit').value}`
+  url += `&sigma=${document.getElementById('sigma').value}`
+  url += `&k=${document.getElementById('kvalue').value}`
+
+  let data = {}
+
+  if (document.querySelector('#onlyfilteredpoints').checked) {
+    if (Object.keys(datasetData).length !== Object.keys(markers).length) {
+      const filtered_points = Object.keys(markers).map(x => markers[x].id)
+      data.filtered_points = filtered_points.join(',')
+
+      if (document.getElementById("kvalue").value > filtered_points.length - 2) {
+        alert("You don't have enough filtered points!")
         runningRequest = false
-        e.innerHTML = oldText;
+        return
       }
     }
-    let url = '/environment/' + datasetOptions.filename + '/' + pointChoice + '/iuga'
+  }
 
-    url += '?limit=' + document.getElementById("timelimit").value
-    url += '&sigma=' + document.getElementById("sigma").value
-    url += '&k=' + document.getElementById("kvalue").value
+  let clusters = getClustersFromMouseTracking()
+  mouseClusters = clusters
+  let greatestCluster = clusters.reduce((value, cluster) => Math.max(cluster.points.length, value), 0)
+  data.clusters = clusters.map(cluster => [...cluster.centroid, (cluster.points.length/greatestCluster)].join(':')).join(',')
 
-    if (document.querySelector('#onlyfilteredpoints').checked) {
-      if (Object.keys(datasetData).length !== Object.keys(markers).length) {
-        const filtered_points = Object.keys(markers).map(x => markers[x].id)
-        data.append('filtered_points', filtered_points.join(','))
-        if (document.getElementById("kvalue").value > filtered_points.length - 2) {
-          alert("You don't have enough filtered points")
-          runningRequest = false
+  axios.post(url, data).then((response) => {
+    if (infowindowsOpened) {
+      infowindowsOpened.forEach(i => i.close())
+      infowindowsOpened = []
+    }
+
+    if (response.status === 202) {
+      alert('Not ready yet.')
+    } else {
+      const jsonResponse = response.data
+
+      iugaPoints = []
+
+      jsonResponse.points.forEach(id => {
+        if (id === pointChoice) {
           return
         }
+        iugaPoints.push(Number(id))
+      })
+
+      if (document.querySelector('#onlyfilteredpoints').checked) {
+        markerClusterer.clearMarkers()
+        Object.keys(markers).forEach(x => {
+          markers[x].setIcon(getIcon(datasetData[x]))
+        })
+      } else {
+        resetFilters()
+        clearMap()
+        Object.values(datasetData).forEach((data, index) => {
+          addPoint(data, index)
+        })
       }
+
+      markerClusterer.addMarkers(Object.values(markers))
+      showClustersFromMouseTrackingAfterIuga()
     }
-    let clusters = getClustersFromMouseTracking()
-    mouseClusters = clusters
-    let greatestCluster = clusters.reduce((value, cluster) => Math.max(cluster.points.length, value), 0)
-    data.append('clusters', clusters.map(cluster => [...cluster.centroid, (cluster.points.length/greatestCluster)].join(':')).join(','))
-    loader.open('POST', url, true)
-    loader.send(data)
-    mouseTrackingCoordinates = []
-    mouseTrackingMarkers = []
-    iugaLastId = pointChoice
-  }
+
+    runningRequest = false
+    e.innerHTML = oldText
+  })
+
+  mouseTrackingCoordinates = []
+  mouseTrackingMarkers = []
+  iugaLastId = pointChoice
 }
 
 const isDatasetReady = () => {
   if (datasetOptions.indexed === false) {
-    let req = new window.XMLHttpRequest()
-    req.onreadystatechange = () => {
-      if (req.status === 200 && req.readyState === window.XMLHttpRequest.DONE) {
-        datasetOptions = JSON.parse(req.responseText)
-        if (datasetOptions.indexed === false) {
-          setTimeout(isDatasetReady, 1000)
-        } else if (pointChoice >= 0) {
-          let btnElement = document.querySelector('#infowindow' + pointChoice + ' button')
-          if (btnElement !== null) {
-            btnElement.removeAttribute('disabled')
-            btnElement.removeAttribute('title')
-          }
+    axios.get(`/environment/${datasetOptions.filename}/details`).then(({data}) => {
+      datasetOptions = data
+      if (datasetOptions.indexed === false) {
+        setTimeout(isDatasetReady, 1000)
+      } else if (pointChoice >= 0) {
+        let btnElement = document.querySelector('#infowindow' + pointChoice + ' button')
+        if (btnElement !== null) {
+          btnElement.removeAttribute('disabled')
+          btnElement.removeAttribute('title')
         }
       }
-    }
-    let url = '/environment/' + datasetOptions.filename + '/details'
-    req.open('GET', url, true)
-    req.send()
+    })
   }
 }
-
-let mouseTrackingCoordinates = []
-let mouseTrackingMarkers = []
 
 const trackCoordinates = latLng => {
   mouseTrackingCoordinates.push(latLng);
@@ -571,8 +568,12 @@ const showClustersFromMouseTrackingAfterIuga = () => {
       lng: point[1]
     }))
 
+    let filtered_points = Object.keys(markers).map(x => markers[x].id)
+    filtered_points = filtered_points.join(',')
+
     axios.post(`/environment/${datasetOptions.filename}/points`, {
-      polygon: hull.map(point => point.join(':')).join(',')
+      polygon: hull.map(point => point.join(':')).join(','),
+      filtered_points
     }).then(({ data }) => {
       if (data.count > 2) {
         let hull = quickHull(data.points)

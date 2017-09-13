@@ -113,10 +113,12 @@ def point_suggestions(selected_dataset, index):
     sigma = float(request.args['sigma'])
     limit = float(request.args['limit'])
 
-    filtered_points = request.form.get('filtered_points', default='')
+    json_data = request.get_json(True, True)
+
+    filtered_points = json_data.get('filtered_points', '')
     filtered_points = [int(x) for x in filtered_points.split(',') if x]
 
-    clusters = request.form.get('clusters', default='')
+    clusters = json_data.get('clusters', '')
     clusters = [[float(x) for x in c.split(':') if x] for c in clusters.split(',') if c]
     if DEBUG:
         print(clusters)
@@ -144,9 +146,14 @@ def point(selected_dataset):
 
     engine = create_engine(SQLALCHEMY_DATABASE_URI)
     table_name = dataset.filename.rsplit('.', 1)[0]
-    polygon_path = request.get_json(True, True).get('polygon', '')
+
+    json_data = request.get_json(True, True)
+    polygon_path = json_data.get('polygon', '')
     polygon_path = polygon_path.split(',') if polygon_path is not '' else []
     polygon = ''
+
+    filtered_points = json_data.get('filtered_points', '')
+    filtered_points = [int(x) for x in filtered_points.split(',') if x]
 
     if len(polygon_path) > 2:
         polygon_path.append(polygon_path[0])
@@ -155,7 +162,7 @@ def point(selected_dataset):
         return jsonify(dict(points=[], count=0)), 400
 
     cursor = engine.execute('''
-    select {}, {}
+    select geoguide_id, {}, {}
     from "{}"
     {}
     '''.format(
@@ -164,5 +171,5 @@ def point(selected_dataset):
         table_name,
         ("where ST_Contains('{}', geom)".format(polygon) if len(polygon) > 0 else '')))
 
-    points = [list(x) for x in cursor]
+    points = [list(x[1:]) for x in cursor if len(filtered_points) > 0 and (x[0] in filtered_points)]
     return jsonify(dict(points=points, count=len(points)))
