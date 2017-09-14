@@ -141,7 +141,7 @@ def point_suggestions(selected_dataset, index):
     return jsonify(vm)
 
 @geoguide_blueprint.route('/environment/<selected_dataset>/points', methods=['GET', 'POST'])
-def point(selected_dataset):
+def point_by_polygon(selected_dataset):
     dataset = Dataset.query.filter_by(filename=selected_dataset).first_or_404()
 
     engine = create_engine(SQLALCHEMY_DATABASE_URI)
@@ -158,18 +158,18 @@ def point(selected_dataset):
     if len(polygon_path) > 2:
         polygon_path.append(polygon_path[0])
         polygon = 'POLYGON(({}))'.format(','.join(['{} {}'.format(*p.split(':')[::-1]) for p in polygon_path]))
-    elif len(polygon_path) != 0:
+    else:
         return jsonify(dict(points=[], count=0)), 400
 
     cursor = engine.execute('''
     select geoguide_id, {}, {}
     from "{}"
-    {}
+    where ST_Contains('{}', geom)
     '''.format(
         dataset.latitude_attr,
         dataset.longitude_attr,
         table_name,
-        ("where ST_Contains('{}', geom)".format(polygon) if len(polygon) > 0 else '')))
+        polygon))
 
     points = [list(x[1:]) for x in cursor if len(filtered_points) > 0 and (x[0] in filtered_points)]
     return jsonify(dict(points=points, count=len(points)))
