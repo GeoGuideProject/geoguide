@@ -25,36 +25,28 @@ user_blueprint = Blueprint('user', __name__,)
 
 @user_blueprint.route('/register', methods=['GET', 'POST'])
 def register():
-    # form = RegisterForm(request.form)
-    # if form.validate_on_submit():
-    #     user = User(
-    #         email=form.email.data,
-    #         password=form.password.data
-    #     )
-    #     db.session.add(user)
-    #     db.session.commit()
-
-    #     login_user(user)
-
-    #     flash('Thank you for registering.', 'success')
-    #     return redirect(url_for("user.members"))
-
+    if request.method == 'POST':
+        user = User(email=request.form['email'], password=request.form['password'])
+        db.session.add(user)
+        db.session.commit()
+        login_user(user)
+        flash('Thank you for registering.', 'success')
+        return redirect(url_for("geoguide.upload"))
     return render_template('user/register.html')
 
 
 @user_blueprint.route('/login', methods=['GET', 'POST'])
 def login():
-    # form = LoginForm(request.form)
-    # if form.validate_on_submit():
-    #     user = User.query.filter_by(email=form.email.data).first()
-    #     if user and bcrypt.check_password_hash(
-    #             user.password, request.form['password']):
-    #         login_user(user)
-    #         flash('You are logged in. Welcome!', 'success')
-    #         return redirect(url_for('user.members'))
-    #     else:
-    #         flash('Invalid email and/or password.', 'danger')
-    #         return render_template('user/login.html', form=form)
+    if request.method == 'POST':
+        user = User.query.filter_by(email=request.form['email']).first()
+        if user and bcrypt.check_password_hash(
+                user.password, request.form['password']):
+            login_user(user)
+            flash('You are logged in. Welcome!', 'success')
+            return redirect(url_for('geoguide.upload'))
+        else:
+            flash('Invalid email and/or password.', 'danger')
+            return render_template('user/login.html', email=request.form['email'])
     return render_template('user/login.html')
 
 
