@@ -10,4 +10,4 @@ echo "Creating tables..."
 docker-compose run web python manage.py create_db
 
 echo "Compiling JS..."
-docker-compose run web npm run build
+docker-compose run web npm install

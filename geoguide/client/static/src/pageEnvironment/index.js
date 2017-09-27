@@ -109,7 +109,7 @@ const initMap = () => {
 
   markerClusterer = new MarkerClusterer(map, [], {
       imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m',
-      maxZoom: 13,
+      maxZoom: 11,
   });
 
   heatmap = new google.maps.visualization.HeatmapLayer({
@@ -277,6 +277,7 @@ const refreshMap = () => {
   resetFilters()
   processData(undefined, Object.values(datasetData))
   processFilter()
+  clearClustersFromMouseTracking()
   iugaLastId = -1
   iugaPoints = []
 }
@@ -317,7 +318,7 @@ const addPoint = (data, index) => {
   let contentString = `
   <div id="infowindow${data.geoguide_id}">
     <h4>Profile</h4>
-    <div style="max-height: 30em; overflow-y: auto; padding-bottom: 1em">
+    <div style="max-height: 25em; overflow-y: auto; padding-bottom: 1em">
     ${Object.keys(data).map(key => {
       if (data[key] === undefined || key === 'geoguide_id' || data[key] === '') {
         return
@@ -329,8 +330,8 @@ const addPoint = (data, index) => {
         value = Number.isInteger(number) ? number.toString() : parseFloat(Number(data[key]).toFixed(5)).toString();
       }
 
-      return `<span><strong>${key}</strong>: <code>${value}</code></span>`
-    }).join('<br>')}
+      return `<span><strong>${key}</strong>: <code>${value}</code></span><br>`
+    }).join('')}
     </div>
     <button type="button" class="btn btn-default" onclick="GeoGuide.showPotentialPoints(this)">Explore</button>
   </div>
@@ -426,7 +427,6 @@ const showPotentialPoints = e => {
       })
 
       if (document.querySelector('#onlyfilteredpoints').checked) {
-        markerClusterer.clearMarkers()
         Object.keys(markers).forEach(x => {
           markers[x].setIcon(getIcon(datasetData[x]))
         })
@@ -446,7 +446,7 @@ const showPotentialPoints = e => {
     e.innerHTML = oldText
   })
 
-  mouseTrackingCoordinates = []
+  // mouseTrackingCoordinates = []
   mouseTrackingMarkers = []
   iugaLastId = pointChoice
 }
@@ -503,6 +503,7 @@ const showClustersFromMouseTracking = () => {
   const rawPoints = mouseTrackingCoordinates.map(latLng => [latLng.lat(), latLng.lng()])
   clusterMaker.data(rawPoints)
   let clusters = clusterMaker.clusters()
+  console.log('Clusters:', clusters.length)
   clusters.forEach((cluster, i) => {
     const color = randomColor()
     const markers = cluster.points.map((point, j) => {
@@ -563,6 +564,8 @@ const showClustersFromMouseTrackingAsHeatmap = () => {
 
 const showClustersFromMouseTrackingAfterIuga = () => {
   clearClustersFromMouseTracking()
+  let greatestCluster = mouseClusters.reduce((value, cluster) => Math.max(cluster.points.length, value), 0)
+  console.log('Clusters:', mouseClusters.length)
   mouseClusters.forEach((cluster, i) => {
     const color = randomColor()
 
@@ -589,11 +592,12 @@ const showClustersFromMouseTrackingAfterIuga = () => {
         var pol = new google.maps.Polygon({
           paths: path,
           strokeColor: color,
-          strokeOpacity: 0.8,
+          strokeOpacity: (cluster.points.length / greatestCluster) * 0.8,
           strokeWeight: 2,
           fillColor: color,
-          fillOpacity: 0.35
+          fillOpacity: (cluster.points.length / greatestCluster) * 0.35
         })
+        console.log(pol.fillColor, (cluster.points.length / greatestCluster), pol.strokeOpacity, pol.fillOpacity)
         pol.setMap(map)
         mousePolygons.push(pol)
       }
