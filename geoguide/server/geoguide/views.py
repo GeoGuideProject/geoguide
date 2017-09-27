@@ -56,7 +56,7 @@ def upload():
             flash('This file is not allowed.', 'error')
         return redirect(url_for('geoguide.upload'))
     vm = {}
-    vm['datasets'] = Dataset.query.all()
+    vm['datasets'] = current_user.datasets
     needs_reload = False
     for dataset in vm['datasets']:
         if not os.path.isfile(datasets.path(dataset.filename)):
@@ -64,7 +64,7 @@ def upload():
             needs_reload = True
     if needs_reload:
         db.session.commit()
-        vm['datasets'] = Dataset.query.all()
+        vm['datasets'] = current_user.datasets
     return render_template('geoguide/upload.html', **vm)
 
 
