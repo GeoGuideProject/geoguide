@@ -12,6 +12,7 @@ from geoguide.server.models import Dataset, Attribute, AttributeType
 from geoguide.server.geoguide.helpers import save_as_hdf, path_to_hdf, save_as_sql
 from geoguide.server.iuga import run_iuga
 from sqlalchemy import create_engine
+from flask_login import login_required, current_user
 
 SQLALCHEMY_DATABASE_URI = app.config['SQLALCHEMY_DATABASE_URI']
 DEBUG = app.config['DEBUG']
@@ -20,7 +21,9 @@ geoguide_blueprint = Blueprint('geoguide', __name__,)
 
 
 
+
 @geoguide_blueprint.route('/upload', methods=['GET', 'POST'])
+@login_required
 def upload():
     if request.method == 'POST' and 'datasetInputFile' in request.files:
         try:
@@ -67,6 +70,7 @@ def upload():
 
 @geoguide_blueprint.route('/environment', defaults={'selected_dataset': None})
 @geoguide_blueprint.route('/environment/<selected_dataset>')
+@login_required
 def environment(selected_dataset):
     if selected_dataset is None:
         if 'SELECTED_DATASET' in session:
@@ -91,6 +95,7 @@ def environment(selected_dataset):
 
 
 @geoguide_blueprint.route('/environment/<selected_dataset>/details')
+@login_required
 def dataset_details(selected_dataset):
     dataset = Dataset.query.filter_by(filename=selected_dataset).first_or_404()
     return jsonify({
@@ -101,13 +106,17 @@ def dataset_details(selected_dataset):
         'attributes': [dict(description=attr.description, type=dict(value=attr.type.value, description=attr.type.name)) for attr in dataset.attributes],
     })
 
+
 @geoguide_blueprint.route('/environment/<selected_dataset>/<int:index>')
+@login_required
 def point_details(selected_dataset, index):
     dataset = Dataset.query.filter_by(filename=selected_dataset).first_or_404()
     df = pd.read_csv(datasets.path(dataset.filename))
     return df.loc[index].to_json(), 200, {'Content-Type': 'application/json'}
 
+
 @geoguide_blueprint.route('/environment/<selected_dataset>/<int:index>/iuga', methods=['POST'])
+@login_required
 def point_suggestions(selected_dataset, index):
     k = int(request.args['k'])
     sigma = float(request.args['sigma'])
@@ -140,7 +149,9 @@ def point_suggestions(selected_dataset, index):
                                                                clusters=clusters)
     return jsonify(vm)
 
+
 @geoguide_blueprint.route('/environment/<selected_dataset>/points', methods=['GET', 'POST'])
+@login_required
 def point_by_polygon(selected_dataset):
     dataset = Dataset.query.filter_by(filename=selected_dataset).first_or_404()
 

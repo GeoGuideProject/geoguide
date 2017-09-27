@@ -1,0 +1,33 @@
+{% extends '_base.html' %}
+
+{% block content %}
+
+  <header class="content-header">
+    <h1>Please login</h1>
+  </header>
+
+  <br>
+
+
+  <form class="form" role="form" method="post" action="">
+
+    <div class="col-lg-4 col-sm-4">
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="text" class="form-control" id="email" name="email" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" class="form-control" id="password" name="password" required>
+      </div>
+
+      <button class="btn btn-success" type="submit">Sign In!</button>
+      <br><br>
+      <p>Need to <a href="{{ url_for('user.register') }}">Register</a>?</p>
+    </div>
+
+  </form>
+
+
+{% endblock content %}
