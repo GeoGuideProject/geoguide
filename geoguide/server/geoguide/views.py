@@ -12,6 +12,7 @@ from geoguide.server.models import Dataset, Attribute, AttributeType
 from geoguide.server.geoguide.helpers import save_as_hdf, path_to_hdf, save_as_sql
 from geoguide.server.iuga import run_iuga
 from sqlalchemy import create_engine
+from flask_login import login_required, current_user
 
 SQLALCHEMY_DATABASE_URI = app.config['SQLALCHEMY_DATABASE_URI']
 DEBUG = app.config['DEBUG']
@@ -20,7 +21,9 @@ geoguide_blueprint = Blueprint('geoguide', __name__,)
 
 
 
+
 @geoguide_blueprint.route('/upload', methods=['GET', 'POST'])
+@login_required
 def upload():
     if request.method == 'POST' and 'datasetInputFile' in request.files:
         try:
@@ -53,7 +56,7 @@ def upload():
             flash('This file is not allowed.', 'error')
         return redirect(url_for('geoguide.upload'))
     vm = {}
-    vm['datasets'] = Dataset.query.all()
+    vm['datasets'] = current_user.datasets
     needs_reload = False
     for dataset in vm['datasets']:
         if not os.path.isfile(datasets.path(dataset.filename)):
@@ -61,12 +64,13 @@ def upload():
             needs_reload = True
     if needs_reload:
         db.session.commit()
-        vm['datasets'] = Dataset.query.all()
+        vm['datasets'] = current_user.datasets
     return render_template('geoguide/upload.html', **vm)
 
 
 @geoguide_blueprint.route('/environment', defaults={'selected_dataset': None})
 @geoguide_blueprint.route('/environment/<selected_dataset>')
+@login_required
 def environment(selected_dataset):
     if selected_dataset is None:
         if 'SELECTED_DATASET' in session:
@@ -91,6 +95,7 @@ def environment(selected_dataset):
 
 
 @geoguide_blueprint.route('/environment/<selected_dataset>/details')
+@login_required
 def dataset_details(selected_dataset):
     dataset = Dataset.query.filter_by(filename=selected_dataset).first_or_404()
     return jsonify({
@@ -101,13 +106,17 @@ def dataset_details(selected_dataset):
         'attributes': [dict(description=attr.description, type=dict(value=attr.type.value, description=attr.type.name)) for attr in dataset.attributes],
     })
 
+
 @geoguide_blueprint.route('/environment/<selected_dataset>/<int:index>')
+@login_required
 def point_details(selected_dataset, index):
     dataset = Dataset.query.filter_by(filename=selected_dataset).first_or_404()
     df = pd.read_csv(datasets.path(dataset.filename))
     return df.loc[index].to_json(), 200, {'Content-Type': 'application/json'}
 
+
 @geoguide_blueprint.route('/environment/<selected_dataset>/<int:index>/iuga', methods=['POST'])
+@login_required
 def point_suggestions(selected_dataset, index):
     k = int(request.args['k'])
     sigma = float(request.args['sigma'])
@@ -140,8 +149,10 @@ def point_suggestions(selected_dataset, index):
                                                                clusters=clusters)
     return jsonify(vm)
 
+
 @geoguide_blueprint.route('/environment/<selected_dataset>/points', methods=['GET', 'POST'])
-def point(selected_dataset):
+@login_required
+def point_by_polygon(selected_dataset):
     dataset = Dataset.query.filter_by(filename=selected_dataset).first_or_404()
 
     engine = create_engine(SQLALCHEMY_DATABASE_URI)
@@ -158,18 +169,18 @@ def point(selected_dataset):
     if len(polygon_path) > 2:
         polygon_path.append(polygon_path[0])
         polygon = 'POLYGON(({}))'.format(','.join(['{} {}'.format(*p.split(':')[::-1]) for p in polygon_path]))
-    elif len(polygon_path) != 0:
+    else:
         return jsonify(dict(points=[], count=0)), 400
 
     cursor = engine.execute('''
     select geoguide_id, {}, {}
     from "{}"
-    {}
+    where ST_Contains('{}', geom)
     '''.format(
         dataset.latitude_attr,
         dataset.longitude_attr,
         table_name,
-        ("where ST_Contains('{}', geom)".format(polygon) if len(polygon) > 0 else '')))
+        polygon))
 
     points = [list(x[1:]) for x in cursor if len(filtered_points) > 0 and (x[0] in filtered_points)]
     return jsonify(dict(points=points, count=len(points)))

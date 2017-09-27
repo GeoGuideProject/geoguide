@@ -2,8 +2,44 @@
 
 import datetime
 import enum
-from geoguide.server import app, db
+from geoguide.server import app, db, bcrypt
 from sqlalchemy_utils import ChoiceType
+from flask_login import current_user
+
+
+class User(db.Model):
+
+    __tablename__ = 'users'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    email = db.Column(db.String(255), unique=True, nullable=False)
+    password = db.Column(db.String(255), nullable=False)
+    registered_on = db.Column(db.DateTime, nullable=False)
+    admin = db.Column(db.Boolean, nullable=False, default=False)
+    datasets = db.relationship('Dataset', backref='user', cascade='all, delete-orphan')
+
+    def __init__(self, email, password, admin=False):
+        self.email = email
+        self.password = bcrypt.generate_password_hash(
+            password, app.config.get('BCRYPT_LOG_ROUNDS')
+        ).decode('utf-8')
+        self.registered_on = datetime.datetime.now()
+        self.admin = admin
+
+    def is_authenticated(self):
+        return True
+
+    def is_active(self):
+        return True
+
+    def is_anonymous(self):
+        return False
+
+    def get_id(self):
+        return self.id
+
+    def __repr__(self):
+        return '<User {0}>'.format(self.email)
 
 
 class Dataset(db.Model):
@@ -19,6 +55,7 @@ class Dataset(db.Model):
     attributes = db.relationship('Attribute', backref='dataset', cascade='all, delete-orphan')
     created_at = db.Column(db.DateTime, nullable=False)
     indexed_at = db.Column(db.DateTime)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
 
     def __init__(self, title, filename, number_of_rows=None, latitude_attr=None, longitude_attr=None):
@@ -28,6 +65,7 @@ class Dataset(db.Model):
         self.latitude_attr = latitude_attr
         self.longitude_attr = longitude_attr
         self.created_at = datetime.datetime.now()
+        self.user_id = current_user.id
 
 
     def __repr__(self):
