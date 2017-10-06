@@ -38,6 +38,60 @@ let sizeModifierElement = document.querySelector('#sizeModifier')
 let sizeModifier = sizeModifierElement.value
 let sizeModifierMax = {}
 
+if (typeof(Storage) !== "undefined") {
+  let ls;
+  if(localStorage.getItem(JSON.parse(document.querySelector('#dataset_json').innerHTML).filename) == null) {
+    ls = {
+      "colorModifier": document.querySelector('#colorModifier').selectedIndex,
+      "sizeModifier": document.querySelector('#sizeModifier').selectedIndex,
+      "timelimit": document.getElementById("timelimit").value,
+      "sigma": document.getElementById("sigma").value,
+      "kvalue": document.getElementById("kvalue").value,
+      "onlyfilteredpoints": $("#onlyfilteredpoints").prop(':checked')
+    };
+    localStorage.setItem(JSON.parse(document.querySelector('#dataset_json').innerHTML).filename, JSON.stringify(ls));
+  } else {
+     ls = JSON.parse(localStorage.getItem(JSON.parse(document.querySelector('#dataset_json').innerHTML).filename));
+
+     document.querySelector('#colorModifier').selectedIndex = ls["colorModifier"];
+     document.querySelector('#sizeModifier').selectedIndex = ls["sizeModifier"];
+     document.getElementById("timelimit").value = ls["timelimit"];
+     document.getElementById("sigma").value = ls["sigma"];
+     document.getElementById("kvalue").value = ls["kvalue"];
+     $("#onlyfilteredpoints").prop('checked', ls['onlyfilteredpoints']);
+  }
+
+  document.querySelector('#colorModifier').addEventListener('change', e => {
+    ls["colorModifier"] = colorModifier.selectedIndex;
+    localStorage.setItem(JSON.parse(document.querySelector('#dataset_json').innerHTML).filename, JSON.stringify(ls));
+  })
+
+  document.querySelector('#sizeModifier').addEventListener('change', e => {
+    ls["sizeModifier"] = sizeModifier.selectedIndex;
+    localStorage.setItem(JSON.parse(document.querySelector('#dataset_json').innerHTML).filename, JSON.stringify(ls));
+  })
+
+  document.getElementById("timelimit").addEventListener('change', e => {
+    ls["timelimit"] = document.getElementById("timelimit").value;
+    localStorage.setItem(JSON.parse(document.querySelector('#dataset_json').innerHTML).filename, JSON.stringify(ls));
+  })
+
+  document.getElementById("sigma").addEventListener('change', e => {
+    ls["sigma"] = document.getElementById("sigma").value;
+    localStorage.setItem(JSON.parse(document.querySelector('#dataset_json').innerHTML).filename, JSON.stringify(ls));
+  })
+
+  document.getElementById("kvalue").addEventListener('change', e => {
+    ls["kvalue"] = document.getElementById("kvalue").value;
+    localStorage.setItem(JSON.parse(document.querySelector('#dataset_json').innerHTML).filename, JSON.stringify(ls));
+  })
+
+  document.getElementById("onlyfilteredpoints").addEventListener('change', e => {
+    ls["onlyfilteredpoints"] = $("#onlyfilteredpoints").prop('checked');
+    localStorage.setItem(JSON.parse(document.querySelector('#dataset_json').innerHTML).filename, JSON.stringify(ls));
+  })
+}
+
 colorModifierElement.addEventListener('change', e => {
   colorModifier = e.target.value
 })
