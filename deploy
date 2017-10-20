@@ -3,6 +3,12 @@
 echo "Building..."
 docker-compose build
 
+echo "Starting db..."
+docker-compose up -d db
+until docker-compose run db psql -h db -U postgres -c '\l' >/dev/null 2>&1; do
+  echo "PostGIS is unavailable - sleeping"; sleep 1
+done
+
 echo "Generating a new APP_KEY..."
 docker-compose run web python generate_key.py
 
@@ -10,5 +16,7 @@ echo "Creating tables..."
 docker-compose run web python manage.py create_db
 
 echo "Compiling JS..."
-docker-compose run web npm install && \
-  docker-compose run web npm run build
+docker-compose run web npm install --quiet && \
+  docker-compose run web npm run --quiet build
+
+docker-compose down
