@@ -45,45 +45,27 @@ if (typeof(Storage) !== "undefined") {
       "timelimit": document.getElementById("timelimit").value,
       "sigma": document.getElementById("sigma").value,
       "kvalue": document.getElementById("kvalue").value,
-      "onlyfilteredpoints": document.getElementById("onlyfilteredpoints").getAttribute('checked')
+      "onlyfilteredpoints": document.getElementById("onlyfilteredpoints").checked
     };
     
   } else {
-     ls = JSON.parse(localStorage.getItem(filename));
+    ls = JSON.parse(localStorage.getItem(filename));
 
-     document.querySelector('#colorModifier').selectedIndex = ls["colorModifier"];
-     document.querySelector('#sizeModifier').selectedIndex = ls["sizeModifier"];
-     document.getElementById("timelimit").value = ls["timelimit"];
-     document.getElementById("sigma").value = ls["sigma"];
-     document.getElementById("kvalue").value = ls["kvalue"];
-     document.getElementById("onlyfilteredpoints").setAttribute("checked", ls['onlyfilteredpoints']);
+    document.querySelector('#colorModifier').selectedIndex = ls["colorModifier"];
+    document.querySelector('#sizeModifier').selectedIndex = ls["sizeModifier"];
+    document.getElementById("timelimit").value = ls["timelimit"];
+    document.getElementById("sigma").value = ls["sigma"];
+    document.getElementById("kvalue").value = ls["kvalue"];
+    document.getElementById("onlyfilteredpoints").checked = ls['onlyfilteredpoints'];
   }
 
-  document.querySelector('#colorModifier').addEventListener('change', e => {
-    ls["colorModifier"] = colorModifier.selectedIndex;
-  })
-
-  document.querySelector('#sizeModifier').addEventListener('change', e => {
-    ls["sizeModifier"] = sizeModifier.selectedIndex;
-  })
-
-  document.getElementById("timelimit").addEventListener('change', e => {
-    ls["timelimit"] = document.getElementById("timelimit").value
-  })
-
-  document.getElementById("sigma").addEventListener('change', e => {
-    ls["sigma"] = document.getElementById("sigma").value;
-  })
-
-  document.getElementById("kvalue").addEventListener('change', e => {
-    ls["kvalue"] = document.getElementById("kvalue").value;
-  })
-
-  document.getElementById("onlyfilteredpoints").addEventListener('change', e => {
-    ls["onlyfilteredpoints"] = document.getElementById("onlyfilteredpoints").getAttribute('checked');    
-  })
-
   window.onbeforeunload = (e) => {
+    ls["colorModifier"] = colorModifier.selectedIndex
+    ls["sizeModifier"] = sizeModifier.selectedIndex
+    ls["timelimit"] = document.getElementById("timelimit").value
+    ls["sigma"] = document.getElementById("sigma").value
+    ls["kvalue"] = document.getElementById("kvalue").value
+    ls["onlyfilteredpoints"] = document.getElementById("onlyfilteredpoints").checked
     localStorage.setItem(filename, JSON.stringify(ls));
   }
 }
