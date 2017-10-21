@@ -35,6 +35,41 @@ let currentChartIndex = 0
 let mouseClusters = {}
 let mousePolygons = []
 
+if (typeof(Storage) !== "undefined") {
+  let filename = JSON.parse(document.querySelector('#dataset_json').innerHTML).filename;
+  let ls;
+  if(localStorage.getItem(filename) == null) {
+    ls = {
+      "colorModifier": document.querySelector('#colorModifier').selectedIndex,
+      "sizeModifier": document.querySelector('#sizeModifier').selectedIndex,
+      "timelimit": document.getElementById("timelimit").value,
+      "sigma": document.getElementById("sigma").value,
+      "kvalue": document.getElementById("kvalue").value,
+      "onlyfilteredpoints": document.getElementById("onlyfilteredpoints").checked
+    };
+    
+  } else {
+    ls = JSON.parse(localStorage.getItem(filename));
+
+    document.querySelector('#colorModifier').selectedIndex = ls["colorModifier"];
+    document.querySelector('#sizeModifier').selectedIndex = ls["sizeModifier"];
+    document.getElementById("timelimit").value = ls["timelimit"];
+    document.getElementById("sigma").value = ls["sigma"];
+    document.getElementById("kvalue").value = ls["kvalue"];
+    document.getElementById("onlyfilteredpoints").checked = ls['onlyfilteredpoints'];
+  }
+
+  window.onbeforeunload = (e) => {
+    ls["colorModifier"] = colorModifier.selectedIndex
+    ls["sizeModifier"] = sizeModifier.selectedIndex
+    ls["timelimit"] = document.getElementById("timelimit").value
+    ls["sigma"] = document.getElementById("sigma").value
+    ls["kvalue"] = document.getElementById("kvalue").value
+    ls["onlyfilteredpoints"] = document.getElementById("onlyfilteredpoints").checked
+    localStorage.setItem(filename, JSON.stringify(ls));
+  }
+}
+
 const makeHeatmapControl = (controlDiv, map)  => {
   controlDiv.style.clear = 'both';
 
