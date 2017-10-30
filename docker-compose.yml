@@ -5,8 +5,7 @@ services:
     image: mdillon/postgis
     volumes:
       - ./pgdata:/var/lib/postgresql/data
-    ports:
-      - 5432:5432
+
   web:
     build: .
     command: python manage.py runserver -h 0.0.0.0 -p 8000

@@ -6,6 +6,16 @@
       <div class="navbar-header">
           <a class="navbar-brand" href="{{ url_for('main.home') }}">GeoGuide Environment</a>
       </div>
+      <div class="navbar-collapse collapse">
+          <ul class="nav navbar-nav navbar-right">
+              {% if current_user.is_authenticated %}
+              <li><a href="{{url_for('user.logout')}}">Logout</a></li>
+              {% else %}
+              <li><a href="{{url_for('user.login')}}">Login</a></li>
+              {% endif %}
+            </ul>
+      </div>
+
       <!-- /.navbar-collapse -->
     </div>
     <!-- /.container -->
