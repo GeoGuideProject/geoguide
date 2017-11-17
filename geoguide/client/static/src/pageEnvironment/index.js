@@ -368,7 +368,7 @@ const addPoint = (data, index) => {
       return `<span><strong>${key}</strong>: <code>${value}</code></span><br>`
     }).join('')}
     </div>
-    <button type="button" class="btn btn-default" onclick="GeoGuide.showPotentialPoints(this)">Explore</button>
+    <button type="button" class="btn btn-default" onclick="GeoGuide.showPotentialPoints(this)">Highlight</button>
   </div>
   `
 
