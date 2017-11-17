@@ -2,6 +2,7 @@ import identifyLatLng from './attribute/identifyLatLng'
 import identifyDatetime from './attribute/identifyDatetime'
 
 import identifyNumberOfRows from './meta/identifyNumberOfRows'
+import identifyFileName from './meta/identifyFileName'
 
 const normalizeHeaders = headers => {
   return headers.map(header => header.replace(/^"|"$/g, ''))
@@ -33,6 +34,7 @@ const readSingleFile = e => {
       identifyAttributes(headers, values)
       identifyMeta(contents)
     }
+    identifyFileName(f)
     r.readAsText(f)
   }
 }
