@@ -81,10 +81,15 @@
         </div>
       </div>
     </div>
-    <div class="control well well-sm">
-      <div class="title" data-toggle="collapse" data-target="#collapseFilters">Filters <span class="pull-right"><span class="caret"></span></span></div>
+  </div>
+    <div class="mapContainer">
+      <div id="map"></div>
+    </div>
+    <div class="control well well-sm custom-filters">
+      <!-- <div class="title" data-toggle="collapse" data-target="#collapseFilters">Filters <span class="pull-right"><span class="caret"></span></span></div> -->
+      <!-- <span>Filters</span> -->
       <div class="collapse in" id="collapseFilters">
-        {% if dataset_headers|length > 1 %}
+        <!-- {% if dataset_headers|length > 1 %}
           <div class="form-horizontal">
             <div class="form-group">
               <label for="filtersPerPage" class="col-sm-4 control-label"># filters:</label>
@@ -102,10 +107,14 @@
               </div>
             </div>
           </div>
-        {% endif %}
+        {% endif %} -->
         <p class="text-muted">
           <span id="active">-</span> of <span id="total">-</span> points filtered.
         </p>
+        <div class="buttons">
+          <input type="button" class="btn btn-default btn-sm" onClick="GeoGuide.changeCurrentChart(this)" value="Previous">
+          <input type="button" class="btn btn-default btn-sm pull-right" onClick="GeoGuide.changeCurrentChart(this)" value="Next">
+        </div>
         <div id="controlCharts" class="well well-sm range-group">
           {% for header in dataset_headers %}
           <div hidden class="chart">
@@ -114,17 +123,8 @@
           {% endfor %}
         </div>
         {% if dataset_headers|length > 1 %}
-        <div class="buttons">
-          <input type="button" class="btn btn-default btn-sm" onClick="GeoGuide.changeCurrentChart(this)" value="Previous">
-          <input type="button" class="btn btn-default btn-sm pull-right" onClick="GeoGuide.changeCurrentChart(this)" value="Next">
-        </div>
         {% endif %}
       </div>
-    </div>
-  </div>
-  </div>
-    <div class="mapContainer">
-      <div id="map"></div>
     </div>
     <script id="dataset_json" type="application/json">{{ dataset_json|safe }}</script>
     <script src="https://code.jquery.com/jquery-1.11.2.min.js"></script>

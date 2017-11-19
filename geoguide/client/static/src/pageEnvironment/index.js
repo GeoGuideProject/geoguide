@@ -30,7 +30,7 @@ let datasetOptions = JSON.parse(document.querySelector('#dataset_json').innerHTM
 let datasetFilters = datasetOptions.headers;
 let mouseTrackingCoordinates = []
 let mouseTrackingMarkers = []
-let chartsPerPage = 2
+let chartsPerPage = 3
 let currentChartIndex = 0
 let mouseClusters = {}
 let mousePolygons = []
@@ -47,7 +47,7 @@ if (typeof(Storage) !== "undefined") {
       "kvalue": document.getElementById("kvalue").value,
       "onlyfilteredpoints": document.getElementById("onlyfilteredpoints").checked
     };
-    
+
   } else {
     ls = JSON.parse(localStorage.getItem(filename));
 
