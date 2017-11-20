@@ -135,7 +135,7 @@ const initMap = () => {
       style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
     },
     disableDefaultUI: true,
-    zoomControl: true,
+    zoomControl: false,
     mapTypeControl: true,
     zoomControlOptions: {
       position: google.maps.ControlPosition.RIGHT_BOTTOM,
@@ -171,6 +171,9 @@ const initMap = () => {
 
   let customControlsLeftTopElement = document.getElementById('customControlsLeftTop')
   map.controls[google.maps.ControlPosition.LEFT_TOP].push(customControlsLeftTopElement)
+
+  let customControlsBottomLeft = document.getElementById('customControlsBottomLeft')
+  map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(customControlsBottomLeft)
 
   let dataset_url = document.querySelector('body').dataset['dataset']
 
