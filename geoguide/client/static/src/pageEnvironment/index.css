@@ -10,6 +10,7 @@ html, body {
 }
 
 .controlContainer {
+  padding-right: 10px;
   padding-left: 10px;
   padding-top: 10px;
   padding-bottom: 10px;
@@ -22,12 +23,25 @@ html, body {
 
 .control {
   pointer-events: auto;
-  width: 32em;
   background: #fff;
   box-shadow: 0 1px 3px rgba(0,0,0,.15);
   border: 2px solid #fff;
   border-radius: 3px;
   margin-bottom: 10px;
+}
+
+.control.simple {
+  padding: 0;
+}
+
+.control.simple .title {
+  padding: 0 5px;
+  line-height: 25px;
+}
+
+.control.simple .collapse {
+  margin: 1em 9px 9px 9px;
+  width: 30em;
 }
 
 .control .title {
@@ -83,6 +97,7 @@ html, body {
 .custom-filters {
   min-width: 10em;
   width: initial;
+  max-width: initial;
   margin-bottom: 0;
 }
 

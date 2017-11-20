@@ -14,8 +14,8 @@
 
   <body data-dataset="{{ dataset_url }}">
     <div class="controlContainer" id="customControlsLeftTop">
-      <div class="control well well-sm">
-        <div class="title" data-toggle="collapse" data-target="#collapseGeoGuideParameters">GeoGuide Parameters <span class="pull-right"><span class="caret"></span></span></div>
+      <div class="control well well-sm simple">
+        <div class="title" data-toggle="collapse" data-target="#collapseGeoGuideParameters"><i class="glyphicon glyphicon-cog"></i></div>
         <div class="collapse" id="collapseGeoGuideParameters">
           <div class="form-horizontal">
             <div class="form-group">
@@ -41,15 +41,10 @@
               </div>
             </div>
           </div>
-          <input type="button" class="btn btn-default btn-sm" onClick="GeoGuide.refreshModifiers()" value="Update">
+          <!-- <input type="button" class="btn btn-default btn-sm" onClick="GeoGuide.refreshModifiers()" value="Update">
           <input type="button" class="btn btn-default btn-sm" onClick="GeoGuide.refreshMap()" value="Restore">
           <input type="button" class="btn btn-default btn-sm" onClick="GeoGuide.showClustersFromMouseTracking()" value="Show Clusters">
-          <input type="button" class="btn btn-default btn-sm" onClick="GeoGuide.showClustersFromMouseTrackingAsHeatmap()" value="Show Clusters as Heatmap">
-        </div>
-      </div>
-      <div class="control well well-sm">
-        <div class="title" data-toggle="collapse" data-target="#collapseIUGADefinition">Highlighting Parameters <span class="pull-right"><span class="caret"></span></span></div>
-        <div class="collapse" id="collapseIUGADefinition">
+          <input type="button" class="btn btn-default btn-sm" onClick="GeoGuide.showClustersFromMouseTrackingAsHeatmap()" value="Show Clusters as Heatmap"> -->
           <div class="form-horizontal">
             <div class="form-group">
               <label for="timelimit" class="col-sm-4 control-label">Max delay (ms):</label>
@@ -79,6 +74,7 @@
               </div>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>

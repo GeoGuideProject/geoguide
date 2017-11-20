@@ -38,6 +38,14 @@ let currentChartIndex = 0
 let mouseClusters = {}
 let mousePolygons = []
 
+modifiers.onColorModifierChange(e => {
+  refreshModifiers()
+})
+
+modifiers.onSizeModifierChange(e => {
+  refreshModifiers()
+})
+
 if (typeof(Storage) !== "undefined") {
   let filename = JSON.parse(document.querySelector('#dataset_json').innerHTML).filename;
   let ls;
@@ -170,7 +178,7 @@ const initMap = () => {
   map.controls[google.maps.ControlPosition.TOP_RIGHT].push(heatMapDiv)
 
   let customControlsLeftTopElement = document.getElementById('customControlsLeftTop')
-  map.controls[google.maps.ControlPosition.LEFT_TOP].push(customControlsLeftTopElement)
+  map.controls[google.maps.ControlPosition.TOP_RIGHT].push(customControlsLeftTopElement)
 
   let customControlsBottomLeft = document.getElementById('customControlsBottomLeft')
   map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(customControlsBottomLeft)
