@@ -27,6 +27,9 @@ let isHeatMap = false
 let isHeatMapCluster = false
 let datasetData = {}
 let datasetOptions = JSON.parse(document.querySelector('#dataset_json').innerHTML)
+let datasetVisibleAttrs = datasetOptions.attributes.reduce((obj, i) => {
+  return { ...obj, [i.description]: i.visible }
+}, {})
 let datasetFilters = datasetOptions.headers;
 let mouseTrackingCoordinates = []
 let mouseTrackingMarkers = []
@@ -349,13 +352,12 @@ const getIcon  = data => {
 
 const addPoint = (data, index) => {
   datasetData[data.geoguide_id] = data;
-
   let contentString = `
   <div id="infowindow${data.geoguide_id}">
     <h4>Profile</h4>
     <div style="max-height: 25em; overflow-y: auto; padding-bottom: 1em">
     ${Object.keys(data).map(key => {
-      if (data[key] === undefined || key === 'geoguide_id' || data[key] === '') {
+      if (data[key] === undefined || key === 'geoguide_id' || data[key] === '' || !datasetVisibleAttrs[key]) {
         return
       }
 
@@ -499,6 +501,9 @@ const isDatasetReady = () => {
           btnElement.removeAttribute('title')
         }
       }
+      datasetVisibleAttrs = datasetOptions.attributes.reduce((obj, i) => {
+        return { ...obj, [i.description]: i.visible }
+      }, {})
     })
   }
 }

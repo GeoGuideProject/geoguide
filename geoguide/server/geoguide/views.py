@@ -50,7 +50,7 @@ def upload():
                 db.session.add(attribute)
                 db.session.commit()
             session['SELECTED_DATASET'] = filename
-            save_as_sql(dataset) if USE_SQL else save_as_hdf(dataset)
+            save_as_sql(dataset, request.form.getlist('selectionAttrInputCheckbox')) if USE_SQL else save_as_hdf(dataset)
             return redirect(url_for('geoguide.environment'))
         except UploadNotAllowed:
             flash('This file is not allowed.', 'error')
@@ -87,7 +87,7 @@ def environment(selected_dataset):
         'latitude_attr': dataset.latitude_attr,
         'longitude_attr': dataset.longitude_attr,
         'indexed': (dataset.indexed_at is not None),
-        'attributes': [dict(description=attr.description, type=dict(value=attr.type.value, description=attr.type.name)) for attr in dataset.attributes],
+        'attributes': [dict(description=attr.description, visible=attr.visible, type=dict(value=attr.type.value, description=attr.type.name)) for attr in dataset.attributes],
         'headers': vm['dataset_headers'],
     })
     vm['dataset_url'] = datasets.url(dataset.filename)
@@ -103,7 +103,7 @@ def dataset_details(selected_dataset):
         'latitude_attr': dataset.latitude_attr,
         'longitude_attr': dataset.longitude_attr,
         'indexed': (dataset.indexed_at is not None),
-        'attributes': [dict(description=attr.description, type=dict(value=attr.type.value, description=attr.type.name)) for attr in dataset.attributes],
+        'attributes': [dict(description=attr.description, visible=attr.visible, type=dict(value=attr.type.value, description=attr.type.name)) for attr in dataset.attributes],
     })
 
 
@@ -156,7 +156,7 @@ def point_by_polygon(selected_dataset):
     dataset = Dataset.query.filter_by(filename=selected_dataset).first_or_404()
 
     engine = create_engine(SQLALCHEMY_DATABASE_URI)
-    table_name = dataset.filename.rsplit('.', 1)[0]
+    table_name = 'datasets.' + dataset.filename.rsplit('.', 1)[0]
 
     json_data = request.get_json(True, True)
     polygon_path = json_data.get('polygon', '')
