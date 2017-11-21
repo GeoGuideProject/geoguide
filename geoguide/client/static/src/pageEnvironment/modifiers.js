@@ -46,6 +46,14 @@ sizeModifierElement.addEventListener('change', e => {
   sizeModifier = e.target.value
 })
 
+export const onColorModifierChange = f => {
+  colorModifierElement.addEventListener('change', f)
+}
+
+export const onSizeModifierChange = f => {
+  sizeModifierElement.addEventListener('change', f)
+}
+
 export const getColor = (data, isSelected, isIugaPoint) => {
   let fillColor = normalfillColor
 
