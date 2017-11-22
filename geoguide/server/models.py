@@ -88,11 +88,13 @@ class Attribute(db.Model):
     description = db.Column(db.String(50), nullable=False)
     type = db.Column(ChoiceType(AttributeType, impl=db.Integer()))
     dataset_id = db.Column(db.Integer, db.ForeignKey('datasets.id'), nullable=False)
+    visible = db.Column(db.Boolean, default=True)
 
-    def __init__(self, description, type, dataset_id):
+    def __init__(self, description, type, dataset_id, visible=True):
         self.description = description
         self.type = type
         self.dataset_id = dataset_id
+        self.visible = visible
 
     def __repr__(self):
         return '<Attribute {}>'.format(self.description)

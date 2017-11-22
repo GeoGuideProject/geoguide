@@ -8,7 +8,6 @@ __pycache__
 *.coverage
 .DS_Store
 env.sh
-migrations
 
 tmp/
 **/dataanalysis/dspoints/

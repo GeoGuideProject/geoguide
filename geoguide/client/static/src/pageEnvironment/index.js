@@ -27,13 +27,24 @@ let isHeatMap = false
 let isHeatMapCluster = false
 let datasetData = {}
 let datasetOptions = JSON.parse(document.querySelector('#dataset_json').innerHTML)
+let datasetVisibleAttrs = datasetOptions.attributes.reduce((obj, i) => {
+  return { ...obj, [i.description]: i.visible }
+}, {})
 let datasetFilters = datasetOptions.headers;
 let mouseTrackingCoordinates = []
 let mouseTrackingMarkers = []
-let chartsPerPage = 2
+let chartsPerPage = 3
 let currentChartIndex = 0
 let mouseClusters = {}
 let mousePolygons = []
+
+modifiers.onColorModifierChange(e => {
+  refreshModifiers()
+})
+
+modifiers.onSizeModifierChange(e => {
+  refreshModifiers()
+})
 
 if (typeof(Storage) !== "undefined") {
   let filename = JSON.parse(document.querySelector('#dataset_json').innerHTML).filename;
@@ -132,7 +143,7 @@ const initMap = () => {
       style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
     },
     disableDefaultUI: true,
-    zoomControl: true,
+    zoomControl: false,
     mapTypeControl: true,
     zoomControlOptions: {
       position: google.maps.ControlPosition.RIGHT_BOTTOM,
@@ -167,7 +178,10 @@ const initMap = () => {
   map.controls[google.maps.ControlPosition.TOP_RIGHT].push(heatMapDiv)
 
   let customControlsLeftTopElement = document.getElementById('customControlsLeftTop')
-  map.controls[google.maps.ControlPosition.LEFT_TOP].push(customControlsLeftTopElement)
+  map.controls[google.maps.ControlPosition.TOP_RIGHT].push(customControlsLeftTopElement)
+
+  let customControlsBottomLeft = document.getElementById('customControlsBottomLeft')
+  map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(customControlsBottomLeft)
 
   let dataset_url = document.querySelector('body').dataset['dataset']
 
@@ -349,13 +363,12 @@ const getIcon  = data => {
 
 const addPoint = (data, index) => {
   datasetData[data.geoguide_id] = data;
-
   let contentString = `
   <div id="infowindow${data.geoguide_id}">
     <h4>Profile</h4>
     <div style="max-height: 25em; overflow-y: auto; padding-bottom: 1em">
     ${Object.keys(data).map(key => {
-      if (data[key] === undefined || key === 'geoguide_id' || data[key] === '') {
+      if (data[key] === undefined || key === 'geoguide_id' || data[key] === '' || !datasetVisibleAttrs[key]) {
         return
       }
 
@@ -368,7 +381,7 @@ const addPoint = (data, index) => {
       return `<span><strong>${key}</strong>: <code>${value}</code></span><br>`
     }).join('')}
     </div>
-    <button type="button" class="btn btn-default" onclick="GeoGuide.showPotentialPoints(this)">Explore</button>
+    <button type="button" class="btn btn-default" onclick="GeoGuide.showPotentialPoints(this)">Highlight</button>
   </div>
   `
 
@@ -499,6 +512,9 @@ const isDatasetReady = () => {
           btnElement.removeAttribute('title')
         }
       }
+      datasetVisibleAttrs = datasetOptions.attributes.reduce((obj, i) => {
+        return { ...obj, [i.description]: i.visible }
+      }, {})
     })
   }
 }

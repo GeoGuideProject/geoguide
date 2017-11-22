@@ -10,19 +10,38 @@ html, body {
 }
 
 .controlContainer {
+  padding-right: 10px;
   padding-left: 10px;
   padding-top: 10px;
+  padding-bottom: 10px;
   pointer-events: none;
+}
+
+.controlContainer.horizontal {
+  width: calc(100% - 10px);
 }
 
 .control {
   pointer-events: auto;
-  width: 32em;
   background: #fff;
   box-shadow: 0 1px 3px rgba(0,0,0,.15);
   border: 2px solid #fff;
   border-radius: 3px;
   margin-bottom: 10px;
+}
+
+.control.simple {
+  padding: 0;
+}
+
+.control.simple .title {
+  padding: 0 5px;
+  line-height: 25px;
+}
+
+.control.simple .collapse {
+  margin: 1em 9px 9px 9px;
+  width: 30em;
 }
 
 .control .title {
@@ -70,12 +89,34 @@ html, body {
 
 #controlCharts {
   max-height: 37em;
-  overflow-y: auto;
+  display: flex;
+  justify-content: space-around;
+  /*overflow-y: auto;*/
+}
+
+.custom-filters {
+  min-width: 10em;
+  width: initial;
+  max-width: initial;
+  margin-bottom: 0;
+}
+
+.custom-filters #controlCharts {
+  overflow-x: auto;
+  white-space: nowrap;
 }
 
 .chart {
   height: 180px;
   margin-bottom: 10px;
+  /* max-height: 180px;
+  width: 30%;
+  margin-bottom: 5px; */
+  display: inline-block;
+}
+
+.chart[hidden] {
+  display: none;
 }
 
 .reset {

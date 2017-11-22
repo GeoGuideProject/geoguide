@@ -73,7 +73,7 @@ def read_input_from_sql(dataset, input_g, filtered_points=[], clusters=[]):
     proximities = {}
 
     engine = create_engine(SQLALCHEMY_DATABASE_URI)
-    table_name = dataset.filename.rsplit('.', 1)[0]
+    table_name = 'datasets.' + dataset.filename.rsplit('.', 1)[0]
     table_rel_name = '{}-rel'.format(table_name)
 
     for df in pd.read_sql_table(table_name, engine, index_col='geoguide_id', chunksize=CHUNKSIZE):
