@@ -51,8 +51,8 @@ if (typeof(Storage) !== "undefined") {
   let ls;
   if(localStorage.getItem(filename) == null) {
     ls = {
-      "colorModifier": document.querySelector('#colorModifier').selectedIndex,
-      "sizeModifier": document.querySelector('#sizeModifier').selectedIndex,
+      "colorModifier": document.querySelector('#colorModifier').value,
+      "sizeModifier": document.querySelector('#sizeModifier').value,
       "timelimit": document.getElementById("timelimit").value,
       "sigma": document.getElementById("sigma").value,
       "kvalue": document.getElementById("kvalue").value,
@@ -62,8 +62,8 @@ if (typeof(Storage) !== "undefined") {
   } else {
     ls = JSON.parse(localStorage.getItem(filename));
 
-    document.querySelector('#colorModifier').selectedIndex = ls["colorModifier"];
-    document.querySelector('#sizeModifier').selectedIndex = ls["sizeModifier"];
+    document.querySelector('#colorModifier').value = ls["colorModifier"];
+    document.querySelector('#sizeModifier').value = ls["sizeModifier"];
     document.getElementById("timelimit").value = ls["timelimit"];
     document.getElementById("sigma").value = ls["sigma"];
     document.getElementById("kvalue").value = ls["kvalue"];
@@ -71,8 +71,8 @@ if (typeof(Storage) !== "undefined") {
   }
 
   window.onbeforeunload = (e) => {
-    ls["colorModifier"] = colorModifier.selectedIndex
-    ls["sizeModifier"] = sizeModifier.selectedIndex
+    ls["colorModifier"] = colorModifier.value
+    ls["sizeModifier"] = sizeModifier.value
     ls["timelimit"] = document.getElementById("timelimit").value
     ls["sigma"] = document.getElementById("sigma").value
     ls["kvalue"] = document.getElementById("kvalue").value
