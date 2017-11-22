@@ -10,6 +10,11 @@ let sizeModifierElement = document.querySelector('#sizeModifier')
 let sizeModifier = sizeModifierElement.value
 let sizeModifierMax = {}
 
+export const updateModifiers = (ls) => {
+	colorModifier = ls["colorModifier"]
+	sizeModifier  = ls["sizeModifier"]
+}
+
 const normalfillColor = '#2196F3'
 const selectedFillColor = '#F44336'
 const iugaFillColor = '#FFC107'
