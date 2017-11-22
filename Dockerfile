@@ -1,24 +1,20 @@
-FROM node:7
+FROM python:3-alpine
 
-RUN apt-get update
+RUN apk --update --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing add \
+    g++ \
+    gcc \
+    hdf5-dev \
+    libffi-dev \
+    libstdc++ \
+    musl-dev \
+    postgresql-dev \
+    python3-dev
 
-ENV PYENV_ROOT /root/.pyenv
-ENV PATH $PYENV_ROOT/shims:$PYENV_ROOT/bin:$PATH
+RUN pip install pipenv --upgrade
 
-RUN curl -L https://raw.githubusercontent.com/yyuu/pyenv-installer/master/bin/pyenv-installer | bash
+WORKDIR /usr/src/app
 
-RUN pyenv install 3.5.2
-RUN pyenv global 3.5.2
-RUN pyenv rehash
+COPY Pipfile ./
+COPY Pipfile.lock ./
 
-RUN mkdir /project
-WORKDIR /project
-
-ADD requirements.txt /project/
-ADD package.json /project/
-ADD webpack.config.js /project/
-
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
-
-RUN npm install
+RUN pipenv install --dev --system

@@ -1,0 +1,159 @@
+{
+    "_meta": {
+        "hash": {
+            "sha256": "77ecb34a9066cda819290380de3f06c9065a58db2315fe0e1e218d01d92d6104"
+        },
+        "requires": {},
+        "sources": [
+            {
+                "url": "https://pypi.python.org/simple",
+                "verify_ssl": true
+            }
+        ]
+    },
+    "default": {
+        "alembic": {
+            "version": "==0.8.10"
+        },
+        "bcrypt": {
+            "version": "==3.1.2"
+        },
+        "blinker": {
+            "version": "==1.4"
+        },
+        "cffi": {
+            "version": "==1.11.2"
+        },
+        "click": {
+            "version": "==6.7"
+        },
+        "flask": {
+            "version": "==0.12.2"
+        },
+        "flask-bcrypt": {
+            "version": "==0.7.1"
+        },
+        "flask-login": {
+            "version": "==0.4.0"
+        },
+        "flask-migrate": {
+            "version": "==2.1.1"
+        },
+        "flask-script": {
+            "version": "==2.0.6"
+        },
+        "flask-sqlalchemy": {
+            "version": "==2.3.2"
+        },
+        "flask-uploads": {
+            "version": "==0.2.1"
+        },
+        "fuzzywuzzy": {
+            "version": "==0.15.1"
+        },
+        "geoalchemy2": {
+            "version": "==0.4.0"
+        },
+        "gunicorn": {
+            "version": "==19.7.1"
+        },
+        "itsdangerous": {
+            "version": "==0.24"
+        },
+        "jinja2": {
+            "version": "==2.10"
+        },
+        "mako": {
+            "version": "==1.0.7"
+        },
+        "markupsafe": {
+            "version": "==1.0"
+        },
+        "numexpr": {
+            "version": "==2.6.4"
+        },
+        "numpy": {
+            "version": "==1.13.3"
+        },
+        "pandas": {
+            "version": "==0.21.0"
+        },
+        "psycopg2": {
+            "version": "==2.7.3.2"
+        },
+        "pycparser": {
+            "version": "==2.18"
+        },
+        "python-dateutil": {
+            "version": "==2.6.1"
+        },
+        "python-decouple": {
+            "version": "==3.1"
+        },
+        "python-editor": {
+            "version": "==1.0.3"
+        },
+        "python-levenshtein": {
+            "version": "==0.12.0"
+        },
+        "python-slugify": {
+            "version": "==1.2.4"
+        },
+        "pytz": {
+            "version": "==2017.3"
+        },
+        "setuptools": {
+            "version": "==37.0.0"
+        },
+        "six": {
+            "version": "==1.11.0"
+        },
+        "sqlalchemy": {
+            "version": "==1.1.15"
+        },
+        "sqlalchemy-utils": {
+            "version": "==0.32.21"
+        },
+        "tables": {
+            "version": "==3.4.2"
+        },
+        "unidecode": {
+            "version": "==0.04.21"
+        },
+        "werkzeug": {
+            "version": "==0.12.2"
+        }
+    },
+    "develop": {
+        "blinker": {
+            "version": "==1.4"
+        },
+        "click": {
+            "version": "==6.7"
+        },
+        "coverage": {
+            "version": "==4.4.2"
+        },
+        "flask": {
+            "version": "==0.12.2"
+        },
+        "flask-debugtoolbar": {
+            "version": "==0.10.1"
+        },
+        "flask-testing": {
+            "version": "==0.6.2"
+        },
+        "itsdangerous": {
+            "version": "==0.24"
+        },
+        "jinja2": {
+            "version": "==2.10"
+        },
+        "markupsafe": {
+            "version": "==1.0"
+        },
+        "werkzeug": {
+            "version": "==0.12.2"
+        }
+    }
+}

@@ -1,16 +1,24 @@
 version: '2'
 
 services:
+
   db:
-    image: mdillon/postgis
+    image: mdillon/postgis:9.6-alpine
     volumes:
       - ./pgdata:/var/lib/postgresql/data
+
+  yarn:
+    image: node:8-alpine
+    volumes:
+      - .:/usr/src/app
+    working_dir: /usr/src/app
+    command: yarn run watch
 
   web:
     build: .
     command: python manage.py runserver -h 0.0.0.0 -p 8000
     volumes:
-      - .:/project
+      - .:/usr/src/app
     ports:
       - "8000:8000"
     depends_on:
