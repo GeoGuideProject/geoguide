@@ -28,7 +28,7 @@ def is_latlng_attribute(header):
     return 'latitude' in header or 'longitude' in header
 
 
-def guess_attributes_types(dataset):
+def guess_attributes_types(dataset, visible_attributes=[]):
     df = pd.read_csv(datasets.path(dataset.filename))
     numberic_attributes = list(df.select_dtypes(include=[np.number]).columns)
     string_attributes = list(df.select_dtypes(include=[object]).columns)
@@ -42,25 +42,25 @@ def guess_attributes_types(dataset):
     text_attributes = [c for c in string_attributes if c not in categorical_text_attributes]
 
     for attr in number_attributes:
-        attribute = Attribute(attr, AttributeType.number, dataset.id)
+        attribute = Attribute(attr, AttributeType.number, dataset.id, attr in visible_attributes)
         db.session.add(attribute)
 
     for attr in categorical_number_attributes:
-        attribute = Attribute(attr, AttributeType.categorical_number, dataset.id)
+        attribute = Attribute(attr, AttributeType.categorical_number, dataset.id, attr in visible_attributes)
         db.session.add(attribute)
 
     for attr in categorical_text_attributes:
-        attribute = Attribute(attr, AttributeType.categorical_text, dataset.id)
+        attribute = Attribute(attr, AttributeType.categorical_text, dataset.id, attr in visible_attributes)
         db.session.add(attribute)
 
     for attr in text_attributes:
-        attribute = Attribute(attr, AttributeType.text, dataset.id)
+        attribute = Attribute(attr, AttributeType.text, dataset.id, attr in visible_attributes)
         db.session.add(attribute)
 
     db.session.commit()
 
 
-def save_as_sql(dataset):
+def save_as_sql(dataset, visible_attributes):
     engine = create_engine(SQLALCHEMY_DATABASE_URI)
 
     dataset_id = dataset.id
@@ -68,9 +68,10 @@ def save_as_sql(dataset):
 
     original_csv_path = datasets.path(dataset.filename)
     csv_path = '{}.normalized.csv'.format(original_csv_path.rsplit('.', 1)[0])
-    table_name = dataset.filename.rsplit('.', 1)[0]
+    table_name = 'datasets.' + dataset.filename.rsplit('.', 1)[0]
     is_first = True
 
+    visible_attributes = [slugify(attr, separator='_') for attr in visible_attributes]
     dataset.latitude_attr = slugify(dataset.latitude_attr, separator='_')
     dataset.longitude_attr = slugify(dataset.longitude_attr, separator='_')
     db.session.add(dataset)
@@ -87,8 +88,7 @@ def save_as_sql(dataset):
     os.remove(original_csv_path)
     shutil.move(csv_path, original_csv_path)
 
-
-    guess_attributes_types(dataset)
+    guess_attributes_types(dataset, visible_attributes)
 
     Thread(target=lambda: index_dataset_from_sql(dataset_id)).start()
 
@@ -98,7 +98,7 @@ def index_dataset_from_sql(dataset_id):
     with app.app_context():
         engine = create_engine(SQLALCHEMY_DATABASE_URI)
         dataset = Dataset.query.get(dataset_id)
-        table_name = dataset.filename.rsplit('.', 1)[0]
+        table_name = 'datasets.' + dataset.filename.rsplit('.', 1)[0]
         table_rel_name = '{}-rel'.format(table_name)
 
         df = pd.read_sql_table(table_name, engine, index_col='geoguide_id')

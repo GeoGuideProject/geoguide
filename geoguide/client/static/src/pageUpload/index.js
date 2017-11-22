@@ -2,6 +2,24 @@ import identifyLatLng from './attribute/identifyLatLng'
 import identifyDatetime from './attribute/identifyDatetime'
 
 import identifyNumberOfRows from './meta/identifyNumberOfRows'
+import identifyFileName from './meta/identifyFileName'
+
+const presentSelection = headers => {
+  const container = document.querySelector('#selectionAttrLabel').parentNode
+
+  const checkboxesToClean = document.querySelectorAll('.selection-attr')
+  if (checkboxesToClean.length > 0) checkboxesToClean.forEach(n => n.remove())
+
+  headers.forEach(h => {
+    let checkboxAttr = `<div class="selection-attr checkbox">
+      <label>
+        <input name="selectionAttrInputCheckbox" type="checkbox" value="${h}" checked> ${h}
+      </label>
+    </div>`
+    container.insertAdjacentHTML('beforeend', checkboxAttr)
+  })
+  container.removeAttribute('hidden')
+}
 
 const normalizeHeaders = headers => {
   return headers.map(header => header.replace(/^"|"$/g, ''))
@@ -10,6 +28,7 @@ const normalizeHeaders = headers => {
 const identifyAttributes = (headers, values) => {
   identifyDatetime(headers, values)
   identifyLatLng(headers, values)
+  presentSelection(headers)
 }
 
 const identifyMeta = (contents) => {
@@ -33,6 +52,7 @@ const readSingleFile = e => {
       identifyAttributes(headers, values)
       identifyMeta(contents)
     }
+    identifyFileName(f)
     r.readAsText(f)
   }
 }
