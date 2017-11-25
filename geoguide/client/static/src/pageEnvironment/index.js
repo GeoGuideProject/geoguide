@@ -55,7 +55,7 @@ if (typeof(Storage) !== "undefined") {
 	let timeLimitElement = document.getElementById("timelimit")
 	let sigmaElement = document.getElementById("sigma")
 	let kvalueElement = document.getElementById("kvalue")
-	let oFPointsElement = document.getElementById("onlyfilteredpoints")
+	let onlyFilteredPointsElement = document.getElementById("onlyfilteredpoints")
 
   if(localStorage.getItem(filename) == null) {
     ls = {
@@ -64,7 +64,7 @@ if (typeof(Storage) !== "undefined") {
       "timelimit": timeLimitElement.value,
       "sigma": sigmaElement.value,
       "kvalue": kvalueElement.value,
-      "onlyfilteredpoints": oFPointsElement.checked
+      "onlyfilteredpoints": onlyFilteredPointsElement.checked
     }
 
   } else {
@@ -75,18 +75,18 @@ if (typeof(Storage) !== "undefined") {
     timeLimitElement.value = ls["timelimit"]
     sigmaElement.value = ls["sigma"]
     kvalueElement.value = ls["kvalue"]
-    oFPointsElement.checked = ls['onlyfilteredpoints']
+    onlyFilteredPointsElement.checked = ls['onlyfilteredpoints']
 
 		modifiers.updateModifiers(ls)	
   }
 
   window.onbeforeunload = (e) => {
     ls["colorModifier"] = colorModifierElement.value
-    ls["sizeModifier"] = sizeModifiereElement.value
+    ls["sizeModifier"] = sizeModifierElement.value
     ls["timelimit"] = timeLimitElement.value
     ls["sigma"] = sigmaElement.value
     ls["kvalue"] = kvalueElement.value
-    ls["onlyfilteredpoints"] = oFPointsElement.checked
+    ls["onlyfilteredpoints"] = onlyFilteredPointsElement.checked
     localStorage.setItem(filename, JSON.stringify(ls))
   }
 
