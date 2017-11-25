@@ -1,7 +1,7 @@
 'use strict'
 
 import './index.css'
-import 'js-marker-clusterer'
+import 'gmaps-marker-clusterer'
 import d3 from 'd3'
 import { initFilters, createChartFilter } from './filters.js'
 import throttle from 'lodash/throttle'
