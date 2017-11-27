@@ -47,38 +47,49 @@ modifiers.onSizeModifierChange(e => {
 })
 
 if (typeof(Storage) !== "undefined") {
-  let filename = JSON.parse(document.querySelector('#dataset_json').innerHTML).filename;
-  let ls;
+  let filename = datasetOptions.filename
+  let ls
+	
+	let colorModifierElement = document.querySelector('#colorModifier')
+	let sizeModifierElement = document.querySelector('#sizeModifier')
+	let timeLimitElement = document.getElementById("timelimit")
+	let sigmaElement = document.getElementById("sigma")
+	let kvalueElement = document.getElementById("kvalue")
+	let onlyFilteredPointsElement = document.getElementById("onlyfilteredpoints")
+
   if(localStorage.getItem(filename) == null) {
     ls = {
-      "colorModifier": document.querySelector('#colorModifier').selectedIndex,
-      "sizeModifier": document.querySelector('#sizeModifier').selectedIndex,
-      "timelimit": document.getElementById("timelimit").value,
-      "sigma": document.getElementById("sigma").value,
-      "kvalue": document.getElementById("kvalue").value,
-      "onlyfilteredpoints": document.getElementById("onlyfilteredpoints").checked
-    };
+      "colorModifier": colorModifierElement.value,
+      "sizeModifier": sizeModifierElement.value,
+      "timelimit": timeLimitElement.value,
+      "sigma": sigmaElement.value,
+      "kvalue": kvalueElement.value,
+      "onlyfilteredpoints": onlyFilteredPointsElement.checked
+    }
 
   } else {
-    ls = JSON.parse(localStorage.getItem(filename));
+    ls = JSON.parse(localStorage.getItem(filename))
 
-    document.querySelector('#colorModifier').selectedIndex = ls["colorModifier"];
-    document.querySelector('#sizeModifier').selectedIndex = ls["sizeModifier"];
-    document.getElementById("timelimit").value = ls["timelimit"];
-    document.getElementById("sigma").value = ls["sigma"];
-    document.getElementById("kvalue").value = ls["kvalue"];
-    document.getElementById("onlyfilteredpoints").checked = ls['onlyfilteredpoints'];
+		colorModifierElement.value = ls["colorModifier"]
+		sizeModifierElement.value = ls["sizeModifier"]
+    timeLimitElement.value = ls["timelimit"]
+    sigmaElement.value = ls["sigma"]
+    kvalueElement.value = ls["kvalue"]
+    onlyFilteredPointsElement.checked = ls['onlyfilteredpoints']
+
+		modifiers.updateModifiers(ls)	
   }
 
   window.onbeforeunload = (e) => {
-    ls["colorModifier"] = colorModifier.selectedIndex
-    ls["sizeModifier"] = sizeModifier.selectedIndex
-    ls["timelimit"] = document.getElementById("timelimit").value
-    ls["sigma"] = document.getElementById("sigma").value
-    ls["kvalue"] = document.getElementById("kvalue").value
-    ls["onlyfilteredpoints"] = document.getElementById("onlyfilteredpoints").checked
-    localStorage.setItem(filename, JSON.stringify(ls));
+    ls["colorModifier"] = colorModifierElement.value
+    ls["sizeModifier"] = sizeModifierElement.value
+    ls["timelimit"] = timeLimitElement.value
+    ls["sigma"] = sigmaElement.value
+    ls["kvalue"] = kvalueElement.value
+    ls["onlyfilteredpoints"] = onlyFilteredPointsElement.checked
+    localStorage.setItem(filename, JSON.stringify(ls))
   }
+
 }
 
 const makeHeatmapControl = (controlDiv, map)  => {
