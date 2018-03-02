@@ -6,6 +6,7 @@ import d3 from 'd3'
 import { initFilters, createChartFilter } from './filters.js'
 import throttle from 'lodash/throttle'
 import clusterMaker from 'clusters'
+import { st_dbscan } from './stdbscan.js'
 import randomColor from 'randomcolor'
 import quickHull from 'quick-hull-2d'
 import * as modifiers from './modifiers'
@@ -37,6 +38,10 @@ let chartsPerPage = 3
 let currentChartIndex = 0
 let mouseClusters = {}
 let mousePolygons = []
+
+const minPts = document.querySelector('#minpts')
+const spatial_threshold = document.querySelector('#spatial-threshold')
+const temporal_threshold = document.querySelector('#temporal-threshold')
 
 modifiers.onColorModifierChange(e => {
   refreshModifiers()
@@ -184,7 +189,11 @@ const initMap = () => {
 
   map.addListener('mousemove', throttle(e => {
       trackCoordinates(e.latLng)
-  }, 200))
+	}, 200))
+
+	window.setInterval((e) => {
+		showClustersFromMouseTrackingOverlapping()
+	}, 10000)
 
   map.controls[google.maps.ControlPosition.TOP_RIGHT].push(heatMapDiv)
 
@@ -531,17 +540,86 @@ const isDatasetReady = () => {
 }
 
 const trackCoordinates = latLng => {
-  mouseTrackingCoordinates.push(latLng);
+	mouseTrackingCoordinates.push({...latLng, datetime: new Date().toString()});
   if (isHeatMapCluster) {
     heatmap.setData(mouseTrackingCoordinates);
   }
 }
 
+
 const getClustersFromMouseTracking = () => {
   const rawPoints = mouseTrackingCoordinates.map(latLng => [latLng.lat(), latLng.lng()])
   clusterMaker.data(rawPoints)
+	
   return clusterMaker.clusters()
 }
+
+
+const showClustersFromMouseTrackingOverlapping = () => {
+  clearClustersFromMouseTracking()
+	
+	/*if (mouseTrackingMarkers.length > 0) {
+    mouseTrackingMarkers.forEach(marker => {
+      marker.setMap(null)
+    })
+    mouseTrackingMarkers = []
+    if (isHeatMapCluster) {
+      heatmap.setData(mouseTrackingCoordinates);
+      heatmap.setMap(map);
+    } else {
+      markerClusterer.addMarkers(Object.values(markers))
+    }
+    return
+	}*/
+
+	//heatmap.setMap(null)
+	//markerClusterer.clearMarkers()
+
+	const rawPoints = mouseTrackingCoordinates.map(latLng => [latLng.lat(), latLng.lng(), latLng.datetime])
+	let clusters = st_dbscan(rawPoints, spatial_threshold.value, temporal_threshold.value, minPts.value)
+		.filter(cluster => cluster.cluster != -1)
+
+  console.log('Clusters stdbscan: ', clusters.length)
+  clusters.forEach((cluster, i) => {
+    const color = randomColor()
+    const markers = cluster.points.map((point, j) => {
+      return new google.maps.Marker({
+        position: new google.maps.LatLng(...point),
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 7,
+          fillColor: color,
+          fillOpacity: 0.75,
+          strokeWeight: 0
+        },
+        id: `{i}.{j}`,
+        map: map
+      })
+    })
+    mouseTrackingMarkers = [
+        ...mouseTrackingMarkers,
+        ...markers
+    ]
+
+    var hull = quickHull(cluster.points);
+    var path = hull.map((point) => ({
+      lat: point[0],
+      lng: point[1]
+    }));
+
+    var pol = new google.maps.Polygon({
+      paths: path,
+      strokeColor: color,
+      strokeOpacity: 0.8,
+      strokeWeight: 2,
+      fillColor: color,
+      fillOpacity: 0.35
+    });
+    pol.setMap(map);
+    mousePolygons.push(pol);
+  });
+}
+
 
 const showClustersFromMouseTracking = () => {
   clearClustersFromMouseTracking()
@@ -562,10 +640,12 @@ const showClustersFromMouseTracking = () => {
   heatmap.setMap(null)
   markerClusterer.clearMarkers()
 
-  const rawPoints = mouseTrackingCoordinates.map(latLng => [latLng.lat(), latLng.lng()])
-  clusterMaker.data(rawPoints)
-  let clusters = clusterMaker.clusters()
-  console.log('Clusters:', clusters.length)
+  const rawPoints = mouseTrackingCoordinates.map(latLng => [latLng.lat(), latLng.lng(), latLng.datetime])
+	clusterMaker.data(rawPoints)
+	//st_dbscan.data(rawPoints)
+	let clusters = clusterMaker.clusters()
+	//let clusters = st_dbscan.clusters.filter(cluster => cluster.cluster != -1)
+  console.log('Clusters: ', clusters.length)
   clusters.forEach((cluster, i) => {
     const color = randomColor()
     const markers = cluster.points.map((point, j) => {
