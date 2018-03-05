@@ -11,6 +11,7 @@ import randomColor from 'randomcolor'
 import quickHull from 'quick-hull-2d'
 import * as modifiers from './modifiers'
 import axios from 'axios'
+import * as turf from '@turf/turf'
 
 let pointChoice = -1
 let iugaLastId = -1
@@ -38,6 +39,7 @@ let chartsPerPage = 3
 let currentChartIndex = 0
 let mouseClusters = {}
 let mousePolygons = []
+let testeMouseClusters = []
 
 const minPts = document.querySelector('#minpts')
 const spatial_threshold = document.querySelector('#spatial-threshold')
@@ -192,8 +194,12 @@ const initMap = () => {
 	}, 200))
 
 	window.setInterval((e) => {
-		showClustersFromMouseTrackingOverlapping()
+		captureClusters()
 	}, 10000)
+
+	window.setInterval((e) => {
+		intersectPolygons()
+	}, 40000)
 
   map.controls[google.maps.ControlPosition.TOP_RIGHT].push(heatMapDiv)
 
@@ -555,50 +561,74 @@ const getClustersFromMouseTracking = () => {
 }
 
 
-const showClustersFromMouseTrackingOverlapping = () => {
-  clearClustersFromMouseTracking()
-	
-	/*if (mouseTrackingMarkers.length > 0) {
-    mouseTrackingMarkers.forEach(marker => {
-      marker.setMap(null)
-    })
-    mouseTrackingMarkers = []
-    if (isHeatMapCluster) {
-      heatmap.setData(mouseTrackingCoordinates);
-      heatmap.setMap(map);
-    } else {
-      markerClusterer.addMarkers(Object.values(markers))
-    }
-    return
-	}*/
-
-	//heatmap.setMap(null)
-	//markerClusterer.clearMarkers()
-
+const captureClusters = () => {
 	const rawPoints = mouseTrackingCoordinates.map(latLng => [latLng.lat(), latLng.lng(), latLng.datetime])
+	mouseTrackingCoordinates = []
+
 	let clusters = st_dbscan(rawPoints, spatial_threshold.value, temporal_threshold.value, minPts.value)
 		.filter(cluster => cluster.cluster != -1)
+	
+	testeMouseClusters = [...testeMouseClusters, ...clusters]
 
-  console.log('Clusters stdbscan: ', clusters.length)
+	drawClustersAsPolygons (clusters);
+}
+
+const intersectPolygons = () => {
+	let polygons = []
+	let intersections = []
+
+	testeMouseClusters.forEach((cluster, i) => {
+		const hull = quickHull(cluster.points);
+		const path = hull.map((point) => ([
+      point[0],
+      point[1]
+		]));
+
+		polygons.push(turf.polygon([[...path, path[0]]]))
+	});
+
+	polygons.forEach((p1, i) => {
+		polygons.slice(i+1).forEach((p2, j) => {
+			if (p1 != p2) {
+				const intersection = turf.intersect(p1, p2);
+				if (intersection != null) {
+					intersections.push(intersection);
+				}
+			}
+		})
+	})
+
+	intersections = intersections.map((poly, i) => (
+		poly.geometry.coordinates[0].map((point) => (
+			{
+				lat: point[0],
+				lng: point[1]
+			}
+		))
+	))
+
+	clearClustersFromMouseTracking()
+
+	intersections.forEach((path) => {
+		const color = 'green' //randomColor()
+		const pol = new google.maps.Polygon({
+      paths: path,
+      strokeColor: color,
+      strokeOpacity: 0.8,
+      strokeWeight: 2,
+      fillColor: color,
+      fillOpacity: 0.35
+    });
+    pol.setMap(map);
+    mousePolygons.push(pol);
+	})
+}
+
+const drawClustersAsPolygons = (clusters) => {
 	clusters.forEach((cluster, i) => {
-    const color = randomColor()
-			/*const markers = cluster.points.map((point, j) => {
-      return new google.maps.Marker({
-        position: new google.maps.LatLng(...point),
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 7,
-          fillColor: color,
-          fillOpacity: 0.75,
-          strokeWeight: 0
-        },
-        id: `{i}.{j}`,
-        map: map
-      })
-		})*/
-    mouseTrackingMarkers = [
+		const color = randomColor()
+		mouseTrackingMarkers = [
         ...mouseTrackingMarkers,
-			//...markers
     ]
 
     var hull = quickHull(cluster.points);
@@ -617,9 +647,8 @@ const showClustersFromMouseTrackingOverlapping = () => {
     });
     pol.setMap(map);
     mousePolygons.push(pol);
-  });
+	});
 }
-
 
 const showClustersFromMouseTracking = () => {
   clearClustersFromMouseTracking()
