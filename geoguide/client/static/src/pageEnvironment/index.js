@@ -580,9 +580,9 @@ const showClustersFromMouseTrackingOverlapping = () => {
 		.filter(cluster => cluster.cluster != -1)
 
   console.log('Clusters stdbscan: ', clusters.length)
-  clusters.forEach((cluster, i) => {
+	clusters.forEach((cluster, i) => {
     const color = randomColor()
-    const markers = cluster.points.map((point, j) => {
+			/*const markers = cluster.points.map((point, j) => {
       return new google.maps.Marker({
         position: new google.maps.LatLng(...point),
         icon: {
@@ -595,17 +595,17 @@ const showClustersFromMouseTrackingOverlapping = () => {
         id: `{i}.{j}`,
         map: map
       })
-    })
+		})*/
     mouseTrackingMarkers = [
         ...mouseTrackingMarkers,
-        ...markers
+			//...markers
     ]
 
     var hull = quickHull(cluster.points);
     var path = hull.map((point) => ({
       lat: point[0],
       lng: point[1]
-    }));
+		}));
 
     var pol = new google.maps.Polygon({
       paths: path,
@@ -642,9 +642,7 @@ const showClustersFromMouseTracking = () => {
 
   const rawPoints = mouseTrackingCoordinates.map(latLng => [latLng.lat(), latLng.lng(), latLng.datetime])
 	clusterMaker.data(rawPoints)
-	//st_dbscan.data(rawPoints)
 	let clusters = clusterMaker.clusters()
-	//let clusters = st_dbscan.clusters.filter(cluster => cluster.cluster != -1)
   console.log('Clusters: ', clusters.length)
   clusters.forEach((cluster, i) => {
     const color = randomColor()
