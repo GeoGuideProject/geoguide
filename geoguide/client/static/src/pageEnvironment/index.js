@@ -610,26 +610,33 @@ const intersectPolygons = () => {
 	clearClustersFromMouseTracking()
 
 	intersections.forEach((path) => {
-		const color = 'green' //randomColor()
+		//const color = 'green' //randomColor()
 		const pol = new google.maps.Polygon({
       paths: path,
-      strokeColor: color,
+			/*strokeColor: color,
       strokeOpacity: 0.8,
       strokeWeight: 2,
       fillColor: color,
-      fillOpacity: 0.35
+			fillOpacity: 0.35*/
     });
-    pol.setMap(map);
+		//pol.setMap(map);
+
+		console.log(Object.values(datasetData).filter((e) => 
+				google.maps.geometry.poly.containsLocation(
+					new google.maps.LatLng(e.pickup_latitude, e.pickup_longitude),
+					pol
+				)
+		))
+
     mousePolygons.push(pol);
 	})
+
+
 }
 
 const drawClustersAsPolygons = (clusters) => {
 	clusters.forEach((cluster, i) => {
 		const color = randomColor()
-		mouseTrackingMarkers = [
-        ...mouseTrackingMarkers,
-    ]
 
     var hull = quickHull(cluster.points);
     var path = hull.map((point) => ({
@@ -639,13 +646,13 @@ const drawClustersAsPolygons = (clusters) => {
 
     var pol = new google.maps.Polygon({
       paths: path,
-      strokeColor: color,
+			/*strokeColor: color,
       strokeOpacity: 0.8,
       strokeWeight: 2,
       fillColor: color,
-      fillOpacity: 0.35
+			fillOpacity: 0.35*/
     });
-    pol.setMap(map);
+		//pol.setMap(map);
     mousePolygons.push(pol);
 	});
 }
