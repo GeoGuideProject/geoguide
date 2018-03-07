@@ -39,7 +39,10 @@ let chartsPerPage = 3
 let currentChartIndex = 0
 let mouseClusters = {}
 let mousePolygons = []
-let testeMouseClusters = []
+let stdbscanMouseClusters = []
+let stdbscanMousePolygons = []
+let stdbscanMousePolygonsIntersections = []
+let captureClustersCycles = 0;
 
 const minPts = document.querySelector('#minpts')
 const spatial_threshold = document.querySelector('#spatial-threshold')
@@ -195,11 +198,10 @@ const initMap = () => {
 
 	window.setInterval((e) => {
 		captureClusters()
+		if (++captureClustersCycles%4 == 0)
+			intersectPolygons()
+		console.log(captureClustersCycles)
 	}, 10000)
-
-	window.setInterval((e) => {
-		intersectPolygons()
-	}, 40000)
 
   map.controls[google.maps.ControlPosition.TOP_RIGHT].push(heatMapDiv)
 
@@ -568,16 +570,16 @@ const captureClusters = () => {
 	let clusters = st_dbscan(rawPoints, spatial_threshold.value, temporal_threshold.value, minPts.value)
 		.filter(cluster => cluster.cluster != -1)
 	
-	testeMouseClusters = [...testeMouseClusters, ...clusters]
+	stdbscanMouseClusters = [...stdbscanMouseClusters, ...clusters]
 
-	drawClustersAsPolygons (clusters);
+	//drawClustersAsPolygons (clusters);
 }
 
 const intersectPolygons = () => {
 	let polygons = []
 	let intersections = []
 
-	testeMouseClusters.forEach((cluster, i) => {
+	stdbscanMouseClusters.forEach((cluster, i) => {
 		const hull = quickHull(cluster.points);
 		const path = hull.map((point) => ([
       point[0],
@@ -587,39 +589,45 @@ const intersectPolygons = () => {
 		polygons.push(turf.polygon([[...path, path[0]]]))
 	});
 
+	stdbscanMousePolygons = [...stdbscanMousePolygons, ...polygons]
+	
+	// Cn,2 of the polygons
 	polygons.forEach((p1, i) => {
 		polygons.slice(i+1).forEach((p2, j) => {
 			if (p1 != p2) {
 				const intersection = turf.intersect(p1, p2);
 				if (intersection != null) {
-					intersections.push(intersection);
+					intersections.push(
+						intersection.geometry.coordinates[0].map((point) => (
+							{
+								lat: point[0],
+								lng: point[1]
+							}
+						))
+					)
 				}
 			}
 		})
 	})
 
-	intersections = intersections.map((poly, i) => (
+
+	stdbscanMousePolygonsIntersections = [...stdbscanMousePolygonsIntersections, ...polygons]
+
+	/*intersections = intersections.map((poly, i) => (
 		poly.geometry.coordinates[0].map((point) => (
 			{
 				lat: point[0],
 				lng: point[1]
 			}
 		))
-	))
+	))*/
 
-	clearClustersFromMouseTracking()
+	//clearClustersFromMouseTracking()
 
 	intersections.forEach((path) => {
-		//const color = 'green' //randomColor()
 		const pol = new google.maps.Polygon({
       paths: path,
-			/*strokeColor: color,
-      strokeOpacity: 0.8,
-      strokeWeight: 2,
-      fillColor: color,
-			fillOpacity: 0.35*/
     });
-		//pol.setMap(map);
 
 		console.log(Object.values(datasetData).filter((e) => 
 				google.maps.geometry.poly.containsLocation(
@@ -646,13 +654,13 @@ const drawClustersAsPolygons = (clusters) => {
 
     var pol = new google.maps.Polygon({
       paths: path,
-			/*strokeColor: color,
+			strokeColor: color,
       strokeOpacity: 0.8,
       strokeWeight: 2,
       fillColor: color,
-			fillOpacity: 0.35*/
+			fillOpacity: 0.35
     });
-		//pol.setMap(map);
+		pol.setMap(map);
     mousePolygons.push(pol);
 	});
 }
