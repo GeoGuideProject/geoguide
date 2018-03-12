@@ -43,6 +43,10 @@ let stdbscanMouseClusters = []
 let stdbscanMousePolygons = []
 let stdbscanMousePolygonsIntersections = []
 let captureClustersCycles = 0;
+let experiment = {
+	polygons: [],
+	intersections: []
+}
 
 const minPts = document.querySelector('#minpts')
 const spatial_threshold = document.querySelector('#spatial-threshold')
@@ -202,6 +206,18 @@ const initMap = () => {
 			intersectPolygons()
 		console.log(captureClustersCycles)
 	}, 10000)
+
+	window.setInterval((e) => {
+		console.log(experiment)
+		stdbscanMouseClusters = []
+		stdbscanMousePolygons = []
+		stdbscanMousePolygonsIntersections = []
+		captureClustersCycles = 0;
+		experiment = {
+			polygons: [],
+			intersections: []
+		}
+	}, 120000)
 
   map.controls[google.maps.ControlPosition.TOP_RIGHT].push(heatMapDiv)
 
@@ -589,6 +605,7 @@ const intersectPolygons = () => {
 		polygons.push(turf.polygon([[...path, path[0]]]))
 	});
 
+	stdbscanMouseClusters = []
 	stdbscanMousePolygons = [...stdbscanMousePolygons, ...polygons]
 	
 	// Cn,2 of the polygons
@@ -611,7 +628,7 @@ const intersectPolygons = () => {
 	})
 
 
-	stdbscanMousePolygonsIntersections = [...stdbscanMousePolygonsIntersections, ...polygons]
+	stdbscanMousePolygonsIntersections = [...stdbscanMousePolygonsIntersections, ...intersections]
 
 	/*intersections = intersections.map((poly, i) => (
 		poly.geometry.coordinates[0].map((point) => (
@@ -624,22 +641,48 @@ const intersectPolygons = () => {
 
 	//clearClustersFromMouseTracking()
 
-	intersections.forEach((path) => {
+	polygons = polygons.map((path) => {
 		const pol = new google.maps.Polygon({
-      paths: path,
-    });
+			paths: path.geometry.coordinates[0].map((point) => (
+				{
+					lat: point[0],
+					lng: point[1]
+				}
+			)),
+		})
 
-		console.log(Object.values(datasetData).filter((e) => 
+		const points = Object.values(datasetData).filter((e) =>
+			google.maps.geometry.poly.containsLocation(
+				new google.maps.LatLng(e.pickup_latitude, e.pickup_longitude),
+				pol
+			)
+		)
+
+		return {
+			path, points
+		}
+	})
+
+
+	intersections = intersections.map((path) => {
+		const pol = new google.maps.Polygon({
+			paths: path,
+		})
+
+		const points = Object.values(datasetData).filter((e) => 
 				google.maps.geometry.poly.containsLocation(
 					new google.maps.LatLng(e.pickup_latitude, e.pickup_longitude),
 					pol
 				)
-		))
+		)
 
-    mousePolygons.push(pol);
+		return {
+			path, points
+		}
 	})
 
-
+	experiment.polygons = [...experiment.polygons, ...polygons]
+	experiment.intersections = [...experiment.intersections, ...intersections]
 }
 
 const drawClustersAsPolygons = (clusters) => {
