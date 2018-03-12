@@ -653,7 +653,7 @@ const intersectPolygons = () => {
 
 		const points = Object.values(datasetData).filter((e) =>
 			google.maps.geometry.poly.containsLocation(
-				new google.maps.LatLng(e.pickup_latitude, e.pickup_longitude),
+				new google.maps.LatLng(e[datasetOptions.latitude_attr], e[datasetOptions.longitude_attr]),
 				pol
 			)
 		)
@@ -671,7 +671,7 @@ const intersectPolygons = () => {
 
 		const points = Object.values(datasetData).filter((e) => 
 				google.maps.geometry.poly.containsLocation(
-					new google.maps.LatLng(e.pickup_latitude, e.pickup_longitude),
+					new google.maps.LatLng(e[datasetOptions.latitude_attr], e[datasetOptions.longitude_attr]),
 					pol
 				)
 		)
