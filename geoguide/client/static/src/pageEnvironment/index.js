@@ -204,11 +204,18 @@ const initMap = () => {
 		captureClusters()
 		if (++captureClustersCycles%4 == 0)
 			intersectPolygons()
-		console.log(captureClustersCycles)
 	}, 10000)
 
 	window.setInterval((e) => {
 		console.log(experiment)
+		console.log("Polygons", experiment.polygons.length)
+		experiment.polygons.forEach((e, i) => {
+			console.log(i, e.points.length);
+		})
+		console.log("Intersections", experiment.intersections.length)
+		experiment.intersections.forEach((e, i) => {
+			console.log(i, e.points.length);
+		})
 		stdbscanMouseClusters = []
 		stdbscanMousePolygons = []
 		stdbscanMousePolygonsIntersections = []
@@ -642,13 +649,15 @@ const intersectPolygons = () => {
 	//clearClustersFromMouseTracking()
 
 	polygons = polygons.map((path) => {
-		const pol = new google.maps.Polygon({
-			paths: path.geometry.coordinates[0].map((point) => (
+		path = path.geometry.coordinates[0].map((point) => (
 				{
 					lat: point[0],
 					lng: point[1]
 				}
-			)),
+		));
+
+		const pol = new google.maps.Polygon({
+			paths: path,
 		})
 
 		const points = Object.values(datasetData).filter((e) =>
