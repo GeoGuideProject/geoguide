@@ -12,6 +12,7 @@ import quickHull from 'quick-hull-2d'
 import * as modifiers from './modifiers'
 import axios from 'axios'
 import * as turf from '@turf/turf'
+import GeoJSON from 'geojson'
 
 let pointChoice = -1
 let iugaLastId = -1
@@ -849,28 +850,22 @@ const clearClustersFromMouseTracking = () => {
   mousePolygons = []
 }
 
-const joinPolygonWithComma = (polygon) => {
-  console.log('polygon', polygon);
-  if (polygon) {
-    return polygon.reduce((point, next) => {
-      return `${point.lat},${point.lng},${next.lat},${next.lng}`
-    })
-  }
-}
+const convertPolygonsToGeoJSON = (polygons) => {
+  let features = []
 
-const convertPolygonsToString = (polygons) => {
-  console.log('polygons', polygons)
+  let a = polygons.map((polygon) => {
 
-  if (polygons.length > 1) {
-    return polygons.reduce((p, n) => {
-      return joinPolygonWithComma(p.path) + ';' + joinPolygonWithComma(n.path)
+    const points = polygon.path.map((point) => {
+      return [point.lat, point.lng]
     })
-  } else {
-    return polygons.reduce((p, n) => {
-      return joinPolygonWithComma(p.path)
-    })
-  }
 
+    const data = { points: [points] }
+
+    return GeoJSON.parse(data, { Polygon: 'points'}, (geojson) => {
+      features.push(geojson);
+    })
+  })
+  return features;
 }
 
 const postMouseClusters = (experiment) => {
@@ -880,20 +875,17 @@ const postMouseClusters = (experiment) => {
   url += `&temporalThreshold=${temporal_threshold.value}`
   url += `&minPts=${minPts.value}`
 
+  console.log('experiment', experiment);
+
   let data = {
-    intersections: convertPolygonsToString(experiment.intersections.path),
-    polygons: convertPolygonsToString(experiment.polygons)
+    intersections: convertPolygonsToGeoJSON(experiment.intersections),
+    polygons: convertPolygonsToGeoJSON(experiment.polygons)
   }
 
-  console.log(data)
-
-  // let clusters = getClustersFromMouseTracking()
-  // mouseClusters = clusters
-  // let greatestCluster = clusters.reduce((value, cluster) => Math.max(cluster.points.length, value), 0)
-  // data.clusters = clusters.map(cluster => [...cluster.centroid, (cluster.points.length/greatestCluster)].join(':')).join(',')
+  console.log('geojson result', data)
 
 
-  console.log('publishing clusters...')
+  console.log('publishing geojsons...')
   axios.post(url, data).then((response) => {
     console.log(response);
   }).catch((error) => {

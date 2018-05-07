@@ -184,3 +184,12 @@ def point_by_polygon(selected_dataset):
 
     points = [list(x[1:]) for x in cursor if len(filtered_points) > 0 and (x[0] in filtered_points)]
     return jsonify(dict(points=points, count=len(points)))
+
+
+@geoguide_blueprint.route('/environment/<selected_dataset>/mouseClusters', methods=['GET', 'POST'])
+@login_required
+def mouse_clusters(selected_dataset):
+    print('argumentos', request.args)
+    json_data = request.get_json(True, True)
+    print('intersections and polygons', json_data)
+    return jsonify(dict(json=json_data, args=request.args))
