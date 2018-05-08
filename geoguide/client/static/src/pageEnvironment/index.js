@@ -575,7 +575,8 @@ const captureClusters = () => {
 	let clusters = st_dbscan(rawPoints, spatial_threshold.value, temporal_threshold.value, minPts.value)
 		.filter(cluster => cluster.cluster != -1)
 
-	stdbscanMouseClusters = [...stdbscanMouseClusters, ...clusters]
+  drawClustersAsPolygons(clusters)
+  stdbscanMouseClusters = [...stdbscanMouseClusters, ...clusters]
 }
 
 const intersectPolygons = () => {
@@ -646,16 +647,18 @@ const intersectPolygons = () => {
 		})
 
 		const points = Object.values(datasetData).filter((e) =>
-				google.maps.geometry.poly.containsLocation(
-					new google.maps.LatLng(e[datasetOptions.latitude_attr], e[datasetOptions.longitude_attr]),
-					pol
-				)
+      google.maps.geometry.poly.containsLocation(
+        new google.maps.LatLng(e[datasetOptions.latitude_attr], e[datasetOptions.longitude_attr]),
+        pol
+      )
 		)
 
 		return {
 			path, points
 		}
-	})
+  })
+
+  console.log(intersections)
 
 	idrResult.polygons = [...idrResult.polygons, ...polygons]
   idrResult.intersections = [...idrResult.intersections, ...intersections]
@@ -671,9 +674,11 @@ const intersectPolygons = () => {
     polygons: [],
     intersections: []
   }
+  clearClustersFromMouseTracking()
+
 }
 
-const drawClustersAsPolygons = (clusters) => {
+const drawClustersAsPolygons = (clusters, isIDR=false) => {
 	clusters.forEach((cluster, i) => {
 		const color = randomColor()
 
@@ -689,7 +694,7 @@ const drawClustersAsPolygons = (clusters) => {
       strokeOpacity: 0.8,
       strokeWeight: 2,
       fillColor: color,
-			fillOpacity: 0.35
+			fillOpacity: isIDR ? 0.7 : 0.35
     });
 		pol.setMap(map);
     mousePolygons.push(pol);
@@ -717,8 +722,8 @@ const showClustersFromMouseTracking = () => {
 
   const rawPoints = mouseTrackingCoordinates.map(latLng => [latLng.lat(), latLng.lng(), latLng.datetime])
 	clusterMaker.data(rawPoints)
-	let clusters = clusterMaker.clusters()
-  console.log('Clusters: ', clusters.length)
+  let clusters = clusterMaker.clusters()
+
   clusters.forEach((cluster, i) => {
     const color = randomColor()
     const markers = cluster.points.map((point, j) => {
