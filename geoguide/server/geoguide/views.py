@@ -4,11 +4,16 @@ import json
 import os.path
 import pandas as pd
 import numpy as np
+import geojson
+
+from shapely.geometry import asShape
+from geoalchemy2.shape import from_shape
+
 from uuid import uuid4
 from flask import request, session, render_template, Blueprint, flash, redirect, url_for, jsonify, abort
 from geoguide.server import app, db, datasets, logging
 from flask_uploads import UploadNotAllowed
-from geoguide.server.models import Dataset, Attribute, AttributeType
+from geoguide.server.models import Dataset, Attribute, AttributeType, Session, Polygon, IDR
 from geoguide.server.geoguide.helpers import save_as_hdf, path_to_hdf, save_as_sql
 from geoguide.server.iuga import run_iuga
 from sqlalchemy import create_engine
@@ -18,8 +23,6 @@ SQLALCHEMY_DATABASE_URI = app.config['SQLALCHEMY_DATABASE_URI']
 DEBUG = app.config['DEBUG']
 USE_SQL = app.config['USE_SQL']
 geoguide_blueprint = Blueprint('geoguide', __name__,)
-
-
 
 
 @geoguide_blueprint.route('/upload', methods=['GET', 'POST'])
@@ -72,6 +75,11 @@ def upload():
 @geoguide_blueprint.route('/environment/<selected_dataset>')
 @login_required
 def environment(selected_dataset):
+    # create a session (to record feedback)
+    session = Session()
+    db.session.add(session)
+    db.session.commit()
+
     if selected_dataset is None:
         if 'SELECTED_DATASET' in session:
             selected_dataset = session['SELECTED_DATASET']
@@ -186,10 +194,23 @@ def point_by_polygon(selected_dataset):
     return jsonify(dict(points=points, count=len(points)))
 
 
-@geoguide_blueprint.route('/environment/<selected_dataset>/mouseClusters', methods=['GET', 'POST'])
+@geoguide_blueprint.route('/environment/<selected_dataset>/mouseClusters', methods=['POST'])
 @login_required
 def mouse_clusters(selected_dataset):
-    print('argumentos', request.args)
-    json_data = request.get_json(True, True)
-    print('intersections and polygons', json_data)
-    return jsonify(dict(json=json_data, args=request.args))
+    # request.args
+    data = request.get_json(True, True)
+    intersections = data['intersections']
+    polygons = data['polygons']
+
+    get_geom = lambda f: from_shape(asShape(geojson.loads(json.dumps(f['geometry']))))
+
+    for feature in intersections:
+        idr = IDR(geom=get_geom(feature))
+        db.session.add(idr)
+
+    for feature in polygons:
+        polygon = Polygon(geom=get_geom(feature))
+        db.session.add(polygon)
+
+    db.session.commit()
+    return jsonify(dict(json=data, args=request.args))

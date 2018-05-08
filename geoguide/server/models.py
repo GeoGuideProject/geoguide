@@ -109,6 +109,10 @@ class Session(db.Model):
     created_at = db.Column(db.DateTime, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
+    def __init__(self):
+        self.user_id = current_user.id
+        self.created_at = datetime.datetime.now()
+
     def __repr__(self):
         return '<Session {}>'.format(self.created_at)
 
@@ -122,6 +126,14 @@ class Polygon(db.Model):
     created_at = db.Column(db.DateTime, nullable=False)
     session_id = db.Column(db.Integer, db.ForeignKey('sessions.id'), nullable=False)
 
+    def __init__(self, geom):
+        from geoguide.server.services import current_session
+
+        self.geom = geom
+        self.session_id = current_session().id
+        self.created_at = datetime.datetime.now()
+
+
     def __repr__(self):
         return '<Polygon {}>'.format(self.id)
 
@@ -134,6 +146,13 @@ class IDR(db.Model):
     geom =  db.Column(Geometry('POLYGON'))
     created_at = db.Column(db.DateTime, nullable=False)
     session_id = db.Column(db.Integer, db.ForeignKey('sessions.id'), nullable=False)
+
+    def __init__(self, geom):
+        from geoguide.server.services import current_session
+
+        self.geom = geom
+        self.session_id = current_session().id
+        self.created_at = datetime.datetime.now()
 
     def __repr__(self):
         return '<IDR {}>'.format(self.id)
