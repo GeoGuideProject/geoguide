@@ -5,6 +5,7 @@ import enum
 from geoguide.server import app, db, bcrypt
 from sqlalchemy_utils import ChoiceType
 from flask_login import current_user
+from geoalchemy2 import Geometry
 
 
 class User(db.Model):
@@ -98,3 +99,42 @@ class Attribute(db.Model):
 
     def __repr__(self):
         return '<Attribute {}>'.format(self.description)
+
+
+class Session(db.Model):
+
+    __tablename__ = 'sessions'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    created_at = db.Column(db.DateTime, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+    def __repr__(self):
+        return '<Session {}>'.format(self.created_at)
+
+
+class Polygon(db.Model):
+
+    __tablename__ = 'polygons'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    geom =  db.Column(Geometry('POLYGON'))
+    created_at = db.Column(db.DateTime, nullable=False)
+    session_id = db.Column(db.Integer, db.ForeignKey('sessions.id'), nullable=False)
+
+    def __repr__(self):
+        return '<Polygon {}>'.format(self.id)
+
+
+class IDR(db.Model):
+
+    __tablename__ = 'idrs'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    geom =  db.Column(Geometry('POLYGON'))
+    created_at = db.Column(db.DateTime, nullable=False)
+    session_id = db.Column(db.Integer, db.ForeignKey('sessions.id'), nullable=False)
+
+    def __repr__(self):
+        return '<IDR {}>'.format(self.id)
+
