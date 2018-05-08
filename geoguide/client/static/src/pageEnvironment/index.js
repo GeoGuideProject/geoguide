@@ -44,7 +44,7 @@ let stdbscanMouseClusters = []
 let stdbscanMousePolygons = []
 let stdbscanMousePolygonsIntersections = []
 let captureClustersCycles = 0;
-let experiment = {
+let idrResult = {
 	polygons: [],
 	intersections: []
 }
@@ -205,31 +205,10 @@ const initMap = () => {
 
 	window.setInterval((e) => {
 		captureClusters()
-		if (++captureClustersCycles % mouseClustersIntersectInterval == 0)
-			intersectPolygons()
+    if (++captureClustersCycles % mouseClustersIntersectInterval == 0) {
+      intersectPolygons()
+    }
 	}, mouseClustersRegionInterval * 1000)
-
-	window.setInterval((e) => {
-    postMouseClusters(experiment)
-		console.log(experiment)
-		console.log("Polygons", experiment.polygons.length)
-		experiment.polygons.forEach((e, i) => {
-			console.log(i, e.points.length);
-		})
-		console.log("Intersections", experiment.intersections.length)
-		experiment.intersections.forEach((e, i) => {
-			console.log(i, e.points.length);
-		})
-    console.log('experiment', experiment);
-		stdbscanMouseClusters = []
-		stdbscanMousePolygons = []
-		stdbscanMousePolygonsIntersections = []
-		captureClustersCycles = 0;
-		experiment = {
-			polygons: [],
-			intersections: []
-		}
-	}, mouseClustersIntersectInterval * mouseClustersRegionInterval * 1000)
 
   map.controls[google.maps.ControlPosition.TOP_RIGHT].push(heatMapDiv)
 
@@ -608,19 +587,19 @@ const intersectPolygons = () => {
 		const path = hull.map((point) => ([
       point[0],
       point[1]
-		]));
+		]))
 
 		polygons.push(turf.polygon([[...path, path[0]]]))
-	});
+	})
 
 	stdbscanMouseClusters = []
 	stdbscanMousePolygons = [...stdbscanMousePolygons, ...polygons]
 
-	// Cn,2 of the polygons
+	// get intersections
 	polygons.forEach((p1, i) => {
 		polygons.slice(i+1).forEach((p2, j) => {
 			if (p1 != p2) {
-				const intersection = turf.intersect(p1, p2);
+				const intersection = turf.intersect(p1, p2)
 				if (intersection != null) {
 					intersections.push(
 						intersection.geometry.coordinates[0].map((point) => (
@@ -635,19 +614,7 @@ const intersectPolygons = () => {
 		})
 	})
 
-
 	stdbscanMousePolygonsIntersections = [...stdbscanMousePolygonsIntersections, ...intersections]
-
-	/*intersections = intersections.map((poly, i) => (
-		poly.geometry.coordinates[0].map((point) => (
-			{
-				lat: point[0],
-				lng: point[1]
-			}
-		))
-	))*/
-
-	//clearClustersFromMouseTracking()
 
 	polygons = polygons.map((path) => {
 		path = path.geometry.coordinates[0].map((point) => (
@@ -655,7 +622,7 @@ const intersectPolygons = () => {
 					lat: point[0],
 					lng: point[1]
 				}
-		));
+		))
 
 		const pol = new google.maps.Polygon({
 			paths: path,
@@ -672,7 +639,6 @@ const intersectPolygons = () => {
 			path, points
 		}
 	})
-
 
 	intersections = intersections.map((path) => {
 		const pol = new google.maps.Polygon({
@@ -691,8 +657,20 @@ const intersectPolygons = () => {
 		}
 	})
 
-	experiment.polygons = [...experiment.polygons, ...polygons]
-	experiment.intersections = [...experiment.intersections, ...intersections]
+	idrResult.polygons = [...idrResult.polygons, ...polygons]
+  idrResult.intersections = [...idrResult.intersections, ...intersections]
+
+  postMouseClusters(idrResult)
+
+  // clear to next cycle
+  stdbscanMouseClusters = []
+  stdbscanMousePolygons = []
+  stdbscanMousePolygonsIntersections = []
+  captureClustersCycles = 0;
+  idrResult = {
+    polygons: [],
+    intersections: []
+  }
 }
 
 const drawClustersAsPolygons = (clusters) => {
@@ -853,8 +831,7 @@ const clearClustersFromMouseTracking = () => {
 const convertPolygonsToGeoJSON = (polygons) => {
   let features = []
 
-  let a = polygons.map((polygon) => {
-
+  polygons.map((polygon) => {
     const points = polygon.path.map((point) => {
       return [point.lat, point.lng]
     })
@@ -862,37 +839,30 @@ const convertPolygonsToGeoJSON = (polygons) => {
     const data = { points: [points] }
 
     return GeoJSON.parse(data, { Polygon: 'points'}, (geojson) => {
-      features.push(geojson);
+      features.push(geojson)
     })
   })
-  return features;
+  return features
 }
 
-const postMouseClusters = (experiment) => {
+const postMouseClusters = (idrResult) => {
   let url = `/environment/${datasetOptions.filename}/mouseClusters`
 
   url += `?spatialThreshold=${spatial_threshold.value}`
   url += `&temporalThreshold=${temporal_threshold.value}`
   url += `&minPts=${minPts.value}`
 
-  console.log('experiment', experiment);
-
   let data = {
-    intersections: convertPolygonsToGeoJSON(experiment.intersections),
-    polygons: convertPolygonsToGeoJSON(experiment.polygons)
+    intersections: convertPolygonsToGeoJSON(idrResult.intersections),
+    polygons: convertPolygonsToGeoJSON(idrResult.polygons)
   }
 
-  console.log('geojson result', data)
-
-
-  console.log('publishing geojsons...')
   axios.post(url, data).then((response) => {
-    console.log(response);
+    // pass
   }).catch((error) => {
-    console.log(error);
+    console.info(error)
   })
 }
-
 
 window.GeoGuide = window.GeoGuide || {}
 
