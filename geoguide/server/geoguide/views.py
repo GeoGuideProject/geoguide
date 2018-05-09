@@ -76,17 +76,17 @@ def upload():
 @geoguide_blueprint.route('/environment/<selected_dataset>')
 @login_required
 def environment(selected_dataset):
-    # create a session (to record feedback)
-    feedback_session = Session()
-    db.session.add(feedback_session)
-    db.session.commit()
-
     if selected_dataset is None:
         if 'SELECTED_DATASET' in session:
             selected_dataset = session['SELECTED_DATASET']
     if selected_dataset is None:
         return redirect(url_for('geoguide.upload'))
     dataset = Dataset.query.filter_by(filename=selected_dataset).first_or_404()
+
+    feedback_session = Session(dataset=dataset)
+    db.session.add(feedback_session)
+    db.session.commit()
+
     df = pd.read_csv(datasets.path(dataset.filename))
     vm = {}
     vm['dataset_headers'] = list(df.select_dtypes(include=[np.number]).columns)
@@ -149,13 +149,11 @@ def point_suggestions(selected_dataset, index):
         return jsonify(dict(message='Not ready yet.')), 202
 
     vm = {}
-    vm['similarity'], vm['diversity'], vm['points'] = run_iuga(index,
-                                                               k,
-                                                               limit,
-                                                               sigma,
-                                                               dataset,
-                                                               filtered_points=filtered_points,
-                                                               clusters=clusters)
+    vm['similarity'], vm['diversity'], vm['points'] = run_iuga(
+        index, k, limit, sigma, dataset,
+        filtered_points=filtered_points,
+        clusters=clusters
+    )
     return jsonify(vm)
 
 
