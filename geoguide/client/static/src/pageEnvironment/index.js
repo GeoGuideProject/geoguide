@@ -53,8 +53,8 @@ const minPts = document.querySelector('#minpts')
 const spatial_threshold = document.querySelector('#spatial-threshold')
 const temporal_threshold = document.querySelector('#temporal-threshold')
 
-const mouseClustersRegionInterval = 10
-const mouseClustersIntersectInterval = 3
+const MOUSE_CLUSTERS_REGION_INTERVAL = 10
+const MOUSE_CLUSTERS_INTERSECT_INTERVAL = 3
 
 modifiers.onColorModifierChange(e => {
   refreshModifiers()
@@ -205,10 +205,11 @@ const initMap = () => {
 
 	window.setInterval((e) => {
 		captureClusters()
-    if (++captureClustersCycles % mouseClustersIntersectInterval == 0) {
+
+    if (++captureClustersCycles % MOUSE_CLUSTERS_INTERSECT_INTERVAL === 0) {
       intersectPolygons()
     }
-	}, mouseClustersRegionInterval * 1000)
+	}, MOUSE_CLUSTERS_REGION_INTERVAL * 1000)
 
   map.controls[google.maps.ControlPosition.TOP_RIGHT].push(heatMapDiv)
 
@@ -484,11 +485,6 @@ const showPotentialPoints = e => {
     }
   }
 
-  let clusters = getClustersFromMouseTracking()
-  mouseClusters = clusters
-  let greatestCluster = clusters.reduce((value, cluster) => Math.max(cluster.points.length, value), 0)
-  data.clusters = clusters.map(cluster => [...cluster.centroid, (cluster.points.length/greatestCluster)].join(':')).join(',')
-
   axios.post(url, data).then((response) => {
     if (infowindowsOpened) {
       infowindowsOpened.forEach(i => i.close())
@@ -522,7 +518,6 @@ const showPotentialPoints = e => {
       }
 
       markerClusterer.addMarkers(Object.values(markers))
-      showClustersFromMouseTrackingAfterIuga()
     }
 
     runningRequest = false
@@ -555,6 +550,7 @@ const isDatasetReady = () => {
 }
 
 const trackCoordinates = latLng => {
+  // TODO: change datetime to timestamp instead of string
 	mouseTrackingCoordinates.push({...latLng, datetime: new Date().toString()});
   if (isHeatMapCluster) {
     heatmap.setData(mouseTrackingCoordinates);
@@ -572,10 +568,18 @@ const captureClusters = () => {
 	const rawPoints = mouseTrackingCoordinates.map(latLng => [latLng.lat(), latLng.lng(), latLng.datetime])
 	mouseTrackingCoordinates = []
 
-	let clusters = st_dbscan(rawPoints, spatial_threshold.value, temporal_threshold.value, minPts.value)
-		.filter(cluster => cluster.cluster != -1)
+	let clusters = st_dbscan(
+    rawPoints,
+    spatial_threshold.value,
+    temporal_threshold.value,
+    minPts.value
+  ).filter(cluster => cluster.cluster !== -1)
 
+  if (captureClustersCycles === 0) {
+    clearClustersFromMouseTracking()
+  }
   drawClustersAsPolygons(clusters)
+
   stdbscanMouseClusters = [...stdbscanMouseClusters, ...clusters]
 }
 
@@ -658,8 +662,6 @@ const intersectPolygons = () => {
 		}
   })
 
-  console.log(intersections)
-
 	idrResult.polygons = [...idrResult.polygons, ...polygons]
   idrResult.intersections = [...idrResult.intersections, ...intersections]
 
@@ -669,13 +671,11 @@ const intersectPolygons = () => {
   stdbscanMouseClusters = []
   stdbscanMousePolygons = []
   stdbscanMousePolygonsIntersections = []
-  captureClustersCycles = 0;
+  captureClustersCycles = 0
   idrResult = {
     polygons: [],
     intersections: []
   }
-  clearClustersFromMouseTracking()
-
 }
 
 const drawClustersAsPolygons = (clusters, isIDR=false) => {
