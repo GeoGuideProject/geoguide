@@ -125,11 +125,13 @@ class Polygon(db.Model):
     geom =  db.Column(Geometry('POLYGON'))
     created_at = db.Column(db.DateTime, nullable=False)
     session_id = db.Column(db.Integer, db.ForeignKey('sessions.id'), nullable=False)
+    iteration = db.Column(db.Integer)
 
-    def __init__(self, geom):
+    def __init__(self, geom, iteration):
         from geoguide.server.services import current_session
 
         self.geom = geom
+        self.iteration = iteration
         self.session_id = current_session().id
         self.created_at = datetime.datetime.now()
 
@@ -146,11 +148,13 @@ class IDR(db.Model):
     geom =  db.Column(Geometry('POLYGON'))
     created_at = db.Column(db.DateTime, nullable=False)
     session_id = db.Column(db.Integer, db.ForeignKey('sessions.id'), nullable=False)
+    iteration = db.Column(db.Integer)
 
-    def __init__(self, geom):
+    def __init__(self, geom, iteration):
         from geoguide.server.services import current_session
 
         self.geom = geom
+        self.iteration = iteration
         self.session_id = current_session().id
         self.created_at = datetime.datetime.now()
 

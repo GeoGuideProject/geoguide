@@ -1,5 +1,5 @@
 from flask_login import current_user
-from geoguide.server.models import Session
+from geoguide.server.models import Session, Polygon
 from sqlalchemy import desc
 
 
@@ -11,3 +11,16 @@ def current_session():
     ).first()
 
     return session
+
+
+def get_next_polygon_and_idr_iteration():
+    latest = Polygon.query.filter_by(
+        session_id=current_session().id
+    ).order_by(
+        desc(Polygon.created_at)
+    ).first()
+
+    if latest is None:
+        return 1
+
+    return latest.iteration + 1
