@@ -838,7 +838,7 @@ const convertPolygonsToGeoJSON = (polygons) => {
 
   polygons.map((polygon) => {
     const points = polygon.path.map((point) => {
-      return [point.lat, point.lng]
+      return [point.lng, point.lat]
     })
 
     const data = { points: [points] }
