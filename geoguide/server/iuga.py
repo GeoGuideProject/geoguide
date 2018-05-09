@@ -1,6 +1,7 @@
 import time
 import pandas as pd
 import datetime
+from collections import defaultdict
 from random import randint
 from geoguide.server import app, diversity, logging
 from geoguide.server.geoguide.helpers import path_to_hdf, haversine_distance
@@ -152,9 +153,9 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset
 
     # begin - prepare lists for easy retrieval
     records = {}
-    similarity_by_id = {}
-    distance_by_id = {}
-    proximity_by_id = {}
+    similarity_by_id = defaultdict(float)
+    distance_by_id = defaultdict(float)
+    proximity_by_id = defaultdict(float)
 
     cnt = 0
     for value in similarities_sorted:
