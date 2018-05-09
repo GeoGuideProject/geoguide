@@ -4,6 +4,8 @@ from sqlalchemy import desc
 
 
 def current_session():
+    # TODO: improve to support multiple sessions in different
+    # computers at the same time
     session = Session.query.filter_by(
         user_id=current_user.id
     ).order_by(
