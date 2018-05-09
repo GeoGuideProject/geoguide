@@ -14,6 +14,7 @@ from flask import request, session, render_template, Blueprint, flash, redirect,
 from geoguide.server import app, db, datasets, logging
 from flask_uploads import UploadNotAllowed
 from geoguide.server.models import Dataset, Attribute, AttributeType, Session, Polygon, IDR
+from geoguide.server.services import get_next_polygon_and_idr_iteration
 from geoguide.server.geoguide.helpers import save_as_hdf, path_to_hdf, save_as_sql
 from geoguide.server.iuga import run_iuga
 from sqlalchemy import create_engine
@@ -76,8 +77,8 @@ def upload():
 @login_required
 def environment(selected_dataset):
     # create a session (to record feedback)
-    session = Session()
-    db.session.add(session)
+    feedback_session = Session()
+    db.session.add(feedback_session)
     db.session.commit()
 
     if selected_dataset is None:
@@ -199,17 +200,18 @@ def point_by_polygon(selected_dataset):
 def mouse_clusters(selected_dataset):
     # request.args
     data = request.get_json(True, True)
+    iteration = get_next_polygon_and_idr_iteration()
     intersections = data['intersections']
     polygons = data['polygons']
 
     get_geom = lambda f: from_shape(asShape(geojson.loads(json.dumps(f['geometry']))))
 
     for feature in intersections:
-        idr = IDR(geom=get_geom(feature))
+        idr = IDR(geom=get_geom(feature), iteration=iteration)
         db.session.add(idr)
 
     for feature in polygons:
-        polygon = Polygon(geom=get_geom(feature))
+        polygon = Polygon(geom=get_geom(feature), iteration=iteration)
         db.session.add(polygon)
 
     db.session.commit()
