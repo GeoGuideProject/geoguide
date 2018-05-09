@@ -4,7 +4,7 @@ import datetime
 from collections import defaultdict
 from random import randint
 from geoguide.server import app, diversity, logging
-from geoguide.server.services import current_session
+from geoguide.server.services import current_session, get_polygons_count, get_idrs_count
 from geoguide.server.geoguide.helpers import path_to_hdf, haversine_distance
 from statistics import mean
 from sqlalchemy import create_engine
@@ -75,9 +75,14 @@ def read_input_from_sql(dataset, input_g, filtered_points=[], clusters=[]):
     distances = {}
     idr_scores = {}
 
+    idr_session = current_session()
     engine = create_engine(SQLALCHEMY_DATABASE_URI)
     table_name = 'datasets.' + dataset.filename.rsplit('.', 1)[0]
     table_rel_name = '{}-rel'.format(table_name)
+
+    logging.info('[SESSION] {}'.format(idr_session.id))
+    logging.info('[POLYGONS] {}'.format(get_polygons_count(idr_session)))
+    logging.info('[IDRs] {}'.format(get_idrs_count(idr_session)))
 
     idr_score_query = '''
     select idr.geoguide_id, (count_idr + count_polygon) as score
@@ -97,7 +102,7 @@ def read_input_from_sql(dataset, input_g, filtered_points=[], clusters=[]):
     order by score desc, geoguide_id
     '''.format(
         table_name=table_name,
-        session_id=current_session().id
+        session_id=idr_session.id
     )
 
     cursor = engine.execute(idr_score_query)
@@ -156,8 +161,9 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset
         similarities, distances, idr_scores = read_input_from_sql(dataset, input_g, filtered_points, clusters)
     else:
         similarities, distances, proximities = read_input_from_hdf(dataset, input_g, filtered_points, clusters)
+
     if DEBUG:
-        logging.info('[IUGA] {} seconds'.format(time.time() - start))
+        logging.info('[PRE IUGA] {} seconds'.format(time.time() - start))
 
     # sorting similarities and distances in descending order
     similarities_sorted = sorted(
@@ -260,4 +266,8 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset
         dicToArray.append(current_records[i])
     my_distances = get_distances_of(current_records, k, distance_by_id)
     my_diversity = diversity.diversity(my_distances)
+
+    if DEBUG:
+        logging.info('[POS IUGA] {} seconds'.format(time.time() - start))
+
     return [min_similarity, round(my_diversity, 3), sorted(dicToArray)]

@@ -1,6 +1,7 @@
 from flask_login import current_user
-from geoguide.server.models import Session, Polygon
+from geoguide.server.models import Session, Polygon, IDR
 from sqlalchemy import desc
+from geoguide.server.geoguide.helpers import haversine_distance
 
 
 def current_session():
@@ -26,3 +27,26 @@ def get_next_polygon_and_idr_iteration():
         return 1
 
     return latest.iteration + 1
+
+
+def get_polygons_count(session):
+    return Polygon.query.filter_by(
+        session_id=session.id
+    ).count()
+
+
+def get_idrs_count(session):
+    return IDR.query.filter_by(
+        session_id=session.id
+    ).count()
+
+
+def filter_dataset(file):
+    import pandas as pd
+    LAT = 48.8583736
+    LNG = 2.2922873
+
+    df = pd.read_csv(file)
+    df['distance'] = df.apply(lambda r: haversine_distance(float(r.latitude), float(r.longitude), LAT, LNG))
+    df = df.sort_values('distance', ascending=False)
+    df.to_csv('/project/airbnb-tower.csv')
