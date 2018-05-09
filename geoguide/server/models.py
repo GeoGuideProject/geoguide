@@ -108,10 +108,12 @@ class Session(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     created_at = db.Column(db.DateTime, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    dataset_id = db.Column(db.Integer, db.ForeignKey('datasets.id'))
 
-    def __init__(self):
+    def __init__(self, dataset):
         self.user_id = current_user.id
         self.created_at = datetime.datetime.now()
+        self.dataset_id = dataset.id
 
     def __repr__(self):
         return '<Session {}>'.format(self.created_at)
