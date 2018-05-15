@@ -4,6 +4,7 @@ import datetime
 from collections import defaultdict
 from random import randint
 from geoguide.server import app, diversity, logging
+from geoguide.server.services import current_session
 from geoguide.server.geoguide.helpers import path_to_hdf, haversine_distance
 from statistics import mean
 from sqlalchemy import create_engine
@@ -52,6 +53,7 @@ def read_input_from_hdf(dataset, input_g, filtered_points=[], clusters=[]):
                      print(proximity, cluster[2], proximity/cluster[2])
                 proximity = proximity / cluster[2]
                 proximities[key] = min([proximity, proximities.get(key, proximity)])
+
     for df in store.select('relation', chunksize=CHUNKSIZE, where='id_a=input_g or id_b=input_g'):
         if filtered_points:
             df = df[((df['id_a'].isin(filtered_points)) & (df['id_b'].isin(filtered_points)))]
@@ -71,26 +73,40 @@ def read_input_from_hdf(dataset, input_g, filtered_points=[], clusters=[]):
 def read_input_from_sql(dataset, input_g, filtered_points=[], clusters=[]):
     similarities = {}
     distances = {}
-    proximities = {}
+    idr_scores = {}
 
     engine = create_engine(SQLALCHEMY_DATABASE_URI)
     table_name = 'datasets.' + dataset.filename.rsplit('.', 1)[0]
     table_rel_name = '{}-rel'.format(table_name)
 
-    for df in pd.read_sql_table(table_name, engine, index_col='geoguide_id', chunksize=CHUNKSIZE):
-        if filtered_points:
-            df = df[df.index.isin(filtered_points)]
-        df = df.loc[:, [dataset.latitude_attr, dataset.longitude_attr]]
-        for row in df.itertuples():
-            key = row[0]
-            for cluster in clusters:
-                if cluster and cluster[2] == 0:
-                    continue
-                proximity = haversine_distance(*cluster[:2], *row[1:])
-                if DEBUG:
-                     print(proximity, cluster[2], proximity/cluster[2])
-                proximity = proximity / cluster[2]
-                proximities[key] = min([proximity, proximities.get(key, proximity)])
+    idr_score_query = '''
+    select idr.geoguide_id, (count_idr + count_polygon) as score
+    from (
+        select d.geoguide_id, COUNT(r.id) as count_idr
+        from "{table_name}" as d
+        left join idrs as r on (st_contains(r.geom, d.geom)) and r.session_id = {session_id}
+        group by d.geoguide_id
+        order by count_idr desc, d.geoguide_id
+    ) as idr join (
+        select d.geoguide_id, COUNT(r.id) as count_polygon
+        from "{table_name}" as d
+        left join polygons as r on (st_contains(r.geom, d.geom)) and r.session_id = {session_id}
+        group by d.geoguide_id
+        order by count_polygon desc, d.geoguide_id
+    ) as polygon on idr.geoguide_id = polygon.geoguide_id
+    order by score desc, geoguide_id
+    '''.format(
+        table_name=table_name,
+        session_id=current_session().id
+    )
+
+    cursor = engine.execute(idr_score_query)
+    for row in cursor:
+        geoguide_id, score = row
+        if filtered_points and geoguide_id in filtered_points:
+            continue
+        idr_scores[geoguide_id] = score
+    print('[IDR_SCORES]', idr_scores)
 
     for df in pd.read_sql_table(table_rel_name, engine, index_col='index', chunksize=CHUNKSIZE):
         df = df[((df['id_a'] == input_g) | (df['id_b'] == input_g))]
@@ -105,7 +121,7 @@ def read_input_from_sql(dataset, input_g, filtered_points=[], clusters=[]):
             similarities[key] = float(row[3])
             distances[key] = float(row[4])
 
-    return similarities, distances, proximities
+    return similarities, distances, idr_scores
 
 
 
@@ -119,7 +135,7 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset
     # indexing file
     # should the algorithm stop if it reaches the end of the index (i.e.,
     # scanning all records once)
-    stop_visiting_once = False
+    STOP_VISITING_ONCE = False
 
     # Note that in case of user group analysis, each group is a record. In
     # case of spatiotemporal data, each geo point is a record.
@@ -137,7 +153,7 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset
     # read input data frame
     start = time.time()
     if USE_SQL:
-        similarities, distances, proximities = read_input_from_sql(dataset, input_g, filtered_points, clusters)
+        similarities, distances, idr_scores = read_input_from_sql(dataset, input_g, filtered_points, clusters)
     else:
         similarities, distances, proximities = read_input_from_hdf(dataset, input_g, filtered_points, clusters)
     if DEBUG:
@@ -148,26 +164,34 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset
         similarities.items(), key=lambda x: x[1], reverse=True)
     distances_sorted = sorted(
         distances.items(), key=lambda x: x[1], reverse=True)
-    proximities_sorted = sorted(
-        proximities.items(), key=lambda x: x[1])
 
     # begin - prepare lists for easy retrieval
     records = {}
     similarity_by_id = defaultdict(float)
     distance_by_id = defaultdict(float)
-    proximity_by_id = defaultdict(float)
+    idr_score_by_id = defaultdict(float)
 
-    cnt = 0
+    # cnt = 0
     for value in similarities_sorted:
-        records[cnt] = value[0]
+        # records[cnt] = value[0]
         similarity_by_id[value[0]] = value[1]
-        cnt += 1
+        # cnt += 1
 
     for value in distances_sorted:
         distance_by_id[value[0]] = value[1]
 
-    for value in proximities_sorted:
-        proximity_by_id[value[0]] = value[1]
+    for value in idr_scores.items():
+        idr_score_by_id[value[0]] = value[1]
+
+    records_sorted = sorted(
+        similarities.items(), key=lambda x: (-idr_score_by_id[x[0]], -x[1])
+    )
+    print('[records_sorted]', records_sorted)
+    cnt = 0
+    for key, _ in records_sorted:
+        records[cnt] = key
+        cnt += 1
+
     # begin - prepare lists for easy retrieval
 
     # print(len(records), "records retrieved and indexed.")
@@ -200,26 +224,26 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset
 
         current_distances = get_distances_of(current_records, k, distance_by_id)
         current_diversity = diversity.diversity(current_distances)
-        current_proximities = get_proximities_of(current_records, k, proximity_by_id)
-        current_clustering_mean = mean(current_proximities)
+        # current_proximities = get_proximities_of(current_records, k, proximity_by_id)
+        # current_clustering_mean = mean(current_proximities)
 
         new_records = make_new_records(current_records, pointer, k, records)
 
         new_distances = get_distances_of(new_records, k, distance_by_id)
         new_diversity = diversity.diversity(new_distances)
-        new_proximities = get_proximities_of(new_records, k, proximity_by_id)
-        new_clustering_mean = mean(new_proximities)
+        # new_proximities = get_proximities_of(new_records, k, proximity_by_id)
+        # new_clustering_mean = mean(new_proximities)
 
-        if new_diversity > current_diversity and new_clustering_mean < current_clustering_mean:
+        if new_diversity > current_diversity:
             if DEBUG:
-                print((current_diversity, new_diversity), (current_clustering_mean, new_clustering_mean))
+                print((current_diversity, new_diversity))
             current_records = new_records
 
         end_time = datetime.datetime.now()
         duration = (end_time - begin_time).microseconds / 1000.0
         total_time += duration
         if similarity_by_id[records[pointer]] < lowest_acceptable_similarity:
-            if stop_visiting_once:
+            if STOP_VISITING_ONCE:
                 break
             else:
                 pointer = k
@@ -236,4 +260,4 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset
         dicToArray.append(current_records[i])
     my_distances = get_distances_of(current_records, k, distance_by_id)
     my_diversity = diversity.diversity(my_distances)
-    return [min_similarity, round(my_diversity, 2), sorted(dicToArray)]
+    return [min_similarity, round(my_diversity, 3), sorted(dicToArray)]
