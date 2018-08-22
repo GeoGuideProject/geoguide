@@ -208,9 +208,16 @@ def mouse_clusters(selected_dataset):
         idr = IDR(geom=get_geom(feature), iteration=iteration)
         db.session.add(idr)
 
+    new_polygons = []
     for feature in polygons:
         polygon = Polygon(geom=get_geom(feature), iteration=iteration)
         db.session.add(polygon)
+        new_polygons.append(polygon)
 
     db.session.commit()
+
+    for polygon in new_polygons:
+        from geoguide.server.services import create_polygon_profile
+        create_polygon_profile(polygon)
+
     return jsonify(dict(json=data, args=request.args))
