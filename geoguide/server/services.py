@@ -1,3 +1,5 @@
+from collections import defaultdict, Counter
+
 import pandas as pd
 
 from flask_login import current_user
@@ -33,6 +35,12 @@ def get_dataset_by_id(id):
     dataset = Dataset.query.get(id)
     return dataset
 
+
+def get_polygon_by_id(id):
+    polygon = Polygon.query.get(id)
+    return polygon
+
+
 def get_next_polygon_and_idr_iteration():
     latest = Polygon.query.filter_by(
         session_id=current_session().id
@@ -62,7 +70,11 @@ def get_points_id_in_polygon(dataset, polygon):
     return [r[0] for r in cursor]
 
 
-def create_polygon_profile(polygon):
+def create_polygon_profile(polygon_id):
+    if polygon_id is None:
+        raise ValueError("polygon_id should not be None")
+
+    polygon = get_polygon_by_id(polygon_id)
     session = get_session_by_id(polygon.session_id)
     dataset = get_dataset_by_id(session.dataset_id)
 
@@ -94,7 +106,16 @@ def create_polygon_profile(polygon):
         logging.info('\n' + tabulate(numbers_summary, headers="keys", tablefmt="grid"))
 
         # texts
-        # TODO
+        rank = defaultdict(Counter)
+        for col in text_columns:
+            for _, value in df[col].str.lower().str.split(" ").items():
+                if value is None:
+                    continue
+                for v in value:
+                    if len(v) < 3:
+                        continue
+                    rank[col][v] += 1
+            logging.info(col + ': \n' + tabulate(rank[col].most_common(10), headers=["term", "counter"], tablefmt="grid"))
 
         # categorical
         # TODO

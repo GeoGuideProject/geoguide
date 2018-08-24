@@ -204,20 +204,23 @@ def mouse_clusters(selected_dataset):
 
     get_geom = lambda f: from_shape(asShape(geojson.loads(json.dumps(f['geometry']))))
 
+    new_idrs = []
     for feature in intersections:
         idr = IDR(geom=get_geom(feature), iteration=iteration)
-        db.session.add(idr)
+        # db.session.add(idr)
+        new_idrs.append(idr)
 
     new_polygons = []
     for feature in polygons:
         polygon = Polygon(geom=get_geom(feature), iteration=iteration)
-        db.session.add(polygon)
+        # db.session.add(polygon)
         new_polygons.append(polygon)
 
+    db.session.add_all(new_idrs + new_polygons)
     db.session.commit()
 
     for polygon in new_polygons:
         from geoguide.server.services import create_polygon_profile
-        create_polygon_profile(polygon)
+        create_polygon_profile(polygon.id)
 
     return jsonify(dict(json=data, args=request.args))
