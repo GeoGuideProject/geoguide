@@ -102,7 +102,7 @@ def create_polygon_profile(polygon_id):
         # numbers
         numbers_summary = []
         for col in number_columns:
-            numbers_summary.append(dict(attribute=col, median=df[col].median()))
+            numbers_summary.append(dict(attribute=col, **df[col].describe().to_dict()))
         logging.info('\n' + tabulate(numbers_summary, headers="keys", tablefmt="grid"))
 
         # texts
@@ -118,7 +118,13 @@ def create_polygon_profile(polygon_id):
             logging.info(col + ': \n' + tabulate(rank[col].most_common(10), headers=["term", "counter"], tablefmt="grid"))
 
         # categorical
-        # TODO
+        cat_map = defaultdict(int)
+        for col in cat_number_columns + cat_text_columns:
+            for _, value in df[col].items():
+                if pd.isnull(value):
+                    continue
+                cat_map["<{}, {}>".format(col, str(value))] += 1
+        logging.info('\n' + tabulate(cat_map.items(), headers=["category", "counter"], tablefmt="grid"))
 
         # datetimes
         # TODO
