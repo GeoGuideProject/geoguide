@@ -210,13 +210,16 @@ def mouse_clusters(selected_dataset):
         # db.session.add(idr)
         new_idrs.append(idr)
 
+    db.session.add_all(new_idrs)
+    db.session.commit()
+
     new_polygons = []
     for feature in polygons:
         polygon = Polygon(geom=get_geom(feature), iteration=iteration)
         # db.session.add(polygon)
         new_polygons.append(polygon)
 
-    db.session.add_all(new_idrs + new_polygons)
+    db.session.add_all(new_polygons)
     db.session.commit()
 
     for polygon in new_polygons:
