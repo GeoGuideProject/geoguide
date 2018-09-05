@@ -14,7 +14,7 @@ from flask import request, session, render_template, Blueprint, flash, redirect,
 from geoguide.server import app, db, datasets, logging
 from flask_uploads import UploadNotAllowed
 from geoguide.server.models import Dataset, Attribute, AttributeType, Session, Polygon, IDR
-from geoguide.server.services import get_next_polygon_and_idr_iteration, current_session, create_polygon
+from geoguide.server.services import get_next_polygon_and_idr_iteration, current_session, create_polygon, create_idr
 from geoguide.server.geoguide.helpers import save_as_hdf, path_to_hdf, save_as_sql
 from geoguide.server.iuga import run_iuga
 from sqlalchemy import create_engine
@@ -216,13 +216,11 @@ def mouse_clusters(selected_dataset):
 
     new_idrs = []
     for feature in intersections:
-        idr = IDR(session_id=session_id,
-                  geom=get_geom(feature), iteration=iteration)
-        # db.session.add(idr)
-        new_idrs.append(idr)
-
-    db.session.add_all(new_idrs)
-    db.session.commit()
+        # idr = IDR(session_id=session_id,
+        #           geom=get_geom(feature), iteration=iteration)
+        # # db.session.add(idr)
+        # new_idrs.append(idr)
+        create_idr(session_id, iteration, get_geom(feature))
 
     new_polygons = []
     for feature in polygons:

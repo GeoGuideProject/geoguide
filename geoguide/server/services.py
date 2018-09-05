@@ -8,7 +8,7 @@ from tabulate import tabulate
 from sqlalchemy import create_engine
 
 from geoguide.server import app, logging, db
-from geoguide.server.models import Dataset, Session, Polygon, AttributeType
+from geoguide.server.models import Dataset, Session, Polygon, AttributeType, IDR
 
 
 SQLALCHEMY_DATABASE_URI = app.config['SQLALCHEMY_DATABASE_URI']
@@ -70,12 +70,36 @@ def get_points_id_in_polygon(dataset, polygon):
     return [r[0] for r in cursor]
 
 
-def create_polygon(session_id, iteration, geom):
-    polygon = Polygon(session_id=session_id, geom=geom, iteration=iteration)
-    db.session.add(polygon)
+def get_points_id_in_idr(dataset, idr):
+    engine = create_engine(SQLALCHEMY_DATABASE_URI)
+    table_name = 'datasets.' + dataset.filename.rsplit('.', 1)[0]
+
+    query = '''
+    SELECT d.geoguide_id
+    FROM "{}" AS d
+    JOIN idrs AS p ON ST_Contains(p.geom, d.geom)
+    WHERE p.id = {}
+    '''.format(table_name, idr.id)
+
+    cursor = engine.execute(query)
+
+    return [r[0] for r in cursor]
+
+
+def create_idr(session_id, iteration, geom):
+    idr = IDR(session_id=session_id,
+              geom=geom, iteration=iteration)
+    db.session.add(idr)
     db.session.commit()
 
-    session = get_session_by_id(polygon.session_id)
+    idr.profile = create_profile(
+        session_id, lambda d: get_points_id_in_idr(d, idr))
+    db.session.add(idr)
+    db.session.commit()
+
+
+def create_profile(session_id, get_points_id):
+    session = get_session_by_id(session_id)
     dataset = get_dataset_by_id(session.dataset_id)
 
     # numbers
@@ -102,13 +126,16 @@ def create_polygon(session_id, iteration, geom):
         table_name = 'datasets.' + dataset.filename.rsplit('.', 1)[0]
 
         df = pd.read_sql_table(table_name, engine, index_col='geoguide_id')
-        df = df.loc[[*get_points_id_in_polygon(dataset, polygon)], :]
+        df = df.loc[[*get_points_id(dataset)], :]
 
         # numbers
         numbers_summary = []
         for col in number_columns:
-            numbers_summary.append(
-                dict(attribute=col, **df[col].describe().to_dict()))
+            d = dict(attribute=col, **df[col].describe().to_dict())
+            for k, v in d.items():
+                if pd.isnull(v):
+                    d[k] = None
+            numbers_summary.append(d)
         logging.info('\n' + tabulate(numbers_summary,
                                      headers="keys", tablefmt="grid"))
 
@@ -138,11 +165,20 @@ def create_polygon(session_id, iteration, geom):
         # datetimes
         # TODO
 
-        profile = dict(
+        return dict(
             numbers=numbers_summary,
             texts=rank,
             categoricals=cat_map
         )
-        polygon.profile = profile
-        db.session.add(polygon)
-        db.session.commit()
+
+
+def create_polygon(session_id, iteration, geom):
+    polygon = Polygon(session_id=session_id,
+                      geom=geom, iteration=iteration)
+    db.session.add(polygon)
+    db.session.commit()
+
+    polygon.profile = create_profile(
+        session_id, lambda d: get_points_id_in_polygon(d, polygon))
+    db.session.add(polygon)
+    db.session.commit()
