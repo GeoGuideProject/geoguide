@@ -6,6 +6,7 @@ from geoguide.server import app, db, bcrypt
 from sqlalchemy_utils import ChoiceType
 from flask_login import current_user
 from geoalchemy2 import Geometry
+from sqlalchemy.dialects.postgresql import JSON
 
 
 class User(db.Model):
@@ -17,7 +18,8 @@ class User(db.Model):
     password = db.Column(db.String(255), nullable=False)
     registered_on = db.Column(db.DateTime, nullable=False)
     admin = db.Column(db.Boolean, nullable=False, default=False)
-    datasets = db.relationship('Dataset', backref='user', cascade='all, delete-orphan')
+    datasets = db.relationship(
+        'Dataset', backref='user', cascade='all, delete-orphan')
 
     def __init__(self, email, password, admin=False):
         self.email = email
@@ -53,11 +55,11 @@ class Dataset(db.Model):
     filename = db.Column(db.String(40), nullable=False)
     latitude_attr = db.Column(db.String(50))
     longitude_attr = db.Column(db.String(50))
-    attributes = db.relationship('Attribute', backref='dataset', cascade='all, delete-orphan')
+    attributes = db.relationship(
+        'Attribute', backref='dataset', cascade='all, delete-orphan')
     created_at = db.Column(db.DateTime, nullable=False)
     indexed_at = db.Column(db.DateTime)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-
 
     def __init__(self, title, filename, number_of_rows=None, latitude_attr=None, longitude_attr=None):
         self.title = title
@@ -67,7 +69,6 @@ class Dataset(db.Model):
         self.longitude_attr = longitude_attr
         self.created_at = datetime.datetime.now()
         self.user_id = current_user.id
-
 
     def __repr__(self):
         return '<Dataset {}>'.format(self.filename)
@@ -88,7 +89,8 @@ class Attribute(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     description = db.Column(db.String(50), nullable=False)
     type = db.Column(ChoiceType(AttributeType, impl=db.Integer()))
-    dataset_id = db.Column(db.Integer, db.ForeignKey('datasets.id'), nullable=False)
+    dataset_id = db.Column(db.Integer, db.ForeignKey(
+        'datasets.id'), nullable=False)
     visible = db.Column(db.Boolean, default=True)
 
     def __init__(self, description, type, dataset_id, visible=True):
@@ -124,19 +126,18 @@ class Polygon(db.Model):
     __tablename__ = 'polygons'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    geom =  db.Column(Geometry('POLYGON'))
+    geom = db.Column(Geometry('POLYGON'))
     created_at = db.Column(db.DateTime, nullable=False)
-    session_id = db.Column(db.Integer, db.ForeignKey('sessions.id'), nullable=False)
+    session_id = db.Column(db.Integer, db.ForeignKey(
+        'sessions.id'), nullable=False)
     iteration = db.Column(db.Integer)
+    profile = db.Column(JSON)
 
-    def __init__(self, geom, iteration):
-        from geoguide.server.services import current_session
-
+    def __init__(self, session_id, geom, iteration):
         self.geom = geom
         self.iteration = iteration
-        self.session_id = current_session().id
+        self.session_id = session_id
         self.created_at = datetime.datetime.now()
-
 
     def __repr__(self):
         return '<Polygon {}>'.format(self.id)
@@ -147,19 +148,20 @@ class IDR(db.Model):
     __tablename__ = 'idrs'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    geom =  db.Column(Geometry('POLYGON'))
+    geom = db.Column(Geometry('POLYGON'))
     created_at = db.Column(db.DateTime, nullable=False)
-    session_id = db.Column(db.Integer, db.ForeignKey('sessions.id'), nullable=False)
+    session_id = db.Column(db.Integer, db.ForeignKey(
+        'sessions.id'), nullable=False)
     iteration = db.Column(db.Integer)
+    profile = db.Column(JSON)
 
-    def __init__(self, geom, iteration):
+    def __init__(self, session_id, geom, iteration):
         from geoguide.server.services import current_session
 
         self.geom = geom
         self.iteration = iteration
-        self.session_id = current_session().id
+        self.session_id = session_id
         self.created_at = datetime.datetime.now()
 
     def __repr__(self):
         return '<IDR {}>'.format(self.id)
-

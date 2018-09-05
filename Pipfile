@@ -6,6 +6,7 @@ verify_ssl = true
 coverage = "*"
 Flask-DebugToolbar = "*"
 Flask-Testing = "*"
+"autopep8" = "*"
 
 [packages]
 alembic = "==0.8.10"

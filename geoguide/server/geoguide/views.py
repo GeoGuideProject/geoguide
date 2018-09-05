@@ -14,7 +14,7 @@ from flask import request, session, render_template, Blueprint, flash, redirect,
 from geoguide.server import app, db, datasets, logging
 from flask_uploads import UploadNotAllowed
 from geoguide.server.models import Dataset, Attribute, AttributeType, Session, Polygon, IDR
-from geoguide.server.services import get_next_polygon_and_idr_iteration
+from geoguide.server.services import get_next_polygon_and_idr_iteration, current_session, create_polygon
 from geoguide.server.geoguide.helpers import save_as_hdf, path_to_hdf, save_as_sql
 from geoguide.server.iuga import run_iuga
 from sqlalchemy import create_engine
@@ -45,8 +45,10 @@ def upload():
                 longitude_attr = request.form['longitudeAttrSelect']
             datetime_attr = []
             if request.form['datetimeAttrInputText']:
-                datetime_attr = [attr.strip() for attr in request.form['datetimeAttrInputText'].split(',')]
-            dataset = Dataset(title, filename, number_of_rows, latitude_attr, longitude_attr)
+                datetime_attr = [
+                    attr.strip() for attr in request.form['datetimeAttrInputText'].split(',')]
+            dataset = Dataset(title, filename, number_of_rows,
+                              latitude_attr, longitude_attr)
             db.session.add(dataset)
             db.session.commit()
             for attr in datetime_attr:
@@ -54,7 +56,8 @@ def upload():
                 db.session.add(attribute)
                 db.session.commit()
             session['SELECTED_DATASET'] = filename
-            save_as_sql(dataset, request.form.getlist('selectionAttrInputCheckbox')) if USE_SQL else save_as_hdf(dataset)
+            save_as_sql(dataset, request.form.getlist(
+                'selectionAttrInputCheckbox')) if USE_SQL else save_as_hdf(dataset)
             return redirect(url_for('geoguide.environment'))
         except UploadNotAllowed:
             flash('This file is not allowed.', 'error')
@@ -90,7 +93,8 @@ def environment(selected_dataset):
     df = pd.read_csv(datasets.path(dataset.filename))
     vm = {}
     vm['dataset_headers'] = list(df.select_dtypes(include=[np.number]).columns)
-    vm['dataset_headers'] = [c for c in vm['dataset_headers'] if 'latitude' not in c and 'longitude' not in c and 'id' not in c and not df[c].isnull().any() and df[c].unique().shape[0] > 3]
+    vm['dataset_headers'] = [c for c in vm['dataset_headers']
+                             if 'latitude' not in c and 'longitude' not in c and 'id' not in c and not df[c].isnull().any() and df[c].unique().shape[0] > 3]
     vm['dataset_json'] = json.dumps({
         'filename': dataset.filename,
         'latitude_attr': dataset.latitude_attr,
@@ -137,7 +141,8 @@ def point_suggestions(selected_dataset, index):
     filtered_points = [int(x) for x in filtered_points.split(',') if x]
 
     clusters = json_data.get('clusters', '')
-    clusters = [[float(x) for x in c.split(':') if x] for c in clusters.split(',') if c]
+    clusters = [[float(x) for x in c.split(':') if x]
+                for c in clusters.split(',') if c]
     if DEBUG:
         print(clusters)
 
@@ -175,7 +180,8 @@ def point_by_polygon(selected_dataset):
 
     if len(polygon_path) > 2:
         polygon_path.append(polygon_path[0])
-        polygon = 'POLYGON(({}))'.format(','.join(['{} {}'.format(*p.split(':')[::-1]) for p in polygon_path]))
+        polygon = 'POLYGON(({}))'.format(
+            ','.join(['{} {}'.format(*p.split(':')[::-1]) for p in polygon_path]))
     else:
         return jsonify(dict(points=[], count=0)), 400
 
@@ -189,24 +195,29 @@ def point_by_polygon(selected_dataset):
         table_name,
         polygon))
 
-    points = [list(x[1:]) for x in cursor if len(filtered_points) > 0 and (x[0] in filtered_points)]
+    points = [list(x[1:]) for x in cursor if len(
+        filtered_points) > 0 and (x[0] in filtered_points)]
     return jsonify(dict(points=points, count=len(points)))
 
 
 @geoguide_blueprint.route('/environment/<selected_dataset>/mouseClusters', methods=['POST'])
 @login_required
 def mouse_clusters(selected_dataset):
+    session_id = current_session().id
+
     # request.args
     data = request.get_json(True, True)
     iteration = get_next_polygon_and_idr_iteration()
     intersections = data['intersections']
     polygons = data['polygons']
 
-    get_geom = lambda f: from_shape(asShape(geojson.loads(json.dumps(f['geometry']))))
+    def get_geom(f): return from_shape(
+        asShape(geojson.loads(json.dumps(f['geometry']))))
 
     new_idrs = []
     for feature in intersections:
-        idr = IDR(geom=get_geom(feature), iteration=iteration)
+        idr = IDR(session_id=session_id,
+                  geom=get_geom(feature), iteration=iteration)
         # db.session.add(idr)
         new_idrs.append(idr)
 
@@ -215,15 +226,9 @@ def mouse_clusters(selected_dataset):
 
     new_polygons = []
     for feature in polygons:
-        polygon = Polygon(geom=get_geom(feature), iteration=iteration)
+        create_polygon(session_id, iteration, get_geom(feature))
+        # polygon = Polygon(geom=get_geom(feature), iteration=iteration)
         # db.session.add(polygon)
-        new_polygons.append(polygon)
-
-    db.session.add_all(new_polygons)
-    db.session.commit()
-
-    for polygon in new_polygons:
-        from geoguide.server.services import create_polygon_profile
-        create_polygon_profile(polygon.id)
+        # new_polygons.append(polygon)
 
     return jsonify(dict(json=data, args=request.args))

@@ -7,7 +7,7 @@ from sqlalchemy import desc
 from tabulate import tabulate
 from sqlalchemy import create_engine
 
-from geoguide.server import app, logging
+from geoguide.server import app, logging, db
 from geoguide.server.models import Dataset, Session, Polygon, AttributeType
 
 
@@ -58,7 +58,7 @@ def get_points_id_in_polygon(dataset, polygon):
     engine = create_engine(SQLALCHEMY_DATABASE_URI)
     table_name = 'datasets.' + dataset.filename.rsplit('.', 1)[0]
 
-    query ='''
+    query = '''
     SELECT d.geoguide_id
     FROM "{}" AS d
     JOIN polygons AS p ON ST_Contains(p.geom, d.geom)
@@ -70,27 +70,32 @@ def get_points_id_in_polygon(dataset, polygon):
     return [r[0] for r in cursor]
 
 
-def create_polygon_profile(polygon_id):
-    if polygon_id is None:
-        raise ValueError("polygon_id should not be None")
+def create_polygon(session_id, iteration, geom):
+    polygon = Polygon(session_id=session_id, geom=geom, iteration=iteration)
+    db.session.add(polygon)
+    db.session.commit()
 
-    polygon = get_polygon_by_id(polygon_id)
     session = get_session_by_id(polygon.session_id)
     dataset = get_dataset_by_id(session.dataset_id)
 
     # numbers
-    number_columns = [attr.description for attr in dataset.attributes if attr.type == AttributeType.number]
+    number_columns = [
+        attr.description for attr in dataset.attributes if attr.type == AttributeType.number]
 
     # texts
-    text_columns = [attr.description for attr in dataset.attributes if attr.type == AttributeType.text]
+    text_columns = [
+        attr.description for attr in dataset.attributes if attr.type == AttributeType.text]
 
     # categorial
     # TODO: incremental per session
-    cat_number_columns = [attr.description for attr in dataset.attributes if attr.type == AttributeType.categorical_number]
-    cat_text_columns = [attr.description for attr in dataset.attributes if attr.type == AttributeType.categorical_text]
+    cat_number_columns = [
+        attr.description for attr in dataset.attributes if attr.type == AttributeType.categorical_number]
+    cat_text_columns = [
+        attr.description for attr in dataset.attributes if attr.type == AttributeType.categorical_text]
 
     # datetimes
-    datetime_columns = [attr.description for attr in dataset.attributes if attr.type == AttributeType.datetime]
+    datetime_columns = [
+        attr.description for attr in dataset.attributes if attr.type == AttributeType.datetime]
 
     with app.app_context():
         engine = create_engine(SQLALCHEMY_DATABASE_URI)
@@ -102,8 +107,10 @@ def create_polygon_profile(polygon_id):
         # numbers
         numbers_summary = []
         for col in number_columns:
-            numbers_summary.append(dict(attribute=col, **df[col].describe().to_dict()))
-        logging.info('\n' + tabulate(numbers_summary, headers="keys", tablefmt="grid"))
+            numbers_summary.append(
+                dict(attribute=col, **df[col].describe().to_dict()))
+        logging.info('\n' + tabulate(numbers_summary,
+                                     headers="keys", tablefmt="grid"))
 
         # texts
         rank = defaultdict(Counter)
@@ -115,7 +122,8 @@ def create_polygon_profile(polygon_id):
                     if len(v) < 3:
                         continue
                     rank[col][v] += 1
-            logging.info(col + ': \n' + tabulate(rank[col].most_common(10), headers=["term", "counter"], tablefmt="grid"))
+            logging.info(col + ': \n' + tabulate(rank[col].most_common(
+                10), headers=["term", "counter"], tablefmt="grid"))
 
         # categorical
         cat_map = defaultdict(int)
@@ -124,7 +132,17 @@ def create_polygon_profile(polygon_id):
                 if pd.isnull(value):
                     continue
                 cat_map["<{}, {}>".format(col, str(value))] += 1
-        logging.info('\n' + tabulate(cat_map.items(), headers=["category", "counter"], tablefmt="grid"))
+        logging.info('\n' + tabulate(cat_map.items(),
+                                     headers=["category", "counter"], tablefmt="grid"))
 
         # datetimes
         # TODO
+
+        profile = dict(
+            numbers=numbers_summary,
+            texts=rank,
+            categoricals=cat_map
+        )
+        polygon.profile = profile
+        db.session.add(polygon)
+        db.session.commit()
