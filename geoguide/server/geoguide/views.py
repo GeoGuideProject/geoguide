@@ -5,6 +5,7 @@ import os.path
 import pandas as pd
 import numpy as np
 import geojson
+from threading import Thread
 
 from shapely.geometry import asShape
 from geoalchemy2.shape import from_shape
@@ -216,17 +217,12 @@ def mouse_clusters(selected_dataset):
 
     new_idrs = []
     for feature in intersections:
-        # idr = IDR(session_id=session_id,
-        #           geom=get_geom(feature), iteration=iteration)
-        # # db.session.add(idr)
-        # new_idrs.append(idr)
-        create_idr(session_id, iteration, get_geom(feature))
+        Thread(target=lambda: create_idr(
+            session_id, iteration, get_geom(feature))).start()
 
     new_polygons = []
     for feature in polygons:
-        create_polygon(session_id, iteration, get_geom(feature))
-        # polygon = Polygon(geom=get_geom(feature), iteration=iteration)
-        # db.session.add(polygon)
-        # new_polygons.append(polygon)
+        Thread(target=lambda: create_polygon(
+            session_id, iteration, get_geom(feature))).start()
 
     return jsonify(dict(json=data, args=request.args))

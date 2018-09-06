@@ -1,4 +1,5 @@
 from collections import defaultdict, Counter
+from threading import Thread
 
 import pandas as pd
 
@@ -87,15 +88,16 @@ def get_points_id_in_idr(dataset, idr):
 
 
 def create_idr(session_id, iteration, geom):
-    idr = IDR(session_id=session_id,
-              geom=geom, iteration=iteration)
-    db.session.add(idr)
-    db.session.commit()
+    with app.app_context():
+        idr = IDR(session_id=session_id,
+                  geom=geom, iteration=iteration)
+        db.session.add(idr)
+        db.session.commit()
 
-    idr.profile = create_profile(
-        session_id, lambda d: get_points_id_in_idr(d, idr))
-    db.session.add(idr)
-    db.session.commit()
+        idr.profile = create_profile(
+            session_id, lambda d: get_points_id_in_idr(d, idr))
+        db.session.add(idr)
+        db.session.commit()
 
 
 def create_profile(session_id, get_points_id):
@@ -121,64 +123,64 @@ def create_profile(session_id, get_points_id):
     datetime_columns = [
         attr.description for attr in dataset.attributes if attr.type == AttributeType.datetime]
 
-    with app.app_context():
-        engine = create_engine(SQLALCHEMY_DATABASE_URI)
-        table_name = 'datasets.' + dataset.filename.rsplit('.', 1)[0]
+    engine = create_engine(SQLALCHEMY_DATABASE_URI)
+    table_name = 'datasets.' + dataset.filename.rsplit('.', 1)[0]
 
-        df = pd.read_sql_table(table_name, engine, index_col='geoguide_id')
-        df = df.loc[[*get_points_id(dataset)], :]
+    df = pd.read_sql_table(table_name, engine, index_col='geoguide_id')
+    df = df.loc[[*get_points_id(dataset)], :]
 
-        # numbers
-        numbers_summary = []
-        for col in number_columns:
-            d = dict(attribute=col, **df[col].describe().to_dict())
-            for k, v in d.items():
-                if pd.isnull(v):
-                    d[k] = None
-            numbers_summary.append(d)
-        logging.info('\n' + tabulate(numbers_summary,
-                                     headers="keys", tablefmt="grid"))
+    # numbers
+    numbers_summary = []
+    for col in number_columns:
+        d = dict(attribute=col, **df[col].describe().to_dict())
+        for k, v in d.items():
+            if pd.isnull(v):
+                d[k] = None
+        numbers_summary.append(d)
+    logging.info('\n' + tabulate(numbers_summary,
+                                 headers="keys", tablefmt="grid"))
 
-        # texts
-        rank = defaultdict(Counter)
-        for col in text_columns:
-            for _, value in df[col].str.lower().str.split(" ").items():
-                if value is None:
+    # texts
+    rank = defaultdict(Counter)
+    for col in text_columns:
+        for _, value in df[col].str.lower().str.split(" ").items():
+            if value is None:
+                continue
+            for v in value:
+                if len(v) < 3:
                     continue
-                for v in value:
-                    if len(v) < 3:
-                        continue
-                    rank[col][v] += 1
-            logging.info(col + ': \n' + tabulate(rank[col].most_common(
-                10), headers=["term", "counter"], tablefmt="grid"))
+                rank[col][v] += 1
+        logging.info(col + ': \n' + tabulate(rank[col].most_common(
+            10), headers=["term", "counter"], tablefmt="grid"))
 
-        # categorical
-        cat_map = defaultdict(int)
-        for col in cat_number_columns + cat_text_columns:
-            for _, value in df[col].items():
-                if pd.isnull(value):
-                    continue
-                cat_map["<{}, {}>".format(col, str(value))] += 1
-        logging.info('\n' + tabulate(cat_map.items(),
-                                     headers=["category", "counter"], tablefmt="grid"))
+    # categorical
+    cat_map = defaultdict(int)
+    for col in cat_number_columns + cat_text_columns:
+        for _, value in df[col].items():
+            if pd.isnull(value):
+                continue
+            cat_map["<{}, {}>".format(col, str(value))] += 1
+    logging.info('\n' + tabulate(cat_map.items(),
+                                 headers=["category", "counter"], tablefmt="grid"))
 
-        # datetimes
-        # TODO
+    # datetimes
+    # TODO
 
-        return dict(
-            numbers=numbers_summary,
-            texts=rank,
-            categoricals=cat_map
-        )
+    return dict(
+        numbers=numbers_summary,
+        texts=rank,
+        categoricals=cat_map
+    )
 
 
 def create_polygon(session_id, iteration, geom):
-    polygon = Polygon(session_id=session_id,
-                      geom=geom, iteration=iteration)
-    db.session.add(polygon)
-    db.session.commit()
+    with app.app_context():
+        polygon = Polygon(session_id=session_id,
+                          geom=geom, iteration=iteration)
+        db.session.add(polygon)
+        db.session.commit()
 
-    polygon.profile = create_profile(
-        session_id, lambda d: get_points_id_in_polygon(d, polygon))
-    db.session.add(polygon)
-    db.session.commit()
+        polygon.profile = create_profile(
+            session_id, lambda d: get_points_id_in_polygon(d, polygon))
+        db.session.add(polygon)
+        db.session.commit()
