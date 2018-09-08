@@ -1,14 +1,19 @@
 [[source]]
+
 url = "https://pypi.python.org/simple"
 verify_ssl = true
 
+
 [dev-packages]
+
 coverage = "*"
-Flask-DebugToolbar = "*"
-Flask-Testing = "*"
+flask-debugtoolbar = "*"
+flask-testing = "*"
 "autopep8" = "*"
 
+
 [packages]
+
 alembic = "==0.8.10"
 bcrypt = "==3.1.2"
 blinker = "==1.4"
@@ -18,17 +23,17 @@ pandas = "*"
 python-slugify = "*"
 python-decouple = "*"
 tables = "*"
-psycopg2 = "*"
-Flask = "*"
-Flask-Bcrypt = "*"
-Flask-Login = "*"
-Flask-Migrate = "*"
-Flask-Script = "*"
-Flask-SQLAlchemy = "*"
-Flask-Uploads = "*"
-python-Levenshtein = "*"
-SQLAlchemy-Utils = "*"
-GeoAlchemy2 = "*"
+flask = "*"
+flask-bcrypt = "*"
+flask-login = "*"
+flask-migrate = "*"
+flask-script = "*"
+flask-sqlalchemy = "*"
+flask-uploads = "*"
+python-levenshtein = "*"
+sqlalchemy-utils = "*"
+"geoalchemy2" = "*"
 tabulate = "*"
 geojson = "*"
 shapely = "*"
+"psycopg2-binary" = "*"

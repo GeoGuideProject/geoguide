@@ -15,7 +15,8 @@ echo "Generating a new APP_KEY..."
 docker-compose run web python generate_key.py
 
 echo "Creating tables..."
-docker-compose run web python manage.py create_db
+docker-compose run web python manage.py db init
+docker-compose run web python manage.py db upgrade
 
 echo "Compiling JS..."
 docker-compose run yarn yarn install && \

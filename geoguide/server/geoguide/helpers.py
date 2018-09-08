@@ -30,6 +30,9 @@ def is_latlng_attribute(header):
 
 def guess_attributes_types(dataset, visible_attributes=[]):
     df = pd.read_csv(datasets.path(dataset.filename))
+
+    attrs = [a.description for a in dataset.attributes]
+
     numberic_attributes = list(df.select_dtypes(include=[np.number]).columns)
     string_attributes = list(df.select_dtypes(include=[object]).columns)
 
@@ -42,18 +45,26 @@ def guess_attributes_types(dataset, visible_attributes=[]):
     text_attributes = [c for c in string_attributes if c not in categorical_text_attributes]
 
     for attr in number_attributes:
+        if attr in attrs:
+            continue
         attribute = Attribute(attr, AttributeType.number, dataset.id, attr in visible_attributes)
         db.session.add(attribute)
 
     for attr in categorical_number_attributes:
+        if attr in attrs:
+            continue
         attribute = Attribute(attr, AttributeType.categorical_number, dataset.id, attr in visible_attributes)
         db.session.add(attribute)
 
     for attr in categorical_text_attributes:
+        if attr in attrs:
+            continue
         attribute = Attribute(attr, AttributeType.categorical_text, dataset.id, attr in visible_attributes)
         db.session.add(attribute)
 
     for attr in text_attributes:
+        if attr in attrs:
+            continue
         attribute = Attribute(attr, AttributeType.text, dataset.id, attr in visible_attributes)
         db.session.add(attribute)
 

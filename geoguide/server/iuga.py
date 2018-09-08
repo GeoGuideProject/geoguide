@@ -106,7 +106,6 @@ def read_input_from_sql(dataset, input_g, filtered_points=[], clusters=[]):
         if filtered_points and geoguide_id in filtered_points:
             continue
         idr_scores[geoguide_id] = score
-    print('[IDR_SCORES]', idr_scores)
 
     for df in pd.read_sql_table(table_rel_name, engine, index_col='index', chunksize=CHUNKSIZE):
         df = df[((df['id_a'] == input_g) | (df['id_b'] == input_g))]
@@ -122,7 +121,6 @@ def read_input_from_sql(dataset, input_g, filtered_points=[], clusters=[]):
             distances[key] = float(row[4])
 
     return similarities, distances, idr_scores
-
 
 
 def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset, *args, **kwargs):
