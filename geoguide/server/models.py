@@ -23,9 +23,7 @@ class User(db.Model):
 
     def __init__(self, email, password, admin=False):
         self.email = email
-        self.password = bcrypt.generate_password_hash(
-            password, app.config.get('BCRYPT_LOG_ROUNDS')
-        ).decode('utf-8')
+        self.password = self.set_password(password)
         self.registered_on = datetime.datetime.now()
         self.admin = admin
 
@@ -40,6 +38,17 @@ class User(db.Model):
 
     def get_id(self):
         return self.id
+
+    def check_password(self, password):
+        if password is None:
+            return False
+        return bcrypt.check_password_hash(self.password, password)
+
+    def set_password(self, password):
+        self.password = bcrypt.generate_password_hash(
+            password, app.config.get('BCRYPT_LOG_ROUNDS')
+        )
+        return self.password
 
     def __repr__(self):
         return '<User {0}>'.format(self.email)

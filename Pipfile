@@ -1,19 +1,14 @@
 [[source]]
-
 url = "https://pypi.python.org/simple"
 verify_ssl = true
 
-
 [dev-packages]
-
 coverage = "*"
 flask-debugtoolbar = "*"
 flask-testing = "*"
 "autopep8" = "*"
 
-
 [packages]
-
 alembic = "==0.8.10"
 bcrypt = "==3.1.2"
 blinker = "==1.4"
@@ -37,3 +32,7 @@ tabulate = "*"
 geojson = "*"
 shapely = "*"
 "psycopg2-binary" = "*"
+flask-cors = "*"
+flask-restful = "*"
+pyjwt = "*"
+arrow = "*"
