@@ -47,7 +47,7 @@ class User(db.Model):
     def set_password(self, password):
         self.password = bcrypt.generate_password_hash(
             password, app.config.get('BCRYPT_LOG_ROUNDS')
-        )
+        ).decode('utf-8')
         return self.password
 
     def __repr__(self):

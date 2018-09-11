@@ -105,8 +105,10 @@ app.register_blueprint(user_blueprint)
 ###################
 
 from geoguide.server.auth.resources import auth_blueprint
+from geoguide.server.datasets.resources import datasets_blueprint
 
 app.register_blueprint(auth_blueprint)
+app.register_blueprint(datasets_blueprint)
 
 
 ########################
