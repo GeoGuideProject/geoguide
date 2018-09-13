@@ -24,10 +24,10 @@ dataset_fields = {
     'id': fields.String(attribute=lambda x: x.filename.rsplit('.')[0]),
     'title': fields.String,
     'filename': fields.String,
-    'latitude_attr': fields.String,
-    'longitude_attr': fields.String,
-    'created_at': fields.DateTime(dt_format='iso8601'),
-    'indexed_at': fields.DateTime(dt_format='iso8601'),
+    'latitudeAttr': fields.String(attribute="latitude_attr"),
+    'longitudeAttr': fields.String(attribute="longitude_attr"),
+    'createdAt': fields.DateTime(attribute="created_at", dt_format='iso8601'),
+    'indexedAt': fields.DateTime(attribute="indexed_at", dt_format='iso8601'),
     'attributes': fields.List(fields.Nested(attribute_fields))
 }
 

@@ -17,7 +17,7 @@ user_fields = {
 }
 
 token_fields = {
-    'access_token': fields.String
+    'accessToken': fields.String(attribute="access_token")
 }
 
 
@@ -36,8 +36,8 @@ class UserDetail(UserBaseResource):
 
     put_parser = reqparse.RequestParser()
     put_parser.add_argument('email', type=str)
-    put_parser.add_argument('cur_password', type=str)
-    put_parser.add_argument('new_password', type=str)
+    put_parser.add_argument('curPassword', type=str)
+    put_parser.add_argument('newPassword', type=str)
 
     @marshal_with(user_fields)
     @login_required
@@ -55,9 +55,9 @@ class UserDetail(UserBaseResource):
     def put(self):
         args = self.put_parser.parse_args()
         # Update password if current one matches
-        if None not in [args['cur_password'], args['new_password']]:
-            if current_user.check_password(args['cur_password']):
-                current_user.set_password(args['new_password'])
+        if None not in [args['curPassword'], args['newPassword']]:
+            if current_user.check_password(args['curPassword']):
+                current_user.set_password(args['newPassword'])
             else:
                 abort(400, message='Invalid password')
         if args['email'] is not None:
@@ -72,14 +72,14 @@ class UserRegister(UserBaseResource):
     parser = reqparse.RequestParser()
     parser.add_argument('email', type=str)
     parser.add_argument('password', type=str, required=True)
-    parser.add_argument('confirm_password', type=str, required=True)
+    parser.add_argument('confirmPassword', type=str, required=True)
 
     @marshal_with(user_fields)
     def post(self):
         parsed_args = self.parser.parse_args()
         if self.is_email_already_registered(parsed_args['email']):
             abort(400, message='Email already registered.')
-        if parsed_args['password'] != parsed_args['confirm_password']:
+        if parsed_args['password'] != parsed_args['confirmPassword']:
             abort(400, message='Passwords does not match.')
 
         user = User(
@@ -109,7 +109,7 @@ class AuthToken(UserBaseResource):
                 'iat': iat.timestamp,
                 'exp': iat.replace(seconds=app.config.get('JWT_EXPIRATION_SECONDS')).timestamp
             }, app.config.get('SECRET_KEY'), algorithm=app.config.get('JWT_ALGORITHM'))
-            return {'access_token': token.decode('utf-8')}, 200
+            return dict(access_token=token.decode('utf-8')), 200
         else:
             abort(401, message='Invalid credentials')
 
@@ -137,7 +137,7 @@ class AuthRefreshToken(UserBaseResource):
                     'iat': iat.timestamp,
                     'exp': iat.replace(seconds=app.config.get('JWT_EXPIRATION_SECONDS')).timestamp
                 }, app.config.get('SECRET_KEY'), algorithm=app.config.get('JWT_ALGORITHM'))
-                return {'access_token': token.decode('utf-8')}, 200
+                return dict(access_token=token.decode('utf-8')), 200
         abort(401, message='Invalid token')
 
 
