@@ -50,13 +50,15 @@ def read_input_from_hdf(dataset, input_g, filtered_points=[], clusters=[]):
                     continue
                 proximity = haversine_distance(*cluster[:2], *row[1:])
                 if DEBUG:
-                     print(proximity, cluster[2], proximity/cluster[2])
+                    print(proximity, cluster[2], proximity/cluster[2])
                 proximity = proximity / cluster[2]
-                proximities[key] = min([proximity, proximities.get(key, proximity)])
+                proximities[key] = min(
+                    [proximity, proximities.get(key, proximity)])
 
     for df in store.select('relation', chunksize=CHUNKSIZE, where='id_a=input_g or id_b=input_g'):
         if filtered_points:
-            df = df[((df['id_a'].isin(filtered_points)) & (df['id_b'].isin(filtered_points)))]
+            df = df[((df['id_a'].isin(filtered_points)) &
+                     (df['id_b'].isin(filtered_points)))]
         for row in df.itertuples():
             id_a = int(row[1])
             id_b = int(row[2])
@@ -111,7 +113,8 @@ def read_input_from_sql(dataset, input_g, filtered_points=[], clusters=[]):
     for df in pd.read_sql_table(table_rel_name, engine, index_col='index', chunksize=CHUNKSIZE):
         df = df[((df['id_a'] == input_g) | (df['id_b'] == input_g))]
         if filtered_points:
-            df = df[((df['id_a'].isin(filtered_points)) & (df['id_b'].isin(filtered_points)))]
+            df = df[((df['id_a'].isin(filtered_points)) &
+                     (df['id_b'].isin(filtered_points)))]
         for row in df.itertuples():
             id_a = int(row[1])
             id_b = int(row[2])
@@ -122,7 +125,6 @@ def read_input_from_sql(dataset, input_g, filtered_points=[], clusters=[]):
             distances[key] = float(row[4])
 
     return similarities, distances, idr_scores
-
 
 
 def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset, *args, **kwargs):
@@ -153,9 +155,11 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset
     # read input data frame
     start = time.time()
     if USE_SQL:
-        similarities, distances, idr_scores = read_input_from_sql(dataset, input_g, filtered_points, clusters)
+        similarities, distances, idr_scores = read_input_from_sql(
+            dataset, input_g, filtered_points, clusters)
     else:
-        similarities, distances, proximities = read_input_from_hdf(dataset, input_g, filtered_points, clusters)
+        similarities, distances, proximities = read_input_from_hdf(
+            dataset, input_g, filtered_points, clusters)
     if DEBUG:
         logging.info('[IUGA] {} seconds'.format(time.time() - start))
 
@@ -222,7 +226,8 @@ def run_iuga(input_g, k_value, time_limit, lowest_acceptable_similarity, dataset
             continue
         begin_time = datetime.datetime.now()
 
-        current_distances = get_distances_of(current_records, k, distance_by_id)
+        current_distances = get_distances_of(
+            current_records, k, distance_by_id)
         current_diversity = diversity.diversity(current_distances)
         # current_proximities = get_proximities_of(current_records, k, proximity_by_id)
         # current_clustering_mean = mean(current_proximities)

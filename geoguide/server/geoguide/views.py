@@ -23,6 +23,7 @@ from flask_login import login_required, current_user
 SQLALCHEMY_DATABASE_URI = app.config['SQLALCHEMY_DATABASE_URI']
 DEBUG = app.config['DEBUG']
 USE_SQL = app.config['USE_SQL']
+GOOGLE_MAPS_KEY = app.config['GOOGLE_MAPS_KEY']
 geoguide_blueprint = Blueprint('geoguide', __name__,)
 
 
@@ -45,8 +46,10 @@ def upload():
                 longitude_attr = request.form['longitudeAttrSelect']
             datetime_attr = []
             if request.form['datetimeAttrInputText']:
-                datetime_attr = [attr.strip() for attr in request.form['datetimeAttrInputText'].split(',')]
-            dataset = Dataset(title, filename, number_of_rows, latitude_attr, longitude_attr)
+                datetime_attr = [
+                    attr.strip() for attr in request.form['datetimeAttrInputText'].split(',')]
+            dataset = Dataset(title, filename, number_of_rows,
+                              latitude_attr, longitude_attr)
             db.session.add(dataset)
             db.session.commit()
             for attr in datetime_attr:
@@ -54,7 +57,8 @@ def upload():
                 db.session.add(attribute)
                 db.session.commit()
             session['SELECTED_DATASET'] = filename
-            save_as_sql(dataset, request.form.getlist('selectionAttrInputCheckbox')) if USE_SQL else save_as_hdf(dataset)
+            save_as_sql(dataset, request.form.getlist(
+                'selectionAttrInputCheckbox')) if USE_SQL else save_as_hdf(dataset)
             return redirect(url_for('geoguide.environment'))
         except UploadNotAllowed:
             flash('This file is not allowed.', 'error')
@@ -90,7 +94,8 @@ def environment(selected_dataset):
     df = pd.read_csv(datasets.path(dataset.filename))
     vm = {}
     vm['dataset_headers'] = list(df.select_dtypes(include=[np.number]).columns)
-    vm['dataset_headers'] = [c for c in vm['dataset_headers'] if 'latitude' not in c and 'longitude' not in c and 'id' not in c and not df[c].isnull().any() and df[c].unique().shape[0] > 3]
+    vm['dataset_headers'] = [c for c in vm['dataset_headers']
+                             if 'latitude' not in c and 'longitude' not in c and 'id' not in c and not df[c].isnull().any() and df[c].unique().shape[0] > 3]
     vm['dataset_json'] = json.dumps({
         'filename': dataset.filename,
         'latitude_attr': dataset.latitude_attr,
@@ -100,6 +105,7 @@ def environment(selected_dataset):
         'headers': vm['dataset_headers'],
     })
     vm['dataset_url'] = datasets.url(dataset.filename)
+    vm['google_maps_key'] = GOOGLE_MAPS_KEY
     return render_template('geoguide/environment.html', **vm)
 
 
@@ -137,7 +143,8 @@ def point_suggestions(selected_dataset, index):
     filtered_points = [int(x) for x in filtered_points.split(',') if x]
 
     clusters = json_data.get('clusters', '')
-    clusters = [[float(x) for x in c.split(':') if x] for c in clusters.split(',') if c]
+    clusters = [[float(x) for x in c.split(':') if x]
+                for c in clusters.split(',') if c]
     if DEBUG:
         print(clusters)
 
@@ -175,7 +182,8 @@ def point_by_polygon(selected_dataset):
 
     if len(polygon_path) > 2:
         polygon_path.append(polygon_path[0])
-        polygon = 'POLYGON(({}))'.format(','.join(['{} {}'.format(*p.split(':')[::-1]) for p in polygon_path]))
+        polygon = 'POLYGON(({}))'.format(
+            ','.join(['{} {}'.format(*p.split(':')[::-1]) for p in polygon_path]))
     else:
         return jsonify(dict(points=[], count=0)), 400
 
@@ -189,7 +197,8 @@ def point_by_polygon(selected_dataset):
         table_name,
         polygon))
 
-    points = [list(x[1:]) for x in cursor if len(filtered_points) > 0 and (x[0] in filtered_points)]
+    points = [list(x[1:]) for x in cursor if len(
+        filtered_points) > 0 and (x[0] in filtered_points)]
     return jsonify(dict(points=points, count=len(points)))
 
 
@@ -202,7 +211,8 @@ def mouse_clusters(selected_dataset):
     intersections = data['intersections']
     polygons = data['polygons']
 
-    get_geom = lambda f: from_shape(asShape(geojson.loads(json.dumps(f['geometry']))))
+    def get_geom(f): return from_shape(
+        asShape(geojson.loads(json.dumps(f['geometry']))))
 
     for feature in intersections:
         idr = IDR(geom=get_geom(feature), iteration=iteration)
